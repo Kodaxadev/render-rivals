@@ -1,147 +1,89 @@
 {
+  "schema": "render-rivals/repository-document-inventory",
+  "schemaVersion": "2.0.0",
   "project": "Render Rivals",
-  "status": "canonical-architecture-baseline",
-  "generated": "2026-07-20",
-  "files": [
-    {
-      "file": "LICENSE-TBD.md",
-      "lines": 7,
-      "sha256": "b50330c2f4ca92d4b8287d51e2cd198a1f925117bc1c0fdc8d54cf491a7ee0eb"
-    },
-    {
-      "file": "README.md",
-      "lines": 110,
-      "sha256": "c43e4ceb897cdb72685195498c1b419ab9b9051e48a8e4837b69fc69c6fc4d57"
-    },
-    {
-      "file": "adr/ADR-0001-typescript-rust-boundary.md",
-      "lines": 25,
-      "sha256": "335850e33fc99be019ae37c81ca01cbd2b06a9bdc458deb4385087093dba99ad"
-    },
-    {
-      "file": "adr/ADR-0002-bootstrap-terminal-and-session.md",
-      "lines": 23,
-      "sha256": "e11e55230ccf4f66089fa4ee2563d063fd4d9f2fe40ada12fa5df877edfe6746"
-    },
-    {
-      "file": "adr/ADR-0003-containment-capabilities.md",
-      "lines": 23,
-      "sha256": "5cb7a831c921c84cba0c74eeff99a4020704211e977d1406eda5b7b5a0f68b74"
-    },
-    {
-      "file": "adr/ADR-0004-secure-ipc-and-output.md",
-      "lines": 19,
-      "sha256": "305921a86272c03290f55beed127879ab1b1266a602afa948567b9efefbad6f7"
-    },
-    {
-      "file": "adr/ADR-0005-sequential-execution.md",
-      "lines": 15,
-      "sha256": "32aa24ffcbcc5708b135ab5d68b4bbcff44be8d4a26ec99950bfe7c49b8b6d7f"
-    },
-    {
-      "file": "adr/ADR-0006-capture-epoch.md",
-      "lines": 15,
-      "sha256": "13a6d5ef4f69091c62d3bb5ad4a515c413b1ac759c09ad79cbaf6bc37e9ac01d"
-    },
-    {
-      "file": "adr/ADR-0007-files-canonical.md",
-      "lines": 15,
-      "sha256": "7955bf5ab8cc97808ac7211fa0e9dbb45fcd478b16a7d6de0f2e18b758fd70e5"
-    },
-    {
-      "file": "adr/ADR-0008-version-policy.md",
-      "lines": 15,
-      "sha256": "302ccff161762a81e1626a131527134368475e63eb7704df7352e83d279f576c"
-    },
-    {
-      "file": "adr/ADR-0009-experimental-controls.md",
-      "lines": 15,
-      "sha256": "3ca2c017e8a83d8bba80c0d2ec9fe4a0e169af1cffd5643125be84f1c48da0ae"
-    },
-    {
-      "file": "adr/ADR-0010-quality-first-accounting.md",
-      "lines": 15,
-      "sha256": "932c9cd3b6c307dadc50fae0da5da42a4d9f32cd3a163d04f1f9d0ac568c9382"
-    },
-    {
-      "file": "archive/README.md",
-      "lines": 24,
-      "sha256": "5e013e5f2abd8dcb5670016f10375a752564fd136ab13e5e5b9a6714ffc04db5"
-    },
-    {
-      "file": "archive/SUPERSEDED-RUNTIME-DECISIONS.md",
-      "lines": 75,
-      "sha256": "e8f4b8a736f6980520add442538b258ec799c3a2d6e061382f51fcc6c46f9fbe"
-    },
-    {
-      "file": "archive/original-design-warden-part-01.md",
-      "lines": 448,
-      "sha256": "a945969cfbac6cfa002d789df8589bf5ffe77a21ee7aef0f87607214a5a72dcc"
-    },
-    {
-      "file": "archive/original-design-warden-part-02.md",
-      "lines": 448,
-      "sha256": "e9574fb33913f9216a08ef87c6e2a192148b7e41ba6cf03e0a68e51c697cc512"
-    },
-    {
-      "file": "archive/original-design-warden-part-03.md",
-      "lines": 447,
-      "sha256": "33fe101f80a613fb264084a3b66b17b5e0df005080b913f3f9902102370176e9"
-    },
-    {
-      "file": "archive/original-design-warden-part-04.md",
-      "lines": 217,
-      "sha256": "4255bcda7347c6f06cc710afed29850d291f07e73c82e3ada4d92a29e9049166"
-    },
-    {
-      "file": "archive/original-roadmap.md",
-      "lines": 37,
-      "sha256": "864d63193ae42e0ad9a16352651f0e07b221604d14036e07b44afd938e8772e0"
-    },
-    {
-      "file": "sources/official-runtime-verification.md",
-      "lines": 91,
-      "sha256": "03f858f227374e61502bcf3dcb6d0e66378e9d82d232ee355c4efc4076a8d8b5"
-    },
-    {
-      "file": "spec/01-scope-and-invariants.md",
-      "lines": 455,
-      "sha256": "40f08a16666f25c1d4401bfb55d64e664e7d4aac4ab8288f3bfe13fe2c60fd97"
-    },
-    {
-      "file": "spec/02-runtime-and-bootstrap.md",
-      "lines": 473,
-      "sha256": "f90bc892ec1d6391f4a16c1b8fd35cc835c78d6e6159514e4847b2380001d867"
-    },
-    {
-      "file": "spec/03-process-containment.md",
-      "lines": 413,
-      "sha256": "bc4dca7aea1562a9b867d6c05a816271580b99a46a660a32955e907045eb22bf"
-    },
-    {
-      "file": "spec/04-supervisor-ipc-and-process-io.md",
-      "lines": 435,
-      "sha256": "e85f71e5eee30d0577c683876a4712dcf30c4eeb709d3c88e0171fe588050aae"
-    },
-    {
-      "file": "spec/05-execution-and-capture.md",
-      "lines": 446,
-      "sha256": "ef0950510bd26c2477c7f62d87df24d1d9a7e2d0321144ca2f03d8804efe99bf"
-    },
-    {
-      "file": "spec/06-evaluation-and-experiments.md",
-      "lines": 443,
-      "sha256": "80f2fd9bcc3a4371b535c6cf3695039365b918365e0a2e971ce5a0568ba90cc5"
-    },
-    {
-      "file": "spec/07-storage-security-and-configuration.md",
-      "lines": 344,
-      "sha256": "c1ae623273fc3975f95a7c917a284e7aa82128d7912ddda0f8cd1b93c2fbd424"
-    },
-    {
-      "file": "spec/08-stack-repository-and-sequence.md",
-      "lines": 363,
-      "sha256": "bd67d106b0eabafc0b29e7342d553985d777f3ebd1129248baa841a216693939"
-    }
+  "generatedAt": "2026-07-20",
+  "inventoryPolicy": {
+    "sourceOfTruth": "Git tree on the referenced commit",
+    "contentIdentity": "Git blob SHA",
+    "notes": [
+      "The previous manifest embedded line counts and SHA-256 values from an early archive snapshot and became stale after every documentation edit.",
+      "This inventory records the maintained document surface. Git provides exact content identity and history.",
+      "A release-time checksum manifest may later be generated by CI for tagged release bundles.",
+      "Archive files remain historical and are not implementation inputs."
+    ]
+  },
+  "canonicalSpecifications": [
+    "spec/01-scope-and-invariants.md",
+    "spec/02-runtime-and-bootstrap.md",
+    "spec/03-process-containment.md",
+    "spec/04-supervisor-ipc-and-process-io.md",
+    "spec/05-execution-and-capture.md",
+    "spec/06-evaluation-and-experiments.md",
+    "spec/07-storage-security-and-configuration.md",
+    "spec/08-stack-repository-and-sequence.md",
+    "spec/09-domain-model-and-identifiers.md",
+    "spec/10-run-and-candidate-state-machines.md",
+    "spec/11-artifact-event-and-schema-contracts.md"
+  ],
+  "acceptedArchitectureDecisions": [
+    "adr/ADR-0001-typescript-rust-boundary.md",
+    "adr/ADR-0002-bootstrap-terminal-and-session.md",
+    "adr/ADR-0003-containment-capabilities.md",
+    "adr/ADR-0004-secure-ipc-and-output.md",
+    "adr/ADR-0005-sequential-execution.md",
+    "adr/ADR-0006-capture-epoch.md",
+    "adr/ADR-0007-files-canonical.md",
+    "adr/ADR-0008-version-policy.md",
+    "adr/ADR-0009-experimental-controls.md",
+    "adr/ADR-0010-quality-first-accounting.md",
+    "adr/ADR-0011-selection-outcomes-and-user-decisions.md"
+  ],
+  "implementationContracts": [
+    "docs/MVP-VERTICAL-SLICE.md",
+    "docs/FAILURE-RECOVERY-MATRIX.md"
+  ],
+  "productPlanning": [
+    "docs/PRODUCT-UI-SCENE-PLAN.md",
+    "docs/MARKETING-AND-DOCS-SITE-PLAN.md",
+    "docs/ROUTE-LEVEL-WIREFRAME-SPEC.md",
+    "docs/PLANNING-SCOPE-STATUS.md"
+  ],
+  "implementationPrerequisites": [
+    "schemas/README.md"
+  ],
+  "sourceVerification": [
+    "sources/official-runtime-verification.md"
+  ],
+  "brand": [
+    "brand/README.md",
+    "brand/VISUAL-DIRECTION.md",
+    "brand/concepts/01-arena-purple-orange.webp",
+    "brand/concepts/02-evidence-editorial.webp",
+    "brand/concepts/03-premium-champion.webp",
+    "brand/concepts/04-neon-creative-technology.webp",
+    "brand/concepts/05-minimal-r-monogram.webp",
+    "brand/concepts/06-twin-slash-lime.webp"
+  ],
+  "historicalArchive": [
+    "archive/README.md",
+    "archive/SUPERSEDED-RUNTIME-DECISIONS.md",
+    "archive/original-design-warden-part-01.md",
+    "archive/original-design-warden-part-02.md",
+    "archive/original-design-warden-part-03.md",
+    "archive/original-design-warden-part-04.md",
+    "archive/original-roadmap.md"
+  ],
+  "repositoryEntryDocuments": [
+    "README.md",
+    "DOCUMENT-MANIFEST.md",
+    "LICENSE-TBD.md"
+  ],
+  "pendingGeneratedImplementationArtifacts": [
+    "versioned Zod schemas",
+    "generated JSON Schema",
+    "valid and invalid schema fixtures",
+    "schema migrations",
+    "schema compatibility tests"
   ]
 }
