@@ -10,7 +10,7 @@ Render Rivals is a local-first visual optimization harness for AI-assisted front
 **Working name:** Render Rivals  
 **Canonical set:** This repository  
 **Supersedes:** Earlier Design Warden and runtime drafts  
-**Implementation status:** Scaffold only against the canonical specifications, accepted ADRs, and locked MVP contract
+**Implementation status:** Scaffold only against the canonical specifications, shared schema vocabulary, accepted ADRs, and locked MVP contract
 
 ## Purpose
 
@@ -31,18 +31,20 @@ The first implementation is an experimental reference tool, not a universal auto
 9. [`spec/09-domain-model-and-identifiers.md`](spec/09-domain-model-and-identifiers.md)
 10. [`spec/10-run-and-candidate-state-machines.md`](spec/10-run-and-candidate-state-machines.md)
 11. [`spec/11-artifact-event-and-schema-contracts.md`](spec/11-artifact-event-and-schema-contracts.md)
+12. [`spec/12-cross-spec-normalization.md`](spec/12-cross-spec-normalization.md)
+13. [`schemas/domain-types.ts`](schemas/domain-types.ts)
 
 Architecture decisions are under [`adr/`](adr/). Official-source verification notes are under [`sources/`](sources/). Earlier drafts are preserved under [`archive/`](archive/) for history only.
 
 ## Product and implementation planning
 
-- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) locks the first complete product path, required evidence coverage, gates, evaluation policy, exclusions, acceptance fixtures, and implementation sequence.
+- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) locks the first complete product path, required evidence coverage, gates, canonical evaluation outcomes, exclusions, acceptance fixtures, and implementation sequence.
 - [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) defines failure classification, evidence impact, retries, recovery targets, idempotency, cleanup, and user-facing behavior.
-- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) defines the complete desktop product surface and includes post-MVP concepts.
+- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) defines the complete desktop product surface and includes explicitly deferred post-MVP concepts.
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) defines the marketing and documentation sites.
-- [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) defines implementation route contracts, page geometry, route guards, state handling, and responsive behavior.
+- [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) is the implementation route authority for page contracts, geometry, route guards, state handling, and responsive behavior.
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) distinguishes enabled MVP routes and features from deferred complete-product planning.
-- [`schemas/README.md`](schemas/README.md) records the schema-registry scaffold prerequisite and makes clear that executable schemas do not exist yet.
+- [`schemas/README.md`](schemas/README.md) describes the shared type vocabulary and remaining executable schema-registry work.
 
 Brand exploration and visual-direction work are under [`brand/`](brand/).
 
@@ -52,11 +54,14 @@ When statements conflict:
 
 1. An accepted ADR overrides general specification text.
 2. A later ADR overrides an earlier ADR only when it explicitly supersedes it.
-3. Canonical specifications override planning documents and archived material.
-4. MVP implementation contracts narrow the first release but do not override canonical runtime invariants.
-5. Code does not silently override the specification. A deliberate deviation requires an ADR amendment or replacement.
+3. `schemas/domain-types.ts` controls the shared persisted enums and record names it defines.
+4. Canonical specifications override planning documents and archived material.
+5. `spec/11` controls live canonical filesystem layout.
+6. `spec/12` controls cross-spec vocabulary mapping, relative-path interpretation, and session/run separation.
+7. MVP implementation contracts narrow the first release but do not override canonical runtime invariants.
+8. Code does not silently override the specification. A deliberate deviation requires an ADR amendment or replacement.
 
-Accepted [`ADR-0011`](adr/ADR-0011-selection-outcomes-and-user-decisions.md) expands the canonical recommendation and user-decision vocabulary. Until the related sections of specifications 09–11 are textually amended, ADR-0011 is authoritative.
+ADR-0011 has been incorporated into specifications 06, 09, 10, the MVP contract, and `schemas/domain-types.ts`. The ADR remains the historical decision record rather than an active textual override.
 
 ## Locked ownership boundary
 
@@ -82,6 +87,7 @@ This summary intentionally mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-bou
 - Every comparison recaptures the current implementation in the same capture epoch as the contender.
 - A Chromium disconnect invalidates the complete capture epoch.
 - Files and append-only event streams are canonical. A database may later be a rebuildable index.
+- `RecommendationOutcome`, `UserDecisionAction`, `InferenceUsage`, and shared record shapes are defined once under `schemas/`.
 - Token consumption is telemetry during the maximum-quality proof, not an early optimization target.
 - Automatic merging is out of scope for exploratory phases.
 
@@ -96,7 +102,7 @@ Scaffolding may begin only after:
 - Playwright Clock behavior is checked against the exact pinned release;
 - the reference-platform support declaration is accepted;
 - the MVP, state-machine, schema, and failure-recovery contracts are treated as implementation inputs;
-- executable schema definitions, fixtures, and migration tests are created under the implementation schema package.
+- executable Zod schemas, generated JSON Schemas, fixtures, migrations, and compatibility tests are created under the implementation schema package.
 
 ## Non-goals for the first scaffold
 
@@ -120,10 +126,13 @@ Canonical specification files should remain below about 600 lines where practica
 Architecture changes update:
 
 1. the affected canonical specification;
-2. a new or superseding ADR;
-3. this locked-decision summary when relevant;
-4. the affected implementation checklist;
-5. repository manifests when the document inventory changes.
+2. the shared schema/type source when serialized vocabulary changes;
+3. a new or superseding ADR;
+4. this locked-decision summary when relevant;
+5. the affected implementation checklist;
+6. repository manifests when the document inventory changes.
+
+Duplicate shared TypeScript unions in Markdown are prohibited. Specs reference `schemas/domain-types.ts` instead.
 
 ## Source freshness
 
