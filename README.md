@@ -35,6 +35,13 @@ Architecture decisions are under `adr/`. Official-source verification notes are 
 
 Brand exploration and visual-direction work are under [`brand/`](brand/).
 
+## Product and public-site planning
+
+- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) defines the complete desktop application surface, workflows, overlays, states, route model, and MVP priorities.
+- [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) defines the marketing website, documentation information architecture, public proof requirements, asset inventory, routes, and delivery priorities.
+
+These are planning baselines rather than accepted architecture decisions. Implementation changes that affect locked runtime behavior still require specification and ADR updates.
+
 ## Canonicality rule
 
 When statements conflict:
