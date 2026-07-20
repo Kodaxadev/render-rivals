@@ -1,54 +1,54 @@
 # 09 — Domain Model and Identifiers
 
 **Status:** Canonical implementation contract  
-**Scope:** Core entities, identifiers, ownership, relationships, mutability, and invariants
+**Scope:** Core entities, identifiers, ownership, relationships, mutability, and invariants  
+**Shared persisted types:** `schemas/domain-types.ts`  
+**Storage schemas:** `spec/11-artifact-event-and-schema-contracts.md`  
+**Lifecycle:** `spec/10-run-and-candidate-state-machines.md`
 
 ## 1. Purpose
 
-Render Rivals must be reconstructable from files and append-only events. That requires one stable domain vocabulary shared by the coordinator, supervisor protocol, UI, evaluators, reports, and export tooling.
+Render Rivals must be reconstructable from files and append-only events. The coordinator, supervisor protocol, UI, evaluators, reports, and export tooling therefore share one stable domain vocabulary.
 
-This specification defines that vocabulary. Storage schemas are defined in `spec/11-artifact-event-and-schema-contracts.md`; lifecycle transitions are defined in `spec/10-run-and-candidate-state-machines.md`.
+This specification defines entity meaning and ownership. It does not redefine shared enum unions already defined in `schemas/domain-types.ts`.
 
 ## 2. Naming rules
 
 Canonical product terms are:
 
 - **current implementation:** the reference implementation being defended;
-- **contender:** an alternate implementation being tested against the current implementation;
-- **candidate:** either the current implementation or a contender when behavior applies equally to both;
+- **contender:** an alternate implementation being tested;
+- **candidate:** either current or contender;
 - **run:** one configured evaluation attempt;
-- **capture epoch:** the browser-lifecycle boundary within which comparable captures are produced;
-- **gate:** a rule that determines eligibility;
+- **capture epoch:** the browser-lifecycle boundary for comparable captures;
+- **gate:** an eligibility rule;
 - **evidence:** a cited observation derived from verified artifacts;
-- **recommendation:** the system's advisory conclusion;
-- **decision:** the user's explicit response to a recommendation;
-- **promotion:** a non-destructive export action following an accepted decision.
+- **recommendation:** the deterministic policy conclusion;
+- **user decision:** the user's explicit response;
+- **promotion:** a non-destructive export operation.
 
-Do not use `champion`, `challenger`, `winner`, or `battle` in persisted schemas.
+`champion`, `challenger`, `winner`, and `battle` may appear only as explanatory prose aliases mapped by `spec/12`. They are forbidden in persisted schemas and stable APIs.
 
 ## 3. Identifier format
 
-### 3.1 General form
+Entity IDs use a lowercase type prefix, underscore, and 26-character ULID:
 
-Entity IDs use a lowercase type prefix, underscore, and canonical 26-character ULID:
+```text
+<prefix>_<ulid>
+```
 
-`<prefix>_<ulid>`
+Identifiers are:
 
-Example:
-
-`run_01K0R7J6R8M3KQ6NPG2XYT4A9B`
-
-Requirements:
-
-- generated locally;
+- locally generated;
 - immutable;
-- lexicographically sortable by creation time;
 - never reused;
 - never derived from display names;
 - compared case-sensitively;
 - serialized exactly as created.
 
-### 3.2 Prefix registry
+Content hashes establish byte/content identity. Entity IDs establish domain identity. They are not interchangeable.
+
+## 4. Prefix registry
 
 | Entity | Prefix |
 |---|---|
@@ -69,557 +69,368 @@ Requirements:
 | Comparison | `cmp` |
 | Recommendation | `rec` |
 | User decision | `dec` |
-| Promotion/export | `pro` |
+| Promotion | `pro` |
 | Artifact | `art` |
 | Process record | `pcs` |
 | Event | `evt` |
 | Diagnostic bundle | `dgn` |
 
-New prefixes require a specification update. Prefixes may not be repurposed.
+New prefixes require a specification amendment.
 
-### 3.3 Sequence identifiers
+## 5. Common entity envelope
 
-Append-only streams use an unsigned 64-bit `sequence` beginning at `1`. Sequence numbers are scoped to one stream and must be contiguous. They are not entity IDs.
+Every persisted entity includes:
 
-### 3.4 Content identity
+- `schema`;
+- `schemaVersion`;
+- prefixed `id`;
+- `createdAt`;
+- `updatedAt` when mutable;
+- owning `projectId` and `runId` when applicable;
+- lifecycle state when applicable;
+- monotonically increasing `revision` for mutable summaries;
+- namespaced `extensions` when allowed.
 
-Files and source manifests also carry SHA-256 hashes. Hashes establish content identity; ULIDs establish entity identity. They are not interchangeable.
+Unknown top-level fields are rejected by canonical writers. Readers may preserve supported namespaced extensions.
 
-## 4. Common entity envelope
+## 6. Aggregate boundaries
 
-Every persisted entity has:
+### Project aggregate
 
-- `schema`: stable schema name;
-- `schemaVersion`: semantic schema version;
-- `id`: prefixed ULID;
-- `createdAt`: RFC 3339 UTC timestamp;
-- `updatedAt`: RFC 3339 UTC timestamp when mutable;
-- `projectId`: owning project when applicable;
-- `runId`: owning run when applicable;
-- `status`: lifecycle state when applicable;
-- `revision`: monotonically increasing integer for mutable snapshots;
-- `extensions`: namespaced optional object for forward-compatible additions.
+Owns:
 
-Unknown top-level fields are rejected in canonical writers. Readers may preserve unknown namespaced extension fields.
-
-## 5. Aggregate boundaries
-
-### 5.1 Project aggregate
-
-The project aggregate contains:
-
-- Project;
-- project configuration references;
+- project registration;
+- trust/configuration references;
 - source snapshots;
 - run index references.
 
-A project does not own source files. It stores identities and paths needed to recreate snapshots.
+It does not own or delete the source repository.
 
-### 5.2 Run aggregate
+### Run aggregate
 
-A run is the primary transactional and recovery boundary. It owns:
+Owns:
 
-- immutable run configuration;
-- candidate records;
-- workspaces;
-- capture epochs and captures;
-- gate results;
-- evaluations and evidence;
-- recommendation;
+- immutable resolved Run Configuration;
+- candidates and attempts;
+- workspaces and process records;
+- capture plans, epochs, and captures;
+- gates;
+- comparisons and evaluations;
+- evidence;
+- recommendations;
 - user decisions;
 - promotions;
-- event stream;
-- artifact manifest;
-- logs.
+- artifacts;
+- events;
+- cleanup and integrity records.
 
-A run never references mutable evidence from another run. Reused artifacts are copied or explicitly imported with provenance.
+A run does not consume mutable evidence from another run. Reuse requires explicit import/provenance.
 
-## 6. Project
+## 7. Project
 
-A Project represents one registered local source repository or directory.
+A Project represents one registered local repository or source directory.
 
-Required fields:
+Required facts:
 
-- `id`;
-- `displayName`;
-- `rootPath` in platform-native normalized absolute form;
-- `rootPathFingerprint` using a normalized path hash;
-- `sourceControl` metadata;
-- `configurationPath` when present;
-- `registeredAt`;
-- `lastOpenedAt`;
-- `capabilities` detected for the project.
+- identity and display name;
+- normalized root path and fingerprint;
+- source-control metadata;
+- configuration path;
+- registration and last-opened timestamps;
+- detected capabilities;
+- trust status.
 
-Mutable fields:
+Moving a source directory requires explicit relinking and identity verification. Removing registration never deletes source.
 
-- display name;
-- last-opened time;
-- detected commands and capabilities;
-- user defaults.
+## 8. Source Snapshot
 
-Invariants:
+A Source Snapshot is an immutable declaration of source content used by a Candidate.
 
-- deleting a Project registration never deletes the source repository;
-- project identity does not change when the branch changes;
-- moving the source directory requires explicit relinking;
-- two Projects may not point to the same normalized root unless the user confirms a duplicate registration.
+It records:
 
-## 7. Source Snapshot
+- project identity;
+- kind: Git commit, worktree, directory manifest, working-tree snapshot, patched workspace, or imported prior candidate;
+- commit and branch provenance where available;
+- dirty-state declaration;
+- file-manifest hash;
+- lockfile hash;
+- configuration hash;
+- symlink and exclusion policy;
+- creation time.
 
-A Source Snapshot is an immutable declaration of source content used by a candidate.
+Changed content creates a new Source Snapshot. Branch names alone never establish immutable identity.
 
-Required fields:
+## 9. Run Configuration
 
-- `id`;
-- `projectId`;
-- `kind`: `git_commit`, `git_worktree`, `directory_manifest`, or `patched_workspace`;
-- `repositoryRoot`;
-- `commitSha` when available;
-- `branchName` when available;
-- `dirtyState`: `clean`, `included`, or `unknown`;
-- `fileManifestHash`;
-- `lockfileHash` when present;
-- `configurationHash`;
-- `capturedAt`;
-- `provenance`.
+A Run Configuration is the fully resolved immutable contract for one Run.
 
-Invariants:
+It includes:
 
-- immutable after creation;
-- source files used for execution must match the recorded manifest;
-- a changed manifest creates a new Source Snapshot;
-- symlinks are recorded and validated according to workspace policy;
-- excluded files and normalization rules are part of the snapshot provenance.
-
-## 8. Run Configuration
-
-A Run Configuration is the immutable resolved configuration used for one run.
-
-It contains fully resolved values after applying configuration precedence. It includes:
-
+- source inputs;
 - target route and local-origin policy;
-- install, build, and development commands;
-- readiness policy;
-- candidate sources;
-- capture viewports and environment;
-- gates;
-- evaluation factors and weights;
-- evaluator adapter and version;
-- runtime limits;
-- storage policy;
-- export policy;
-- configuration-source provenance.
+- fixture, states, viewports, and critical interaction;
+- install/build/test/development commands;
+- readiness and settle policy;
+- gates and protected dimensions;
+- factor definitions and evaluator policy;
+- resource limits;
+- storage, retention, security, and export policy;
+- configuration provenance and canonical hash.
 
-The draft wizard may mutate a draft configuration. Starting validation seals a new immutable Run Configuration and assigns its ID.
+The wizard may edit a draft. Validation seals a new immutable Run Configuration.
 
-## 9. Run
+## 10. Run
 
 A Run represents one attempt to execute a Run Configuration.
 
-Required fields:
+Required fields include:
 
-- `id`;
-- `projectId`;
-- `runConfigurationId`;
-- `displayName`;
-- `state`;
-- `currentCandidateId`;
-- ordered `contenderIds`;
-- `activeEpochId` when capturing;
-- `recommendationId` when available;
-- `latestDecisionId` when available;
-- `startedAt` and terminal time when applicable;
-- `lastDurableCheckpoint`;
-- `recoveryDisposition`;
-- `failure` when applicable.
+- Project and Run Configuration references;
+- state from `RunState`;
+- exactly one current Candidate;
+- ordered Contender IDs;
+- active epoch when capturing;
+- latest Recommendation and User Decision references;
+- durable checkpoint;
+- recovery disposition;
+- terminal/failure details.
 
-Invariants:
+MVP cardinality is one current Candidate and one Contender. Later modes may add contenders without changing entity semantics.
 
-- MVP run has exactly one current candidate and one contender;
-- only one candidate executes at a time in the first scheduler;
-- at most one capture epoch is active;
-- a terminal run cannot return to an active state;
-- retrying a terminal run creates a new Run linked through `supersedesRunId`;
-- a recommendation is not a user decision;
-- completed does not imply promoted.
+A terminal Run never reopens. Retrying terminal work creates a superseding Run.
 
-## 10. Candidate
+## 11. Candidate
 
-A Candidate represents the current implementation or one contender.
+A Candidate represents either current or contender and uses `CandidateRole` from `schemas/domain-types.ts`.
 
-Required fields:
+It records:
 
-- `id`;
-- `runId`;
-- `role`: `current` or `contender`;
-- `ordinal`: current is `0`; contenders begin at `1`;
-- `displayName`;
-- `sourceSnapshotId`;
-- `workspaceId` when prepared;
-- `state`;
-- `eligibility`: `unknown`, `eligible`, or `ineligible`;
-- `gateResultIds`;
-- `captureIds`;
+- immutable role and ordinal;
+- Source Snapshot;
+- effective workspace/attempt;
+- lifecycle state;
+- eligibility;
+- gate results;
+- captures;
 - source-difference summary;
-- failure details when applicable.
+- failure details.
 
-Invariants:
+Eligibility is derived from required gates. An ineligible or stale Contender cannot be recommended.
 
-- role is immutable;
-- exactly one candidate has role `current`;
-- eligibility is derived from required gate results;
-- ineligible candidates may retain diagnostic artifacts but cannot receive a promotion recommendation;
-- candidate labels and colors in the UI are presentation metadata, not identity.
-
-## 11. Candidate Workspace
+## 12. Candidate Workspace and Attempt
 
 A Candidate Workspace is an owned execution copy of a Source Snapshot.
 
-Required fields:
+It:
 
-- `id`;
-- `candidateId`;
-- absolute `workspacePath` under an owned run root;
-- `sourceSnapshotId`;
-- `materializationMethod`;
-- workspace-manifest hash;
-- creation and cleanup timestamps;
-- cleanup state.
+- lives under an owned cache/workspace root;
+- never aliases the active working tree;
+- records materialization method and manifest hash;
+- is verified before reuse;
+- may be cleaned without deleting evidence.
 
-Invariants:
+A Candidate Attempt records one materialization/execution/capture attempt. Retries preserve prior attempts.
 
-- never aliases the user's active working tree;
-- only the supervisor and coordinator may declare it ready;
-- must be inside the configured owned workspace root;
-- paths are canonicalized before use;
-- cleanup failure is recorded and retried but does not erase run evidence.
+## 13. Process Record
 
-## 12. Process Record
+A Process Record describes one supervisor-launched process.
 
-A Process Record describes a process launched through the supervisor.
+It records:
 
-Fields include:
-
-- `id`;
-- `candidateId`;
-- `purpose`: install, build, serve, evaluator, export helper, or diagnostic;
+- Candidate and purpose;
 - executable identity;
-- argument hash and redacted display arguments;
+- redacted argument/environment summaries;
 - working directory;
-- environment hash and redaction summary;
-- supervisor-native process identity;
-- PID as observation, not identity;
+- supervisor-native identity;
+- PID as observation only;
 - containment membership;
-- start and exit timestamps;
-- exit status;
-- log artifact IDs;
-- endpoint ownership observations.
+- lifecycle and exit facts;
+- output and usage artifacts;
+- endpoint-ownership observations.
 
-A stored PID alone never proves that a process is still the same process.
+PID alone never proves continuity.
 
-## 13. Capture Plan
+## 14. Capture Plan
 
-A Capture Plan is the immutable matrix of capture work for an epoch.
-
-It contains:
+A Capture Plan is the immutable matrix for an epoch:
 
 - candidate order;
-- target route;
+- route;
+- required application states;
 - viewports;
-- color scheme;
-- locale;
-- time zone;
-- readiness and settle policy;
-- required selectors;
-- browser version requirement;
-- artifact types;
+- critical interaction steps;
+- locale, time zone, theme, reduced motion, clock, and random policy;
+- readiness/settle policy;
+- browser requirement;
+- required artifact classes;
 - comparison-equivalence constraints.
 
-The MVP plan contains two candidates and two viewports.
+## 15. Capture Epoch
 
-## 14. Capture Epoch
+A Capture Epoch is the validity boundary for comparable browser evidence.
 
-A Capture Epoch is the validity boundary for comparable browser artifacts.
+It records:
 
-Required fields:
-
-- `id`;
-- `runId`;
-- `capturePlanId`;
-- `state`;
-- browser executable and version;
-- browser process record;
-- context identity;
+- Run and Capture Plan;
+- browser executable/version and process identity;
+- Playwright version;
 - environment fingerprint;
-- ordered candidate capture groups;
-- invalidation reason when applicable;
-- opened, sealed, and invalidated timestamps.
+- ordered capture groups;
+- state and invalidation reasons;
+- open/seal/invalidation timestamps.
 
-Invariants:
+Current and Contender evidence used together must belong to the same valid epoch. Browser disconnect or crash invalidates the complete epoch permanently.
 
-- current and contender evidence used in one comparison must belong to the same valid epoch;
-- a browser disconnect or crash invalidates the complete active epoch;
-- an invalidated epoch cannot become valid again;
-- retry creates a new epoch and recaptures current and contender;
-- invalidated artifacts remain diagnostic only.
+## 16. Capture
 
-## 15. Capture
+A Capture represents one Candidate, route, application state, viewport, and optional interaction step within one epoch.
 
-A Capture represents one candidate at one viewport and application state.
+A valid Capture requires all configured artifacts and matching source, fixture, browser, environment, and epoch identity.
 
-Required fields:
+Capture completion does not imply gate success. Invalid-epoch artifacts remain diagnostic only.
 
-- `id`;
-- `epochId`;
-- `candidateId`;
-- route;
-- viewport;
-- state key;
-- status;
-- navigation metadata;
-- readiness observations;
-- screenshot artifact ID;
-- DOM-summary artifact ID;
-- console-summary artifact ID;
-- metadata artifact ID;
-- artifact hashes;
-- start and completion timestamps.
+## 17. Gate Definition and Result
 
-Invariants:
+A Gate Definition is immutable policy within a started Run.
 
-- valid only when all required artifacts verify;
-- belongs to exactly one epoch and candidate;
-- may not cite artifacts from another candidate;
-- capture completion does not imply gate success;
-- diagnostic captures from invalid epochs are marked unusable for evaluation.
+A Gate Result is one append-only attempt against a Candidate or Capture.
 
-## 16. Gate Definition
+Required result facts:
 
-A Gate Definition declares an eligibility rule.
-
-Required fields:
-
-- `id`;
-- stable `key` unique within the Run Configuration;
-- name and description;
-- severity: `required` or `advisory`;
-- evaluator type;
-- parameters;
-- retry policy;
-- failure message template;
-- schema version.
-
-Definitions are immutable within a started run.
-
-## 17. Gate Result
-
-A Gate Result is one execution of one Gate Definition against one candidate or capture.
-
-Required fields:
-
-- `id`;
-- `gateId`;
-- `candidateId`;
-- optional `captureId`;
-- status: pending, running, passed, failed, error, or skipped;
-- observations;
-- cited artifact IDs;
+- gate and subject IDs;
 - attempt number;
-- started and completed timestamps;
+- state: pending, running, passed, failed, error, or skipped;
+- observations and cited artifacts;
 - blocking effect;
-- failure or error details.
+- failure/error details;
+- supersession link.
 
-Invariants:
-
-- a required failed or error result makes the candidate ineligible unless policy explicitly retries and later supersedes it;
-- results are append-only attempts; they are not overwritten;
-- the effective result is the latest completed attempt declared by a supersession link.
+A required effective failure or error makes the Candidate ineligible.
 
 ## 18. Evaluation Factor
 
-An Evaluation Factor defines one dimension of pairwise judgment.
+An Evaluation Factor defines one pairwise judgment dimension and records:
 
-Fields:
-
-- `id`;
-- stable `key`;
-- name and definition;
+- stable key and definition;
 - weight;
 - required artifact classes;
 - minimum confidence;
 - blocking limitation rules;
-- tie treatment.
+- tie treatment;
+- whether it is protected.
 
-Factor weights for a resolved Run Configuration must sum to `1.0` within decimal tolerance.
+Weights for weighted factors sum to 1.0 within declared tolerance. Protected dimensions may veto independent of weight.
 
 ## 19. Comparison
 
-A Comparison binds exactly two candidates and the evidence set used to compare them.
+A Comparison binds exactly two Candidates and the valid evidence set used to compare them.
 
-Required fields:
+It records:
 
-- `id`;
-- `runId`;
-- current candidate ID;
-- contender candidate ID;
-- valid epoch ID;
-- capture pairs;
+- Run and Candidate IDs;
+- valid epoch;
+- capture pairs and interaction evidence;
 - gate eligibility summary;
-- evaluation ID;
-- comparison validity state;
-- environment fingerprint.
+- environment fingerprint;
+- evaluation attempts;
+- comparison-validity state.
 
-MVP has exactly one Comparison per completed evaluation attempt.
-
-## 20. Evaluation
+## 20. Evaluation and InferenceUsage
 
 An Evaluation represents one evaluator attempt.
 
-Fields:
+It records:
 
-- `id`;
-- `comparisonId`;
-- evaluator adapter identity and version;
-- input-manifest artifact ID;
-- output artifact ID;
-- state;
-- attempt number;
-- factor evidence IDs;
-- aggregate confidence;
+- adapter/provider/model provenance;
+- immutable input manifest;
+- raw and normalized output artifacts;
 - validation result;
+- factor evidence;
 - limitations;
-- start and completion timestamps.
+- attempt/supersession details;
+- `InferenceUsage` imported from `schemas/domain-types.ts`.
 
-Invalid evaluator output remains stored with a rejected state and may not feed the decision engine.
+There is no second local `InferenceUsage` definition.
 
 ## 21. Evidence Record
 
-An Evidence Record is one factor-level conclusion.
+An Evidence Record is an immutable factor-level or protected-regression conclusion.
 
-Required fields:
+It records:
 
-- `id`;
-- `evaluationId`;
-- `factorId`;
-- outcome: `current`, `contender`, or `tie`;
-- confidence;
+- Evaluation and Factor references;
+- PairwiseVerdict;
+- confidence or null;
 - rationale;
-- artifact citations;
-- optional capture-region references;
+- artifact/region/interaction citations;
 - limitations;
 - validator status.
 
-Invariants:
-
-- every conclusion cites at least one artifact in the same run;
-- every cited artifact hash must verify;
-- confidence is finite and in `[0,1]`;
-- rationale cannot introduce unrecorded external evidence;
-- evidence is immutable after evaluator-output acceptance.
+Every cited artifact must belong to the same Run, verify its hash, and be allowed by the immutable evaluation packet.
 
 ## 22. Recommendation
 
-A Recommendation is the deterministic decision-policy result over valid gates and evidence.
+A Recommendation uses `RecommendationRecord` and `RecommendationOutcome` from `schemas/domain-types.ts`.
 
-Required fields:
+Allowed outcomes are exactly:
 
-- `id`;
-- `runId`;
-- `comparisonId`;
-- `evaluationId`;
-- outcome: `contender_recommended`, `current_retained`, or `human_review_required`;
-- policy version;
-- weighted support;
-- aggregate confidence;
-- reasons;
-- blocking conditions;
-- reproducibility hash;
-- created timestamp.
+- `contender_recommended`;
+- `current_retained`;
+- `tie`;
+- `human_review_required`;
+- `invalid_run`.
 
-Invariants:
+The policy engine creates the Recommendation only after validating gates, evidence, order reversal, protected regressions, and staleness.
 
-- immutable;
-- cannot exist before evidence validation;
-- cannot recommend an ineligible contender;
-- does not alter source code;
-- superseding evaluation creates a new Recommendation.
+A Recommendation is immutable, advisory, and never changes source.
 
 ## 23. User Decision
 
-A User Decision records the human response.
+A User Decision uses `UserDecisionRecord` and `UserDecisionAction` from `schemas/domain-types.ts`.
 
-Fields:
+Allowed actions are exactly:
 
-- `id`;
-- `runId`;
-- `recommendationId`;
-- action: `accepted`, `declined`, `kept_current`, `deferred`, or `exported_without_acceptance` when policy permits;
-- optional note;
-- actor: local user identity or `local_user`;
-- timestamp.
+- `accept_recommendation`;
+- `retain_current`;
+- `decline_recommendation`;
+- `select_other_eligible_candidate`;
+- `defer`;
+- `invalidate_run`.
 
-Decisions are append-only. The latest decision may supersede a prior deferred decision but never deletes it.
+`exported_without_acceptance` is not a decision action.
+
+Decisions are append-only and bind to recommendation, evidence, source, and policy hashes. Changed bound inputs make a decision stale.
 
 ## 24. Promotion
 
-A Promotion represents an explicit non-destructive export.
+A Promotion uses `PromotionRecord` from `schemas/domain-types.ts`.
 
-Fields:
+Promotion is a non-destructive export such as:
 
-- `id`;
-- `runId`;
-- `decisionId`;
-- `candidateId`;
-- type: `patch` or `branch` in the MVP;
-- destination;
-- exported artifact IDs;
-- source precondition hash;
-- result;
-- verification summary;
-- timestamp.
+- patch export;
+- local branch creation;
+- workspace preservation;
+- report export.
 
-Promotion does not mean merge. A failed Promotion does not invalidate the Recommendation or User Decision.
+Promotion does not mean merge, push, checkout, or deployment. It requires a nonstale authorizing User Decision.
 
-## 25. Artifact
+## 25. Artifact and Event
 
-An Artifact is an immutable file produced or imported by a run.
+An Artifact is an immutable registered file with:
 
-Fields:
-
-- `id`;
-- `runId`;
-- optional candidate, epoch, capture, evaluation, or promotion owner;
-- class;
-- relative path;
-- media type;
-- byte length;
+- owner;
+- class/role;
+- canonical relative path;
+- media type and byte length;
 - SHA-256;
-- creation event ID;
-- validity: valid, diagnostic, quarantined, missing, or corrupt;
-- redaction metadata;
-- retention policy.
+- validity and sensitivity;
+- retention and provenance.
 
-An Artifact record may not point outside the run root.
+An Event is one immutable run-scoped fact with contiguous sequence and hash-chain linkage.
 
-## 26. Event
+Requested actions and observed outcomes are distinct events.
 
-An Event is one immutable fact in the run stream.
-
-Fields:
-
-- `id`;
-- run-scoped sequence;
-- event type;
-- timestamp;
-- actor: bootstrap, supervisor, coordinator, browser, evaluator, exporter, or user;
-- entity references;
-- payload;
-- previous-event hash;
-- event hash.
-
-Events are facts, not commands. Requested actions and observed outcomes are separate events.
-
-## 27. Relationship summary
+## 26. Relationship summary
 
 ```text
 Project
@@ -628,7 +439,8 @@ Project
        ├─ RunConfiguration 1
        ├─ Candidate 2..n
        │    ├─ SourceSnapshot 1
-       │    ├─ CandidateWorkspace 0..1
+       │    ├─ CandidateAttempt*
+       │    ├─ CandidateWorkspace*
        │    ├─ ProcessRecord*
        │    ├─ Capture*
        │    └─ GateResult*
@@ -645,35 +457,42 @@ Project
        └─ Event*
 ```
 
-## 28. Mutation and revision rules
+## 27. Mutation and retention
 
-- Immutable entities are never updated in place; a superseding entity is created.
-- Mutable summary snapshots use `revision` and atomic replacement.
-- Event streams retain every transition and supersession.
-- UI caches and indexes are rebuildable and noncanonical.
+- Immutable entities are superseded, never edited in place.
+- Mutable summaries use revision checks and atomic replacement.
+- Event streams preserve every transition.
+- UI caches and databases are rebuildable.
+- Deleting a Project registration never deletes source.
+- Evidence cited by retained decisions or recommendations cannot be removed independently.
 - Display labels may change without changing entity identity.
-- Moving an artifact is a new artifact-record revision only when the canonical relative path changes through a controlled migration.
 
-## 29. Deletion and retention
+## 28. Domain invariants
 
-- Source repositories are never deleted by project removal.
-- Active-run entities cannot be selectively deleted.
-- Cleanup operates at artifact or whole-run retention boundaries.
-- A completed run may be deleted only after explicit confirmation and a durable deletion event in the project-level index.
-- Exported bundles are outside Render Rivals retention control.
-- Evidence cited by a retained recommendation cannot be cleaned independently.
+An implementation is nonconforming if it permits:
 
-## 30. Domain invariants checklist
+- two current Candidates in one Run;
+- mixed-epoch selection evidence;
+- recommendation of an ineligible Contender;
+- Recommendation enums outside the canonical five;
+- User Decision actions outside the canonical six;
+- export represented as a User Decision action;
+- recommendation treated as merge or deployment;
+- PID reuse treated as process continuity;
+- cross-run artifact citation without import provenance;
+- mutation of source snapshots, evidence, recommendations, or decisions;
+- a database becoming the only source of a fact;
+- persisted `champion`, `challenger`, `retain_champion`, `promote`, or `escalate` enum values.
 
-An implementation is nonconforming if it permits any of the following:
+## 29. Required tests
 
-- two current candidates in one run;
-- evaluation using captures from different valid epochs;
-- recommendation of an ineligible contender;
-- accepted recommendation being treated as a merge;
-- PID reuse being mistaken for process continuity;
-- artifact citations crossing run boundaries without imported provenance;
-- mutation of immutable source snapshots, evidence, or recommendations;
-- state changes performed only in UI memory;
-- deletion of historical gate attempts when retried;
-- a database becoming the only source of a domain fact.
+- shared types compile from `schemas/domain-types.ts`;
+- deprecated persisted vocabulary is rejected;
+- Recommendation validates all five outcomes;
+- User Decision validates all six actions;
+- stale decision blocks Promotion;
+- mixed-epoch Comparison is invalid;
+- artifact citations cannot cross Run boundaries;
+- gate retries preserve attempt history;
+- Run reconstructs without an index;
+- PID reuse cannot attach an unrelated process.
