@@ -1,443 +1,297 @@
 # 06 — Pairwise Evaluation, Controls, Human Ratings, and Experimental Sequence
 
+**Status:** Canonical implementation contract  
+**Shared types:** `schemas/domain-types.ts`  
+**Vocabulary normalization:** `spec/12-cross-spec-normalization.md`
+
 ## 1. Hypothesis
 
-Given one shared renderable champion, multiple hard-gate-valid challengers, the same baseline evidence, and same-run captures, an evidence-backed selector can recommend a better final implementation than retaining, random eligible selection, and serious linear refinement.
+Given one shared renderable current implementation, one or more hard-gate-valid contenders, the same task brief, and same-epoch evidence, an evidence-backed selector can recommend a better final implementation than retaining current, random eligible selection, or serious linear refinement.
 
-## 2. Quality-first policy
+The first proof is quality-first rather than token-constrained. Usage is measured, not silently optimized away.
 
-The first proof is not token constrained. Spend enough to test whether the mechanism can work. Record usage.
+## 2. Eligible set
 
-## 3. Eligible set
+The eligible set contains:
 
-Contains champion and every challenger passing mandatory gates. Rejected candidates remain recorded but do not enter aesthetic selection.
+- the qualified current implementation;
+- each contender whose mandatory gates pass;
+- only candidates with complete, valid same-epoch evidence.
 
-## 4. Outcomes
+Rejected or stale candidates remain recorded for diagnosis but do not enter aesthetic selection.
 
-```ts
-type SelectionOutcome =
-  | { kind: "promote"; candidateId: string }
-  | { kind: "retain_champion" }
-  | { kind: "tie" }
-  | { kind: "escalate"; reason: string }
-  | { kind: "invalid_run"; reason: string };
-```
+## 3. Canonical outcomes
 
-## 5. Protected regression
+This specification does not define a local outcome union. It uses `RecommendationOutcome` from `schemas/domain-types.ts`:
 
-Any protected regression vetoes promotion:
+- `contender_recommended`;
+- `current_retained`;
+- `tie`;
+- `human_review_required`;
+- `invalid_run`.
 
-- task clarity;
-- functionality;
-- responsive integrity;
-- required states;
-- accessibility;
-- truthfulness;
-- maintainability policy;
-- protected-file policy.
+A recommendation is produced by deterministic policy over validated gates and evidence. An evaluator never writes the recommendation directly.
 
-## 6. Judge roles
+## 4. Pairwise verdicts
 
-### Visual critic
+Each factor uses `PairwiseVerdict`:
 
-Hierarchy, typography, composition, coherence, product fit, distinctiveness, state presentation.
+- `a_materially_better`;
+- `b_materially_better`;
+- `no_material_difference`;
+- `unable_to_judge`.
 
-### UX/task critic
+Every verdict includes:
 
-Primary action, workflow clarity, error recovery, information priority, interaction state.
+- confidence or explicit unknown;
+- concise rationale;
+- artifact citations;
+- limitations;
+- protected-regression concerns.
 
-### Code/regression critic
+A scalar quality score without cited factor evidence is invalid output.
 
-Implementation risk, duplication, scope, maintainability, tests, build evidence.
+## 5. Comparison packet
 
-### Selector
+An immutable packet contains:
 
-Combines critic evidence and protected-regression results.
+- task brief and product constraints;
+- anonymous candidate labels where configured;
+- valid capture-epoch identity;
+- state/viewport/interaction matrix;
+- registered artifact allowlist;
+- gate eligibility summary;
+- factor definitions;
+- protected dimensions;
+- evaluator instructions and policy hash;
+- excluded evidence and reasons.
 
-## 7. Separate critics
+The evaluator may cite only artifacts in the packet.
 
-Visual and code criticism remain separate so visual gain cannot conceal implementation regression.
+## 6. Evaluation factors
 
-## 8. Pairwise packet
+The MVP factor set is:
 
-```ts
-interface PairwisePacket {
-  comparisonId: string;
-  candidateA: AnonymousCandidateEvidence;
-  candidateB: AnonymousCandidateEvidence;
-  taskBrief: TaskBrief;
-  protectedDimensions: string[];
-  comparisonDimensions: string[];
-  evidenceIndex: EvidenceIndex;
-}
-```
+- task and product fit;
+- primary-action clarity;
+- information hierarchy;
+- visual coherence and intentionality;
+- responsive quality;
+- empty and error-state quality;
+- interaction and recovery clarity.
 
-Hide candidate identity, strategy, and model.
+Factor weights and thresholds are frozen in the Run Configuration. Protected regressions are vetoes, not weighted tradeoffs.
 
-## 9. Dimensions
+## 7. Order reversal
 
-1. product/brief fit;
-2. primary-action clarity;
-3. information hierarchy;
-4. visual coherence;
-5. intentionality;
-6. distinctiveness without usability loss;
-7. responsive quality;
-8. state quality.
+Every model-backed selector comparison runs twice:
 
-## 10. Dimension verdict
+1. current as A, contender as B;
+2. contender as A, current as B.
 
-```ts
-type DimensionVerdict =
-  | "a_materially_better"
-  | "b_materially_better"
-  | "no_material_difference"
-  | "unable_to_judge";
-```
+The evidence, task brief, factor definitions, and policy remain identical. Only presentation order changes.
 
-Every verdict cites evidence.
+Material disagreement cannot be averaged into a winner. It yields `tie`, `human_review_required`, or `current_retained` according to frozen policy.
 
-## 11. Materiality
+## 8. Critic and selector separation
 
-A visible difference is not automatically worth accepting. Model/human must state whether replacement is meaningful.
+When multiple evaluator roles are used:
 
-## 12. Order reversal
+- critics identify evidence-backed strengths, weaknesses, and regressions;
+- selectors compare candidates using validated evidence;
+- the policy engine applies gates, vetoes, thresholds, and outcome rules.
 
-For model pairwise comparison:
+A critic may disagree with another critic. Disagreement is retained and surfaced.
 
-1. A/B fresh context;
-2. B/A fresh context;
-3. compare dimensions;
-4. calculate stability;
-5. retain/escalate on material conflict.
+## 9. Human-only mode
 
-## 13. Tie-break
+Human-only mode uses the same immutable comparison packet and evidence allowlist.
 
-Optional when order conflicts, critics disagree, confidence is insufficient, or opportunity appears high. Usage recorded separately.
+It still requires:
 
-## 14. No opaque score
+- complete gates;
+- valid comparison evidence;
+- factor-level ratings;
+- citations or region/step references;
+- explicit limitations;
+- a typed User Decision.
 
-Store dimension verdicts, vetoes, confidence, evidence, and policy decision. No universal 0–100 design score.
+Human-only mode does not claim automated selector performance.
 
-## 15. Promotion policy
+## 10. Human rating contract
 
-Recommend challenger only when:
+A human review may record:
 
-- gates pass;
-- no protected regression;
-- visual/UX evidence supports material improvement;
-- order reversal sufficiently stable;
-- no applicable explicit preference rejection;
-- selector chooses promotion.
+- factor verdicts;
+- confidence;
+- rationale;
+- evidence references;
+- overall preference;
+- protected-regression flags;
+- usability concerns;
+- whether the result would be adopted.
 
-Ambiguity retains or escalates.
+Ratings are append-only artifacts. Later ratings do not erase prior ratings.
 
-## 16. Random control
+## 11. Deterministic recommendation policy
 
-Condition E1 uses same eligible set. Expected random result is calculated from human outcomes, not one random draw.
+The policy engine considers:
 
-## 17. Retain control
+- current and contender eligibility;
+- comparison validity;
+- factor coverage;
+- confidence thresholds;
+- order-reversal stability;
+- protected-regression vetoes;
+- contradictory evidence;
+- source, fixture, policy, and artifact staleness.
 
-Condition E2 always selects champion.
+Typical mapping:
 
-## 18. Human oracle
+- material, stable contender advantage with no veto → `contender_recommended`;
+- valid evidence without proven improvement → `current_retained`;
+- materially indistinguishable eligible candidates → `tie`;
+- valid but unresolved evidence → `human_review_required`;
+- invalid baseline or comparison → `invalid_run`.
 
-After ratings, oracle selects human-preferred best eligible candidate. It is a ceiling, not deployable.
+## 12. Experimental controls
 
-## 19. Selector metrics
+The first experiment compares Render Rivals against:
 
-- uplift over random;
-- uplift over retention;
-- oracle gap.
+- retain current;
+- random eligible choice;
+- serious linear refinement using the same task brief;
+- evidence-only human review where useful.
 
-## 20. Linear condition
+Controls must use:
 
-Condition C uses same initial artifact as D:
+- the same source baseline;
+- the same target route and states;
+- the same fixture;
+- the same viewports;
+- the same time window where practical;
+- the same evaluator policy where applicable.
 
-```text
-X0
-→ critique
-→ repair X1
-→ critique
-→ repair X2
-```
+## 13. Experimental unit
 
-## 21. Challenger condition
+The experimental unit is one task on one project with:
 
-```text
-X0 + same baseline packet
-├── Y1
-├── Y2
-├── Y3
-└── Y4
-```
+- one current source snapshot;
+- one or more contender snapshots;
+- one frozen Run Configuration;
+- one valid evidence set per compared candidate;
+- one recommendation;
+- one or more blinded human ratings.
 
-Challengers do not see one another.
+Do not treat individual screenshots as independent experimental samples.
 
-## 22. Information flow
+## 14. Randomization and blinding
 
-Both C and D receive:
+Where practical:
 
-- task brief;
-- X0 source;
-- X0 screenshots;
-- deterministic findings;
-- one shared X0 critique.
+- candidate labels are neutral;
+- left/right order is randomized;
+- source/agent identity is hidden from raters;
+- order reversal is recorded;
+- raters do not see token cost before quality judgment;
+- invalid candidates are excluded before aesthetic review.
 
-C receives sequential feedback after repairs. D receives independent diversity. Report this explicitly.
+## 15. Primary and secondary measures
 
-## 23. Budget reporting
+Primary measure:
 
-### Generation allocation
+- blinded human preference or adoption rate for the selected implementation versus controls.
 
-Initial generation, repair generations, challenger generations.
+Secondary measures:
 
-### Selection allocation
+- gate-failure rate;
+- no-material-improvement rate;
+- order-reversal conflict rate;
+- evaluator rejection rate;
+- protected-regression veto rate;
+- run completion and recovery rate;
+- elapsed time;
+- token and cost telemetry;
+- candidate diversity.
 
-Critics, selector, reversal, tie break.
+## 16. Accounting
 
-### Total usage
+This specification uses the sole canonical `InferenceUsage` interface from `schemas/domain-types.ts`.
 
-Tokens/credits where known, wall time, human time, local resources.
+It uses:
 
-Equal generations and equal total cost are separate analyses.
+- `adapter`, not `agent`;
+- closed `EvaluationPurpose` values;
+- start and completion timestamps;
+- nullable token and cost values;
+- `policySnapshotId`.
 
-## 24. Phase 1 — Personal preference-fit
+Unknown values remain `null`.
 
-Purpose: determine owner utility and expose obvious selector failure.
+## 17. Evaluator provenance
 
-Rater: Justin primary.
+Each invocation records:
 
-Claim: personal utility only.
+- provider;
+- adapter and version;
+- model when known;
+- purpose;
+- immutable input artifact;
+- raw output artifact;
+- normalized output artifact;
+- schema-validation result;
+- citation-validation result;
+- usage;
+- retry/supersession links.
 
-## 25. Phase 1 scale
+Raw output is never overwritten by normalized output.
 
-Because token use is unconstrained:
+## 18. Invalid output
 
-- one champion;
-- four challengers;
-- at least two strategies;
-- top two may receive one refinement;
-- finalist pairwise tournament.
+Evaluator output is rejected when:
 
-Execution remains sequential.
+- it is malformed;
+- required factors are absent;
+- citations cannot be resolved;
+- cited artifacts are outside the packet;
+- confidence is invalid;
+- candidate identity is confused;
+- conclusions rely on unrecorded external evidence;
+- policy/provenance does not match the invocation.
 
-## 26. Phase 1 state matrix
+Rejected output remains stored for diagnosis and cannot feed recommendation policy.
 
-- meaningful route;
-- populated;
-- empty;
-- error/unavailable;
-- mobile;
-- desktop;
-- critical interaction.
+## 19. Tie breaking
 
-## 27. Phase 1 controls
+Tie-break evaluation is optional and must be declared in the frozen policy.
 
-- linear;
-- selector;
-- expected random;
-- retain;
-- human oracle.
+A tie breaker:
 
-## 28. Phase 1 metrics
+- receives the same canonical evidence set;
+- cannot override mandatory gates;
+- cannot convert invalid evidence into valid evidence;
+- records separate usage and provenance;
+- may still return `tie` or `human_review_required`.
 
-- opportunity count/rate;
-- promotion count/rate;
-- correct promotions;
-- false promotions;
-- promotion recall;
-- correct retentions;
-- escalation count/rate;
-- human ambiguity;
-- reversal stability;
-- uplift over random;
-- uplift over retention;
-- oracle gap;
-- D versus C;
-- protected regressions;
-- human time.
+## 20. Decision and export separation
 
-Always show counts with percentages.
+Recommendation, User Decision, and Promotion are separate entities.
 
-## 29. Phase 1 interpretation
+- Recommendation states what the policy advises.
+- User Decision records the user's response.
+- Promotion performs a non-destructive export.
 
-Positive means not obviously broken and personally useful enough to continue. It does not establish production safety.
+`exported_without_acceptance` is not a User Decision action.
 
-## 30. Phase 2 — External exploratory
+## 21. Required tests
 
-Only after promising Phase 1.
-
-Use unfamiliar tasks, reduced owner prompting, external raters, hidden method identity, randomized display, same gates/capture.
-
-## 31. Rater interface
-
-Per dimension:
-
-- A materially better;
-- B materially better;
-- no material difference;
-- unable to judge.
-
-Also:
-
-- replacement worth accepting?
-- protected regression visible?
-
-## 32. Human materiality rule
-
-Candidate materially better for one rater when it wins at least two more dimensions, has no protected regression, and rater says replacement is worth accepting.
-
-## 33. Three-rater aggregation
-
-- 3 A → A;
-- 2 A + 1 tie → A;
-- 3 B → B;
-- 2 B + 1 tie → B;
-- all tie → tie;
-- direct A/B split → human ambiguous.
-
-Consensus-labeled comparisons feed confusion metrics.
-
-## 34. Rater limitations
-
-Report agreement, ambiguity, rater trends, and tie frequency. Three raters do not eliminate preference noise.
-
-## 35. Phase 3 — Confirmatory
-
-Freeze prompts, metrics, aggregation, thresholds; use new tasks/raters; preregister analysis.
-
-The first pilot is exploratory, not preregistered.
-
-## 36. Generator confound
-
-Manual candidate preparation tests curated candidates. It does not prove safe autonomous generation. State this in every result.
-
-## 37. Adversarial candidate phase
-
-Inject:
-
-- mobile regression;
-- lost empty state;
-- fabricated metric;
-- duplicated logic;
-- excessive patch;
-- visual novelty with worse task clarity;
-- intermittent crash.
-
-Gates and selector must reject.
-
-## 38. Usage record
-
-```ts
-interface InferenceUsage {
-  provider: string;
-  agent: string;
-  model: string | null;
-  purpose:
-    | "generation"
-    | "critique"
-    | "selection"
-    | "order_reversal"
-    | "tie_break";
-  inputTokens: number | null;
-  outputTokens: number | null;
-  cachedInputTokens: number | null;
-  subscriptionUnits: number | null;
-  reportedCostUsd: number | null;
-  policySnapshot: string;
-}
-```
-
-Unknown stays null.
-
-## 39. Vendor snapshot
-
-Store date, provider, auth mode, plan, known policy, source note, uncertainty.
-
-## 40. Preference ledger
-
-Not required for first proof. Later preferences are project-scoped, contextual, inspectable, and subordinate to hard gates.
-
-## 41. Convergence
-
-Stop expansion when:
-
-- two generations fail to improve;
-- judges repeatedly disagree;
-- candidates repeat rejected patterns;
-- protected regressions increase;
-- human says preference-level only;
-- configured depth reached.
-
-## 42. Fatal exploratory outcomes
-
-Independent stop reasons:
-
-- selector loses to linear;
-- selector does not beat random;
-- recurring false promotions;
-- near-total escalation;
-- human ambiguity dominates;
-- oracle shows little headroom;
-- operational instability prevents valid evidence;
-- outside raters reject owner-only effect.
-
-## 43. Unpromising outcomes
-
-- safe but inert;
-- selector overhead adds little;
-- random similar;
-- generator supplies almost all value;
-- gains inconsistent.
-
-## 44. Promising Phase 1
-
-- selector beats linear on owner preference;
-- uplift over random;
-- promotes some preferred challengers;
-- no obvious recurring false promotion;
-- escalation not constant;
-- workflow reliable.
-
-## 45. Small-sample caveat
-
-Pilot cannot certify low false-promotion probability. Use “not obviously broken under this limited sample,” never “safe for autonomous use.”
-
-## 46. Experiment model
-
-```ts
-interface ExperimentResult {
-  conditions: ConditionResult[];
-  candidateSet: CandidateSummary[];
-  humanRatings: HumanRating[];
-  automatedDecisions: AutomatedDecision[];
-  controls: ControlResult[];
-  metrics: ExperimentMetrics;
-  usage: InferenceUsage[];
-  limitations: string[];
-}
-```
-
-## 47. Tests
-
-- `EVAL-001`: random uses same eligible set.
-- `EVAL-002`: retain chooses champion.
-- `EVAL-003`: hard-gate failure cannot promote.
-- `EVAL-004`: reversal conflict escalates under strict policy.
-- `EVAL-005`: tie remains tie.
-- `EVAL-006`: protected regression vetoes.
-- `EVAL-007`: counts accompany rates.
-- `EVAL-008`: unknown usage null.
-- `EVAL-009`: ambiguous humans excluded from consensus matrix.
-- `EVAL-010`: C and D share X0.
-- `EVAL-011`: selection usage in total cost.
-- `EVAL-012`: oracle marked nondeployable.
-
-## 48. Open items
-
-- `OPEN-EVAL-001`: initial judge ensemble.
-- `OPEN-EVAL-002`: evidence citation schema.
-- `OPEN-EVAL-003`: Phase 1 strategies.
-- `OPEN-EVAL-004`: external rater path.
-- `OPEN-EVAL-005`: quality encoding for uplift.
+- outcome vocabulary imports from `schemas/domain-types.ts`;
+- no persisted `champion`, `challenger`, `promote`, `retain_champion`, or `escalate` enum values;
+- A/B and B/A packets differ only in presentation order;
+- invalid citation rejects evaluator output;
+- protected regression vetoes recommendation;
+- unknown accounting fields remain null;
+- human-only mode uses the same evidence allowlist;
+- rejected output cannot create a Recommendation;
+- no-material-improvement maps to `current_retained`;
+- invalid baseline maps to `invalid_run`.
