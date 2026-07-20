@@ -2,21 +2,19 @@
 
 > Build contenders. Keep the best.
 
-Render Rivals is a local-first visual optimization harness for AI-assisted frontend work. It creates competing implementations, captures them under comparable conditions, blocks functional regressions, and recommends promotion only when a contender earns it.
+Render Rivals is a local-first visual optimization harness for AI-assisted frontend work. It compares a current implementation with contenders under controlled conditions, blocks functional and protected regressions, preserves evidence, and recommends adoption only when a contender demonstrates a material improvement.
 
-## Canonical Architecture
+## Canonical architecture
 
 **Status:** Architecture and MVP implementation contracts established  
 **Working name:** Render Rivals  
-**Canonical set:** This directory only  
-**Supersedes:** All earlier Design Warden and runtime drafts  
-**Implementation status:** Scaffold only against the canonical specifications and MVP vertical slice
+**Canonical set:** This repository  
+**Supersedes:** Earlier Design Warden and runtime drafts  
+**Implementation status:** Scaffold only against the canonical specifications, accepted ADRs, and locked MVP contract
 
 ## Purpose
 
-This specification defines a local-first visual optimization harness for coding agents.
-
-The harness preserves a current implementation, creates or accepts contenders, builds and renders eligible candidates under comparable conditions, applies hard regression gates, evaluates candidates pairwise using cited evidence, and recommends promotion only when a contender demonstrates a material improvement.
+Render Rivals preserves a current implementation, accepts independently prepared contenders, builds and renders eligible candidates under comparable conditions, applies hard regression gates, evaluates candidates pairwise using cited evidence, and requires an explicit human decision before non-destructive export.
 
 The first implementation is an experimental reference tool, not a universal autonomous design system.
 
@@ -34,19 +32,19 @@ The first implementation is an experimental reference tool, not a universal auto
 10. [`spec/10-run-and-candidate-state-machines.md`](spec/10-run-and-candidate-state-machines.md)
 11. [`spec/11-artifact-event-and-schema-contracts.md`](spec/11-artifact-event-and-schema-contracts.md)
 
-Architecture decisions are under `adr/`. Official-source verification notes are under `sources/`. Earlier drafts are preserved under `archive/` for history only.
-
-Brand exploration and visual-direction work are under [`brand/`](brand/).
+Architecture decisions are under [`adr/`](adr/). Official-source verification notes are under [`sources/`](sources/). Earlier drafts are preserved under [`archive/`](archive/) for history only.
 
 ## Product and implementation planning
 
-- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) locks the first end-to-end product claim, supported project shape, gates, evaluation rule, exclusions, acceptance fixtures, and implementation sequence.
-- [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) defines failure classification, detection, evidence impact, cleanup, retries, recovery targets, and user-facing behavior.
-- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) defines the complete desktop application surface, workflows, overlays, states, route model, and MVP priorities.
-- [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) defines the marketing website, documentation information architecture, public proof requirements, asset inventory, routes, and delivery priorities.
-- [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) defines implementation-ready route contracts, layout zones, page templates, route guards, state handling, responsive behavior, and phased wireframe delivery.
+- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) locks the first complete product path, required evidence coverage, gates, evaluation policy, exclusions, acceptance fixtures, and implementation sequence.
+- [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) defines failure classification, evidence impact, retries, recovery targets, idempotency, cleanup, and user-facing behavior.
+- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) defines the complete desktop product surface and includes post-MVP concepts.
+- [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) defines the marketing and documentation sites.
+- [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) defines implementation route contracts, page geometry, route guards, state handling, and responsive behavior.
+- [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) distinguishes enabled MVP routes and features from deferred complete-product planning.
+- [`schemas/README.md`](schemas/README.md) records the schema-registry scaffold prerequisite and makes clear that executable schemas do not exist yet.
 
-The MVP and failure-recovery documents are implementation contracts. UI and public-site plans remain planning baselines. Changes that affect locked runtime behavior still require specification and ADR updates.
+Brand exploration and visual-direction work are under [`brand/`](brand/).
 
 ## Canonicality rule
 
@@ -58,20 +56,30 @@ When statements conflict:
 4. MVP implementation contracts narrow the first release but do not override canonical runtime invariants.
 5. Code does not silently override the specification. A deliberate deviation requires an ADR amendment or replacement.
 
-## Locked decisions
+Accepted [`ADR-0011`](adr/ADR-0011-selection-outcomes-and-user-decisions.md) expands the canonical recommendation and user-decision vocabulary. Until the related sections of specifications 09–11 are textually amended, ADR-0011 is authoritative.
 
-- TypeScript owns domain policy, experiments, evidence, evaluation, adapters, browser orchestration, configuration, and the local dashboard.
-- Rust owns session containment, process creation, process-tree termination, process I/O capture, endpoint ownership inspection, resource enforcement, secure native IPC, and terminal signal handling.
+## Locked ownership boundary
+
+This summary intentionally mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-boundary.md).
+
+- TypeScript owns policy, domain state, Git and workspaces, Playwright/browser orchestration, evidence, evaluation, accounting, experiments, configuration, adapters, the local server, and UI.
+- Rust owns session supervision, process containment, process creation and I/O, process-tree termination, native resource accounting and enforcement, listener ownership, secure IPC, and terminal signals.
+- Rust does not own promotion policy, visual judgment, Git strategy, provider parsing, evidence interpretation, or dashboard behavior.
+- TypeScript does not emulate Job Objects, delegated cgroup termination, native peer credentials, or native listener ownership.
+- The boundary is a sidecar protocol, not N-API.
+
+## Other locked decisions
+
 - The npm entry process is a minimal JavaScript bootstrap outside containment.
-- Rust launches the coordinator with the bootstrap’s exact `process.execPath`.
+- Rust launches the coordinator using the bootstrap's exact `process.execPath`.
 - Endpoint identifiers and session nonces are passed through environment, never argv.
 - Rust is the terminal and Ctrl+C authority.
-- Coordinator and supervised children do not inherit the user’s interactive console.
+- Coordinator and supervised children do not inherit the user's interactive console.
 - Windows is the first strong-containment reference platform.
 - Linux strong mode requires an explicitly delegated systemd user scope, an owned subtree, and a usable `cgroup.kill`.
 - macOS native containment is best effort and is never described as equivalent to Windows or Linux strong mode.
 - The first scheduler is sequential.
-- Every comparison recaptures the current implementation in the same capture epoch as contenders.
+- Every comparison recaptures the current implementation in the same capture epoch as the contender.
 - A Chromium disconnect invalidates the complete capture epoch.
 - Files and append-only event streams are canonical. A database may later be a rebuildable index.
 - Token consumption is telemetry during the maximum-quality proof, not an early optimization target.
@@ -87,7 +95,8 @@ Scaffolding may begin only after:
 - Linux delegated-scope acquisition has a live verification task;
 - Playwright Clock behavior is checked against the exact pinned release;
 - the reference-platform support declaration is accepted;
-- the MVP vertical slice and state/schema contracts are treated as implementation inputs.
+- the MVP, state-machine, schema, and failure-recovery contracts are treated as implementation inputs;
+- executable schema definitions, fixtures, and migration tests are created under the implementation schema package.
 
 ## Non-goals for the first scaffold
 
@@ -100,19 +109,21 @@ Scaffolding may begin only after:
 - SQLite as source of truth;
 - Tauri or Electron packaging;
 - three production agent adapters;
+- contender generation inside the MVP run;
 - automatic promotion or merging;
 - cross-platform containment parity claims.
 
 ## Maintenance
 
-Canonical specification files should remain below about 600 lines. Split them before review becomes difficult. ADRs may be shorter.
+Canonical specification files should remain below about 600 lines where practical. Split them before review becomes difficult. ADRs may be shorter.
 
 Architecture changes update:
 
 1. the affected canonical specification;
 2. a new or superseding ADR;
-3. the locked-decision summary when relevant;
-4. the affected implementation checklist.
+3. this locked-decision summary when relevant;
+4. the affected implementation checklist;
+5. repository manifests when the document inventory changes.
 
 ## Source freshness
 
@@ -122,6 +133,7 @@ Highest-risk version-sensitive checks:
 
 - Playwright Clock and browser lifecycle;
 - systemd transient-scope and delegation signatures;
+- Windows process creation and ConPTY behavior;
 - agent CLI stream formats;
 - vendor authentication and subscription terms;
 - Node and TypeScript support ranges.
