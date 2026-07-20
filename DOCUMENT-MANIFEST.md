@@ -1,10 +1,10 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 2.0  
+**Inventory format:** 2.1  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
-The previous manifest embedded line counts and SHA-256 values from the original architecture archive. Those values became stale whenever a document changed and omitted every later planning and implementation contract. This manifest is now a maintained document inventory. Tagged release bundles may later include a CI-generated checksum manifest.
+This manifest tracks the maintained repository surface. Tagged release bundles may later include a CI-generated checksum manifest.
 
 ## Canonical specifications
 
@@ -19,6 +19,17 @@ The previous manifest embedded line counts and SHA-256 values from the original 
 9. [`spec/09-domain-model-and-identifiers.md`](spec/09-domain-model-and-identifiers.md)
 10. [`spec/10-run-and-candidate-state-machines.md`](spec/10-run-and-candidate-state-machines.md)
 11. [`spec/11-artifact-event-and-schema-contracts.md`](spec/11-artifact-event-and-schema-contracts.md)
+12. [`spec/12-cross-spec-normalization.md`](spec/12-cross-spec-normalization.md)
+
+`spec/12` normalizes explanatory aliases, shared-type authority, storage-path precedence, and Session/Run lifecycle separation across earlier specs.
+
+## Canonical shared type vocabulary
+
+- [`schemas/domain-types.ts`](schemas/domain-types.ts)
+
+This file is the sole canonical source for `RecommendationOutcome`, `UserDecisionAction`, `PairwiseVerdict`, `EvaluationPurpose`, `InferenceUsage`, shared record shapes, `RunState`, and `RecoveryDisposition`.
+
+Markdown specifications must reference these definitions rather than create competing unions.
 
 ## Accepted architecture decisions
 
@@ -34,7 +45,7 @@ The previous manifest embedded line counts and SHA-256 values from the original 
 - [`adr/ADR-0010-quality-first-accounting.md`](adr/ADR-0010-quality-first-accounting.md)
 - [`adr/ADR-0011-selection-outcomes-and-user-decisions.md`](adr/ADR-0011-selection-outcomes-and-user-decisions.md)
 
-ADR-0011 currently supersedes the narrower recommendation and decision enums still printed in parts of specifications 09 and 10. Those sections require a later textual consolidation, but the accepted ADR is authoritative now.
+ADR-0011 is now textually incorporated into specs 06, 09, 10, the MVP contract, and the shared type file. It remains the historical decision record.
 
 ## Implementation contracts
 
@@ -48,13 +59,14 @@ ADR-0011 currently supersedes the narrower recommendation and decision enums sti
 - [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md)
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md)
 
-The scope-status document makes explicit that generated contenders, multi-contender tournaments, and other complete-product concepts are post-MVP. The wireframe specification is authoritative for concrete MVP route decomposition, including preparation, capture, and new-run wizard subroutes.
+The scope-status document marks generated contenders and other complete-product concepts as post-MVP. The wireframe specification is authoritative for concrete route decomposition.
 
-## Schema implementation prerequisite
+## Schema implementation surface
 
 - [`schemas/README.md`](schemas/README.md)
+- [`schemas/domain-types.ts`](schemas/domain-types.ts)
 
-No executable schema registry exists yet. Zod schemas, generated JSON Schema, fixtures, migrations, and compatibility tests are required scaffold outputs.
+The shared type vocabulary now exists. Full executable Zod schemas, generated JSON Schema, fixtures, migrations, hashing tests, and compatibility tests remain scaffold deliverables.
 
 ## Runtime source verification
 
@@ -71,7 +83,7 @@ No executable schema registry exists yet. Zod schemas, generated JSON Schema, fi
 - `brand/concepts/05-minimal-r-monogram.webp`
 - `brand/concepts/06-twin-slash-lime.webp`
 
-Brand concepts are exploratory assets, not architecture inputs.
+Brand concepts are exploratory assets, not architecture inputs. Legacy wording in asset filenames is not persisted-domain vocabulary.
 
 ## Historical archive
 
