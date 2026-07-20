@@ -3,15 +3,15 @@
 **Status:** Implementation contract  
 **Target:** First end-to-end usable alpha  
 **Primary platform:** Windows 11 strong-containment reference path  
-**Depends on:** Canonical specifications, accepted ADRs, and the route-level wireframe specification
+**Depends on:** Canonical specifications, accepted ADRs, the failure-recovery matrix, and the route-level wireframe specification
 
 ## 1. Decision summary
 
 The MVP proves one complete product claim:
 
-> Given a current local frontend implementation and one existing contender, Render Rivals can execute both under controlled conditions, capture comparable evidence, reject functionally invalid work, produce a cited pairwise recommendation, and export the selected result without silently modifying the project.
+> Given a current local frontend implementation and one existing contender, Render Rivals can execute both under controlled conditions, capture the same meaningful states and interaction under one valid browser epoch, reject functional and protected regressions, produce a cited pairwise recommendation, and export the selected result without silently modifying the project.
 
-The MVP is not a general autonomous design system. It is the smallest trustworthy comparison loop that exercises the JavaScript bootstrap, Rust supervisor, TypeScript coordinator, Playwright capture layer, file-backed evidence model, evaluator boundary, local UI, and explicit promotion workflow.
+The MVP is not a general autonomous design system. It is the smallest trustworthy comparison loop that exercises the JavaScript bootstrap, Rust supervisor, TypeScript coordinator, Playwright capture layer, file-backed evidence model, evaluator boundary, deterministic policy engine, local UI, recovery system, and explicit promotion workflow.
 
 ## 2. Primary user
 
@@ -21,7 +21,8 @@ The primary MVP user is a solo frontend developer or AI-assisted builder who:
 - can produce or obtain an alternate implementation through any tool or manual process;
 - wants a repeatable comparison rather than relying on memory or a single screenshot;
 - needs functional regressions blocked before considering visual preference;
-- wants the evidence and final choice retained locally.
+- wants the evidence, uncertainty, and final choice retained locally;
+- accepts substantial evaluator usage while the quality mechanism is being proven.
 
 The MVP does not optimize for design teams, remote review, CI enforcement, shared workspaces, or nontechnical consumers.
 
@@ -33,22 +34,25 @@ A successful MVP run follows this exact sequence.
 2. The bootstrap verifies and launches the native supervisor.
 3. The supervisor launches the coordinator using the bootstrap's exact `process.execPath`.
 4. The user opens a local Git project.
-5. Render Rivals detects or receives the project working directory, package manager, install command, development command, readiness URL, and target route.
+5. Render Rivals detects or receives the project root, package manager, install command, build command, development command, readiness URL, target route, fixture, and protected paths.
 6. The user chooses the current source snapshot and one existing contender source.
-7. The user reviews a run configuration containing one route, two viewports, required gates, and one evaluator.
+7. The user reviews a frozen run configuration containing one route, populated/default, empty, and error/unavailable states, desktop and mobile viewports, one critical interaction sequence, required gates, protected dimensions, and one evaluator.
 8. Render Rivals validates that both source inputs are stable and distinct.
-9. The coordinator creates isolated candidate workspaces.
-10. The supervisor executes install, build when configured, and development processes sequentially.
-11. Playwright opens one capture epoch and recaptures the current implementation before capturing the contender.
-12. Both candidates are captured at the same two viewports with equivalent environment metadata.
-13. Required gates are evaluated for both candidates.
-14. An ineligible contender cannot advance to visual evaluation.
-15. The evaluator receives only verified artifacts and returns factor-level conclusions with citations and confidence.
-16. The decision engine produces one of three outcomes: contender recommended, current retained, or human review required.
-17. The user inspects side-by-side captures, gate results, factor evidence, and limitations.
-18. The user explicitly accepts or declines the recommendation.
-19. If accepted, Render Rivals exports a patch or creates a new local branch from the contender source. It never overwrites the current working tree in place.
-20. The completed run remains reconstructable from its files and append-only event stream.
+9. The coordinator creates isolated candidate workspaces outside the active repository.
+10. The supervisor executes dependency preparation, build when configured, and development processes sequentially.
+11. Playwright opens one capture epoch.
+12. The current implementation is captured twice in fresh contexts for a gross stability probe.
+13. The current implementation is recaptured for comparison across the complete required state, viewport, and interaction matrix.
+14. The contender is captured across the identical matrix in fresh contexts within the same browser epoch.
+15. Required gates are evaluated for both candidates.
+16. An ineligible contender cannot advance to visual evaluation.
+17. The evaluator receives only verified, registered artifacts and returns factor-level conclusions with citations, confidence, and limitations.
+18. The same pairwise packet is evaluated in A/B and reversed B/A order.
+19. The policy engine produces one of five outcomes: contender recommended, current retained, tie, human review required, or run invalid.
+20. The user inspects synchronized captures, interaction steps, gate results, factor evidence, contrary evidence, and limitations.
+21. The user explicitly accepts, declines, keeps current, selects another eligible result where permitted, or defers.
+22. If adoption is requested, Render Rivals exports a patch or creates a new local branch. It never overwrites the active working tree in place.
+23. The completed run remains reconstructable from its files and append-only event stream.
 
 ## 4. Supported project shape
 
@@ -58,11 +62,16 @@ The MVP supports projects that satisfy all of the following:
 - Node-based package manager: npm, pnpm, or yarn;
 - browser-rendered application reachable through HTTP on localhost;
 - deterministic development command supplied by detection or user configuration;
-- one target route that does not require interactive authentication;
-- no mandatory external service that cannot be reached from the local run environment;
-- stable rendering after a configured readiness and settle period.
+- one target route;
+- three reproducible data states: populated/default, empty, and error or unavailable;
+- one reproducible critical interaction sequence;
+- no mandatory external service that cannot be reached or deterministically replaced from the local run environment;
+- stable rendering after configured readiness and settle policy;
+- project commands that can execute without privileged machine-global changes.
 
 The first acceptance fixture is a Vite-based TypeScript frontend. Framework detection may recognize other projects, but only the reference fixture is release-blocking for the first alpha.
+
+Authentication-heavy projects are permitted only when the fixture can establish authentication deterministically without placing credentials in canonical artifacts. Interactive login recording is deferred.
 
 ## 5. Source inputs
 
@@ -75,11 +84,11 @@ The current implementation is an immutable source snapshot created from one of:
 
 The snapshot records:
 
-- repository root;
+- repository identity and root;
 - commit SHA when available;
-- branch name when available;
-- dirty-state declaration;
-- normalized file manifest hash;
+- branch name as provenance only;
+- dirty-state declaration and patch hash;
+- normalized file-manifest hash;
 - dependency lockfile hash;
 - configuration hash;
 - creation timestamp.
@@ -90,14 +99,17 @@ The MVP accepts exactly one contender from:
 
 - a local Git branch or commit;
 - an existing Git worktree;
-- a local directory explicitly selected by the user; or
-- a patch applied into an isolated workspace.
+- a local directory explicitly selected by the user;
+- a patch applied into an isolated workspace; or
+- a previous candidate snapshot whose provenance and hashes remain valid.
 
 Agent-driven generation is excluded from the MVP. Any coding agent may create the contender outside Render Rivals.
 
 ### 5.3 Source stability
 
-After validation begins, source snapshots are immutable. If the source manifest changes before its capture finishes, the candidate is marked stale and must be re-snapshotted. Render Rivals does not continue with an silently changed source tree.
+After validation begins, source snapshots are immutable. If source bytes change before capture finishes, the candidate becomes stale and cannot continue under the frozen run configuration.
+
+Render Rivals never continues with a silently changed source tree. Source correction requires a new snapshot and, after execution has started, a superseding run.
 
 ## 6. Run scope
 
@@ -107,12 +119,16 @@ The MVP run contains:
 - one current implementation;
 - one contender;
 - one target route;
-- one initial application state;
-- two viewports;
-- one light color scheme;
+- three required application states;
+- two required viewports;
+- one required critical interaction sequence;
+- one color scheme per run, with light as the reference default;
 - one locale and time zone;
-- one sequential capture epoch;
-- one configured evaluator;
+- one immutable fixture identity;
+- one sequential active candidate workload;
+- one valid capture epoch used for selection;
+- one configured pairwise evaluator or explicit human-only mode;
+- one deterministic recommendation policy;
 - one explicit human decision.
 
 ### 6.1 Fixed reference viewports
@@ -124,171 +140,349 @@ The reference defaults are:
 
 Users may change these dimensions, but acceptance tests use the reference defaults.
 
-### 6.2 Initial application state
+### 6.2 Required state matrix
 
-The MVP captures the route after:
+The route must support:
+
+1. `populated` or `default`: the normal meaningful product state;
+2. `empty`: the state with no records, results, or user-created content;
+3. `error` or `unavailable`: a realistic failure, unavailable dependency, permission denial, or recoverable error state.
+
+Each state declares:
+
+- stable key;
+- setup method;
+- readiness assertions;
+- required root selectors;
+- reset behavior;
+- expected state fingerprint;
+- secret and external-service requirements;
+- whether failure to establish the state blocks the run.
+
+Each candidate is captured at desktop and mobile for every required state. A missing required cell makes the capture set incomplete.
+
+### 6.3 Critical interaction sequence
+
+The MVP includes one repeatable interaction that matters to the page's primary task.
+
+Supported action vocabulary:
+
+- navigate;
+- click;
+- hover when semantically required;
+- focus;
+- fill;
+- select;
+- press;
+- wait for selector or response;
+- assert visible, text, URL, or enabled state;
+- capture step.
+
+The sequence records:
+
+- initial state;
+- ordered actions;
+- selector strategy;
+- per-step timeout;
+- assertions;
+- screenshots at configured steps;
+- console and network errors;
+- final state fingerprint.
+
+The same sequence is replayed for current and contender. Interactive recorder tooling, arbitrary branching flows, and multi-user journeys are deferred.
+
+### 6.4 Capture readiness and settling
+
+Each capture occurs only after:
 
 1. navigation succeeds;
-2. the configured readiness check passes;
-3. `document.fonts.ready` resolves or times out according to policy;
-4. animations and transitions are disabled through the capture stylesheet;
-5. a configurable settle interval passes without a browser disconnect.
+2. local-origin and listener-ownership policy passes;
+3. fixture setup completes;
+4. required readiness checks pass;
+5. `document.fonts.ready` resolves or reaches an explicitly configured failure policy;
+6. clock and random fixtures are installed before application use where required;
+7. configured timers, responses, selectors, network quiet, animation frames, and final delay settle;
+8. browser continuity remains intact.
 
-Scripted interactions, authentication flows, network mocking, hover states, and multi-step journeys are deferred.
+Animations are not blindly disabled when their completion is part of the interaction. The settle policy explicitly declares whether motion is allowed to finish, reduced, frozen, or treated as unsupported.
 
-## 7. Required gates
+## 7. Required capture artifacts
 
-A contender is eligible only when every required gate passes. The current implementation is also gated; a run cannot produce a promotion recommendation if the current reference itself is invalid.
-
-### Gate G1: process readiness
-
-- Development process remains alive through capture.
-- The expected endpoint is owned by the supervised process tree.
-- The route becomes reachable before timeout.
-
-### Gate G2: route readiness
-
-- Navigation completes without a fatal browser error.
-- The final URL matches the allowed local origin and expected route policy.
-- The document reaches the configured readiness condition.
-
-### Gate G3: browser integrity
-
-- No uncaught page exception occurs after navigation begins.
-- No browser crash or disconnect occurs during the epoch.
-- The capture context remains the context registered for the epoch.
-
-### Gate G4: required content
-
-- The configured root selector is visible.
-- Its bounding box has nonzero dimensions.
-- It is not entirely outside the viewport.
-
-### Gate G5: capture completeness
-
-For each viewport, the candidate has:
+For every state and viewport, each candidate requires:
 
 - screenshot;
 - DOM summary;
+- accessibility snapshot;
+- element geometry;
+- selected computed styles;
 - console summary;
-- metadata record;
-- matching source, environment, browser, and epoch identifiers;
+- network summary;
+- capture metadata;
+- fixture and epoch identity;
 - verified artifact hashes.
 
-### Gate G6: source-policy compliance
+The critical interaction additionally requires:
 
-- The candidate was created from the declared source snapshot.
-- Protected paths were not modified when a protected-path policy is configured.
-- Dependency changes are disclosed.
+- action and assertion trace;
+- configured step screenshots;
+- per-step result;
+- final state fingerprint;
+- interaction console and network summary.
 
-Accessibility scanning, performance budgets, interaction scripts, and network policies become additional gates after the vertical slice.
+A screenshot alone is never a complete evidence record.
 
-## 8. Evaluation contract for the MVP
+## 8. Stability and comparison validity
 
-The MVP uses one pairwise evaluator behind a stable adapter. The evaluator may be backed by an external command or agent integration, but Render Rivals owns input construction, output validation, provenance, retries, and decision policy.
+The MVP requires:
 
-### 8.1 Evaluation factors
+- one pinned Playwright-managed Chromium version per epoch;
+- one browser process identity per epoch;
+- fresh browser context per stability sample and candidate;
+- one fixture hash across compared candidates;
+- matching route, state, viewport, locale, time zone, color scheme, device scale factor, and reduced-motion policy;
+- current implementation recapture in the active epoch;
+- two current stability samples before selection capture;
+- visible volatile-region declarations and exclusions;
+- complete epoch invalidation after Chromium disconnect or browser crash;
+- no prior-run screenshot, DOM, accessibility, or interaction artifact used for selection.
 
-The MVP evaluates four factors:
+The two-sample stability probe detects gross nondeterminism only. The report records sample count, observed variation, exclusions, uncontrolled dimensions, and that passing does not prove determinism.
+
+Comparison validity states are:
+
+- `valid`: every required identity and artifact verifies;
+- `limited`: an allowed platform capability or declared exclusion reduces confidence without breaking equivalence;
+- `invalid`: candidates are not comparable or required evidence is missing;
+- `stale`: source, fixture, policy, or environment changed after evidence creation.
+
+Only `valid` comparison evidence may support automated recommendation in the reference MVP acceptance path.
+
+## 9. Required gates
+
+A contender is eligible only when every required gate passes. The current implementation is also gated; a run cannot recommend replacement when its reference is invalid.
+
+### Gate G1: source and workspace integrity
+
+- Candidate workspace matches the immutable source snapshot.
+- Protected paths were not modified.
+- Dependency and lockfile changes comply with policy.
+- Workspace remains inside the owned root.
+
+### Gate G2: dependency and build
+
+- Dependency preparation succeeds.
+- Build succeeds when configured.
+- Required project tests succeed when configured.
+- Expected build outputs exist.
+
+### Gate G3: process and endpoint readiness
+
+- Development process remains alive through capture.
+- The expected endpoint belongs to the supervised process tree where the platform can verify ownership.
+- The route becomes reachable before timeout.
+
+### Gate G4: route and state readiness
+
+- Navigation completes without a fatal browser error.
+- Final URL matches the allowed local origin and route policy.
+- Populated, empty, and error/unavailable states establish successfully.
+- Required root and state selectors are visible and nonzero.
+
+### Gate G5: browser and capture integrity
+
+- No browser crash or disconnect occurs during the epoch.
+- Context identity remains valid.
+- Required capture matrix and interaction trace are complete.
+- Artifact hashes and identity metadata verify.
+- Blank, login-redirect, and wrong-route captures are rejected.
+
+### Gate G6: interaction behavior
+
+- Every required action executes.
+- Every required assertion passes.
+- The final state matches its expected fingerprint.
+- Required controls remain usable through keyboard-compatible actions where declared.
+
+### Gate G7: accessibility baseline
+
+- No configured severe automated accessibility violation is introduced.
+- Focus visibility and keyboard reachability for the critical interaction do not regress.
+- Required semantic labels and roles remain present.
+
+Automated checks inform the gate but do not constitute complete WCAG certification.
+
+### Gate G8: console and network policy
+
+- No prohibited uncaught page exception occurs.
+- Console errors follow the configured allowlist and severity policy.
+- Required local or fixture-backed requests succeed.
+- External requests outside policy are reported or blocked.
+
+A required failure makes the contender ineligible. If the current implementation fails a required gate, the run enters baseline failure or recovery; it does not proceed to aesthetic judgment.
+
+## 10. Evaluation contract
+
+The MVP uses pairwise evidence rather than one opaque design score.
+
+The evaluator may be backed by an external command or agent integration, but Render Rivals owns packet construction, artifact allowlisting, anonymization where configured, output validation, retries, provenance, accounting, and policy.
+
+### 10.1 Factors
 
 | Factor | Weight | Required evidence |
 |---|---:|---|
-| Visual hierarchy | 0.30 | Desktop and mobile captures |
-| Clarity and readability | 0.30 | Captures and DOM text summary |
-| Consistency and composition | 0.20 | Captures at both viewports |
-| Responsive behavior | 0.20 | Cross-viewport comparison |
+| Task and product fit | 0.15 | Task brief, all states, critical interaction |
+| Primary-action clarity | 0.15 | Populated state and interaction evidence |
+| Information hierarchy | 0.15 | Desktop and mobile captures |
+| Visual coherence and intentionality | 0.15 | All state captures and selected style evidence |
+| Responsive quality | 0.15 | Desktop/mobile pairs across states |
+| Empty and error-state quality | 0.10 | Empty and error/unavailable captures |
+| Interaction and recovery clarity | 0.15 | Interaction trace, focus, assertions, resulting state |
 
-Each factor returns:
+Protected regressions are vetoes, not weights.
 
-- `current`, `contender`, or `tie`;
-- confidence from `0.00` to `1.00`;
+Each factor returns one verdict:
+
+- `a_materially_better`;
+- `b_materially_better`;
+- `no_material_difference`;
+- `unable_to_judge`.
+
+Every verdict includes:
+
+- confidence from `0.00` to `1.00` or `null` when unavailable;
 - concise rationale;
-- citations to one or more artifact IDs;
-- limitations or missing evidence.
+- citations to registered artifact IDs and optional regions or interaction steps;
+- limitations;
+- any protected-regression concern.
 
-A scalar score without citations is invalid evaluator output.
+A scalar score or uncited preference is invalid evaluator output.
 
-### 8.2 Decision rule
+### 10.2 Order reversal
 
-The contender is recommended only when all of the following are true:
+The model-backed comparison runs twice:
 
-1. all required contender gates pass;
-2. all current-reference gates pass;
-3. the evaluation payload passes schema and citation validation;
-4. aggregate evaluator confidence is at least `0.70`;
-5. weighted contender support is at least `0.60`;
-6. no factor with confidence at least `0.80` reports the current implementation materially better on responsive behavior;
-7. the evaluator reports no blocking limitation that makes the comparison invalid.
+1. packet with current as A and contender as B;
+2. fresh invocation with contender as A and current as B.
 
-Weighted support is calculated as:
+Inputs, artifacts, task brief, and factor definitions remain identical apart from presentation order and anonymous labels.
 
-- contender win: full factor weight;
-- tie: half factor weight;
-- current win: zero factor weight.
+Material disagreement between orders cannot be averaged into certainty. It produces tie handling, retain-current, or human review according to frozen policy.
 
-The current implementation is retained when the evidence is valid but the contender does not meet the promotion threshold.
+### 10.3 Recommendation outcomes
 
-Human review is required when:
+```ts
+type SelectionOutcome =
+  | { kind: "recommend_contender"; candidateId: CandidateId }
+  | { kind: "retain_current"; reasonCodes: string[] }
+  | { kind: "tie"; candidateIds: CandidateId[] }
+  | { kind: "human_review_required"; reasonCodes: string[] }
+  | { kind: "invalid_run"; reasonCodes: string[] };
+```
 
-- aggregate confidence is below threshold;
-- evidence is contradictory;
-- a required citation cannot be resolved;
-- the evaluator marks a material limitation;
-- the decision cannot be reproduced from stored inputs.
+The contender may be recommended only when:
 
-### 8.3 Human authority
+1. all current and contender required gates pass;
+2. comparison validity is `valid`;
+3. evaluator outputs pass schema, provenance, factor-coverage, and citation validation;
+4. no protected regression applies;
+5. factor evidence supports a material improvement rather than mere difference;
+6. order reversal is sufficiently stable;
+7. confidence meets the frozen policy threshold;
+8. source, fixture, artifact, and policy identities remain current;
+9. deterministic policy chooses recommendation.
 
-A recommendation is advisory. The user must explicitly accept it. Declining a recommendation is a valid completed outcome and does not mutate the evidence record.
+The current implementation is retained when evidence is valid but improvement is not proven. `No material improvement` is a successful completed outcome.
 
-## 9. Comparison UI included in the MVP
+### 10.4 Human-only mode
+
+The same immutable comparison packet may be rated manually when no model evaluator is configured and the frozen run configuration permits human-only mode.
+
+Human-only mode remains auditable but does not claim automated selector performance. It still requires gates, comparable evidence, explicit decision artifacts, and non-destructive export.
+
+## 11. Explicit human authority
+
+A recommendation is advisory. The user records one typed decision:
+
+- accept recommendation;
+- keep current;
+- decline recommendation;
+- select another eligible candidate where a later multi-contender mode permits it;
+- defer;
+- invalidate the run.
+
+The decision binds to:
+
+- recommendation ID and hash;
+- source-set hash;
+- evidence-set hash;
+- policy hash;
+- actor and timestamp;
+- rationale or structured ratings;
+- acknowledged warnings.
+
+A changed bound input makes the decision stale and blocks promotion.
+
+## 12. Comparison UI included in the MVP
 
 The local UI must provide:
 
 - run overview and phase progress;
 - contender eligibility summary;
+- state and viewport selector;
 - side-by-side desktop comparison;
 - side-by-side mobile comparison;
 - synchronized zoom and pan;
 - current and contender labels that remain visible;
+- critical interaction step navigator with synchronized state;
 - gate-result detail;
 - factor-level evidence and citations;
+- conflicting and missing-evidence states;
 - decision overview;
-- current retained / no material improvement outcome;
+- current-retained / no-material-improvement outcome;
 - explicit promotion review;
 - event timeline and filtered logs;
+- interrupted-run recovery state;
 - completed-run reconstruction.
 
-Overlay, flicker, pixel-difference, responsive-sequence, annotation, historical-comparison, and multi-round interfaces are deferred.
+Overlay, flicker, pixel-difference quality scoring, annotation authoring, historical comparison, and multi-round interfaces are deferred. A basic overlay may be implemented if it does not delay the required path.
 
-## 10. Export behavior
+## 13. Export behavior
 
-The MVP supports two non-destructive exports.
+The MVP supports non-destructive outputs.
 
-### 10.1 Patch export
+### 13.1 Patch export
 
 Render Rivals produces:
 
 - unified patch;
 - source provenance manifest;
-- evidence report;
-- artifact references;
+- evidence and decision report;
+- artifact references and hashes;
 - verification instructions.
 
-### 10.2 Branch export
+### 13.2 Branch export
 
 When the project is a compatible Git repository, Render Rivals may create a new branch from the contender snapshot. The branch name is user-editable and defaults to:
 
-`render-rivals/<run-id-short>/<contender-slug>`
+```text
+render-rivals/<run-id-short>/<contender-slug>
+```
+
+### 13.3 Report export
+
+A sanitized report may be exported without adopting the contender. It includes recommendation, decision, gates, evidence, limitations, provenance, integrity, and declared omissions.
 
 The MVP does not:
 
-- check out the branch over the user's active working tree;
+- check out a branch over the user's active working tree;
 - push to a remote;
 - open a pull request;
 - merge;
-- delete the source contender.
+- force reset;
+- delete the source contender;
+- represent a successful export as deployment.
 
-## 11. Explicit exclusions
+## 14. Explicit exclusions
 
 The MVP excludes:
 
@@ -296,14 +490,15 @@ The MVP excludes:
 - more than one contender per run;
 - tournament rounds;
 - parallel candidate execution;
+- automatic repair after gate failure;
 - automatic merging or source replacement;
 - cloud accounts or hosted storage;
 - team collaboration and comments;
 - remote workers;
 - CI and pull-request checks;
-- scripted interaction flows;
-- authenticated capture flows;
-- visual annotation tools;
+- interactive authentication recording;
+- arbitrary branching interaction flows;
+- visual annotation authoring;
 - pixel-difference scoring as a quality metric;
 - design-system plugins;
 - evaluator marketplaces;
@@ -312,7 +507,7 @@ The MVP excludes:
 - Linux strong-containment parity claims until verified;
 - a database as canonical storage.
 
-## 12. Reference platform policy
+## 15. Reference platform policy
 
 The first release-blocking path is Windows 11 with strong process containment.
 
@@ -324,31 +519,40 @@ The MVP is accepted on Windows only when:
 - coordinator and child processes do not inherit the interactive terminal;
 - Ctrl+C is owned by the Rust supervisor;
 - run artifacts survive coordinator failure;
-- stale descendants are detected during recovery.
+- stale descendants are detected during recovery;
+- the complete required state, viewport, and interaction matrix runs sequentially;
+- browser invalidation forces complete epoch recapture.
 
 Linux and macOS may run in development, but their limitations must be explicit. They do not block the first Windows reference milestone.
 
-## 13. Persistence and recovery requirements
+## 16. Persistence and recovery requirements
 
-The run is durable at every phase boundary. At minimum, the following checkpoints must survive coordinator restart:
+The run is durable at every phase boundary. At minimum, these checkpoints survive coordinator restart:
 
-- validated configuration;
-- source snapshots;
+- validated configuration and policy;
+- sealed source snapshots;
 - workspace preparation result;
-- completed current capture set;
+- capture plan;
+- completed current stability samples;
+- completed current comparison capture set;
 - completed contender capture set;
-- gate results;
-- evaluator input manifest;
-- evaluator output;
+- valid epoch seal;
+- gate results and eligibility;
+- evaluator input manifests;
+- raw and normalized evaluator output;
+- evidence records;
 - recommendation;
 - user decision;
-- export result.
+- promotion/export result;
+- cleanup and integrity result.
 
 A browser disconnect invalidates the complete active capture epoch. Captures from that epoch remain for diagnostics but cannot be used as valid evidence.
 
-A resumed run never assumes a process is alive solely because a PID was stored. The supervisor must verify process identity, containment membership, and endpoint ownership.
+A resumed run never assumes a process is alive solely because a PID was stored. The supervisor verifies process identity, containment membership, endpoint ownership, and session continuity.
 
-## 14. Security boundaries
+Recovery targets follow `spec/10-run-and-candidate-state-machines.md` and `docs/FAILURE-RECOVERY-MATRIX.md`.
+
+## 17. Security boundaries
 
 The MVP must:
 
@@ -357,32 +561,46 @@ The MVP must:
 - prevent project-provided paths from escaping owned run directories;
 - redact configured secrets from structured logs;
 - avoid placing session nonces or native endpoint identifiers in argv;
-- reject evaluator citations outside the run artifact manifest;
+- reject evaluator citations outside the immutable input manifest;
 - restrict browser navigation to the configured local origin after startup;
 - record all external evaluator data flows;
-- never include source files in diagnostic exports by default.
+- isolate candidate browser contexts and state;
+- exclude source files, raw process output, cookies, and secret values from diagnostic exports by default;
+- require explicit trust acknowledgement before first project execution.
 
-## 15. Acceptance fixtures
+## 18. Acceptance fixtures
 
-The repository must include fixture applications covering:
+The repository must include fixtures covering:
 
-1. valid current and visually stronger valid contender;
-2. valid current and visually weaker contender;
-3. contender build failure;
-4. contender route readiness timeout;
-5. uncaught browser exception;
-6. missing required selector;
-7. browser disconnect during current capture;
-8. browser disconnect during contender capture;
-9. source mutation after validation;
-10. evaluator output with an unresolved citation;
-11. low-confidence evaluation;
-12. cancellation with a stubborn descendant process;
-13. coordinator crash after current capture;
-14. disk-write interruption before atomic rename;
-15. successful patch export without changing the active working tree.
+1. valid current and materially stronger valid contender;
+2. valid current and visually different but not materially stronger contender;
+3. contender with stronger appearance but protected interaction regression;
+4. populated, empty, and error/unavailable states;
+5. mobile-only responsive regression;
+6. critical interaction success for current and contender;
+7. critical interaction assertion failure;
+8. severe accessibility regression;
+9. contender build failure;
+10. contender route readiness timeout;
+11. uncaught browser exception;
+12. missing required selector;
+13. browser disconnect during current capture;
+14. browser disconnect during contender capture;
+15. source mutation after validation;
+16. current stability probe failure;
+17. evaluator output with unresolved citation;
+18. low-confidence evaluation;
+19. order-reversal conflict;
+20. cancellation with stubborn descendant process;
+21. coordinator crash after partial epoch;
+22. coordinator crash after valid epoch seal;
+23. disk-write interruption before atomic rename;
+24. artifact hash mismatch;
+25. stale human decision blocking export;
+26. successful patch export without changing the active working tree;
+27. idempotent branch retry detecting an already-created matching branch.
 
-## 16. Release acceptance criteria
+## 19. Release acceptance criteria
 
 The MVP is complete only when all of the following are demonstrated by automated or repeatable acceptance tests.
 
@@ -390,59 +608,81 @@ The MVP is complete only when all of the following are demonstrated by automated
 
 - Bootstrap, supervisor, and coordinator establish authenticated local IPC.
 - The supervisor owns terminal signals and complete process cleanup.
-- One current implementation and one contender run sequentially.
-- Port ownership is verified before the browser trusts the endpoint.
+- Current and contender workloads run sequentially.
+- Port ownership is verified before the browser trusts the endpoint where supported.
+- Platform capability and limitations are stored and visible.
 
 ### Capture
 
 - Current and contender are recaptured in one valid epoch.
-- Desktop and mobile capture sets are complete and hash-verified.
+- The current stability probe runs in fresh contexts.
+- Populated, empty, and error/unavailable states are captured at desktop and mobile.
+- The critical interaction is replayed and asserted for both candidates.
+- Required accessibility, geometry, console, network, and metadata artifacts verify.
 - Browser disconnect invalidates the entire epoch.
-- Invalidated artifacts are visible for diagnosis but excluded from evaluation.
+- Invalidated artifacts remain diagnostic and cannot enter evaluation.
 
-### Evidence
+### Evidence and policy
 
-- Required gates block an invalid contender.
+- Required gates block invalid contenders.
+- Protected regressions veto recommendation.
 - Evaluator output is factorized, cited, confidence-bearing, and schema-valid.
-- The recommendation can be reproduced from stored artifacts and policy.
-- A no-material-improvement result is treated as successful completion.
+- A/B and B/A order reversal is recorded and checked.
+- The recommendation is reproducible from stored artifacts and policy.
+- No-material-improvement, tie, and escalation are ordinary outcomes.
 
-### Persistence
+### Persistence and recovery
 
-- The run can be reconstructed from files and events without a database.
+- The run reconstructs from files and events without a database.
 - Coordinator restart resumes from the latest safe checkpoint.
 - Partial writes do not appear as committed artifacts.
 - Artifact tampering is detected through hash verification.
+- Invalid epoch evidence cannot become valid during recovery.
+- Terminal business outcome remains distinct from cleanup status.
 
 ### User control
 
 - The user can inspect all evidence used for the recommendation.
-- Promotion requires explicit confirmation.
-- Patch or branch export does not overwrite the current working tree.
-- Cancellation terminates owned processes and records a durable terminal event.
+- Promotion requires an explicit, nonstale decision artifact.
+- Patch or branch export does not overwrite the active working tree.
+- Cancellation terminates owned processes or records an explicit cleanup incident.
+- No source is merged, pushed, or replaced automatically.
 
-## 17. Implementation sequence
+## 20. Implementation sequence
 
-The vertical slice should be built in this order:
+Build the vertical slice in this order:
 
-1. file and event primitives;
-2. domain entities and state reducers;
+1. canonical file, event, hash, and artifact primitives;
+2. domain entities, identifiers, and pure state reducers;
 3. authenticated bootstrap-supervisor-coordinator session;
-4. Windows process containment and cleanup;
-5. project detection and immutable source snapshots;
-6. isolated workspace preparation;
-7. sequential application launch and readiness verification;
-8. Playwright capture epoch and artifact verification;
-9. required gates;
-10. pairwise evaluator adapter and output validation;
-11. deterministic decision policy;
-12. run reconstruction and recovery;
-13. minimum local UI;
-14. patch and branch export;
-15. acceptance fixture suite.
+4. Windows process containment, output capture, endpoint ownership, and cleanup;
+5. project trust, detection, and immutable source snapshots;
+6. isolated workspace and dependency preparation;
+7. fixture, state, viewport, and interaction contracts;
+8. sequential application launch and readiness verification;
+9. Playwright stability probe, capture epoch, and artifact validation;
+10. required deterministic gates;
+11. comparison UI and human-only evidence review;
+12. pairwise evaluator adapter, order reversal, and output validation;
+13. deterministic recommendation policy;
+14. typed user decision and staleness checks;
+15. run reconstruction and recovery;
+16. patch, branch, and report export;
+17. complete acceptance and failure fixture suite.
 
 No generated-contender work should begin until this vertical slice passes its acceptance suite.
 
-## 18. Definition of done
+## 21. Definition of done
 
-The MVP is done when a user can take a real local project and a real alternative implementation through the complete golden path without hand-editing run files, manually killing descendant processes, guessing whether screenshots are comparable, or trusting an unexplained score.
+The MVP is done when a user can take a real local project and a real alternative implementation through the complete golden path without:
+
+- hand-editing canonical run files;
+- manually coordinating worktrees;
+- manually killing descendant processes;
+- guessing whether screenshots and interaction states are comparable;
+- trusting an unexplained score;
+- losing evidence after interruption;
+- confusing recommendation with adoption;
+- risking automatic modification of the accepted branch.
+
+A polished happy-path demo that omits empty/error states, critical interaction evidence, epoch invalidation, recovery, or explicit human approval is not the MVP.
