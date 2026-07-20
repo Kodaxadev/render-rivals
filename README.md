@@ -39,6 +39,7 @@ Brand exploration and visual-direction work are under [`brand/`](brand/).
 
 - [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) defines the complete desktop application surface, workflows, overlays, states, route model, and MVP priorities.
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) defines the marketing website, documentation information architecture, public proof requirements, asset inventory, routes, and delivery priorities.
+- [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) defines implementation-ready route contracts, layout zones, page templates, route guards, state handling, responsive behavior, and phased wireframe delivery.
 
 These are planning baselines rather than accepted architecture decisions. Implementation changes that affect locked runtime behavior still require specification and ADR updates.
 
