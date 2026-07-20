@@ -1,344 +1,376 @@
-# 07 — Canonical Storage, Configuration, Security, and Accounting
+# 07 — Storage Policy, Configuration, Security, and Accounting
 
-## 1. Canonical principle
+**Status:** Canonical implementation contract  
+**Filesystem authority:** `spec/11-artifact-event-and-schema-contracts.md`  
+**Shared types:** `schemas/domain-types.ts`  
+**Normalization:** `spec/12-cross-spec-normalization.md`
 
-Files are canonical. A database may index them later. Deleting index cannot destroy run record.
+## 1. Scope
 
-## 2. Project metadata
+This specification defines storage policy, configuration precedence, security boundaries, redaction, accounting, retention, and data-flow requirements.
 
-```text
-.visual-optimizer/
-  project.json
-  preferences.jsonl
-  suppressions.jsonl
-```
+It does not define a second filesystem layout. All live canonical paths and filenames come from `spec/11`.
 
-Large evidence defaults to user cache.
+## 2. Canonical principle
 
-## 3. Session storage
+Files and append-only event streams are canonical. A database may later index them, but deleting the index must leave the full run reconstructable.
 
-```text
-<cache>/visual-optimizer/sessions/<session-id>/
-  session.json
-  native-events.ndjson
-  processes/
-  runs/
-  temp/
-```
+Canonical data includes:
 
-## 4. Run storage
+- project identity;
+- resolved run configuration;
+- source snapshots;
+- semantic events;
+- artifact registrations and payloads;
+- gate results;
+- evaluator input and output;
+- evidence;
+- recommendations;
+- user decisions;
+- promotions;
+- cleanup and integrity results.
 
-```text
-runs/<run-id>/
-  manifest.json
-  events.ndjson
-  decision.json
-  metrics.json
-  accounting.json
-  cleanup.json
-  champion/
-  candidates/
-  comparisons/
-  human-ratings/
-```
+## 3. Storage roots
 
-## 5. Candidate storage
+Canonical durable storage uses the platform data roots defined by `spec/11`.
+
+The repository marker is:
 
 ```text
-candidates/<candidate-id>/
-  manifest.json
-  source.json
-  patch.diff
-  agent-events.raw
-  agent-events.ndjson
-  build/
-  tests/
-  server/
-  captures/
-  accessibility/
-  traces/
-  judge/
-  resource.json
+<repository>/.render-rivals/project.json
 ```
 
-## 6. Process storage
+The following older names are superseded and must not be implemented:
+
+- `.visual-optimizer/`;
+- `visual-optimizer/sessions/` as canonical storage;
+- session cache directories containing the only copy of run history.
+
+Disposable worktrees, browser downloads, package caches, and image-processing files may use a separate cache root.
+
+## 4. Run layout
+
+The canonical run root is:
 
 ```text
-processes/<process-id>/
-  lifecycle.json
-  stdout.bin
-  stderr.bin
-  usage.json
+<data-root>/projects/<project-id>/runs/<run-id>/
 ```
 
-## 7. Event log
+Its exact files and directories are defined only in `spec/11`.
 
-Append-only NDJSON with schema version, sequence, timestamp, session, run, type, payload.
+Older examples such as top-level `manifest.json`, `decision.json`, `metrics.json`, `accounting.json`, and `cleanup.json` are superseded. Their canonical replacements are described in `spec/12`.
 
-## 8. Recovery
+## 5. Configuration sources
 
-Recovery:
+Configuration may come from:
 
-1. validate sequence;
-2. identify incomplete phase;
-3. classify cleanup;
-4. preserve partial artifacts;
-5. invalidate bad captures;
-6. write summary.
+1. built-in defaults;
+2. user-global configuration;
+3. project configuration;
+4. run-template values;
+5. explicit CLI or dashboard overrides;
+6. session-only secret references.
 
-## 9. Atomic writes
+Resolved Run Configuration is immutable after validation.
 
-Small JSON: temp write, flush/fsync where supported, rename. Streams use explicit flush policy.
+## 6. Precedence
 
-## 10. Hashes
+Higher-precedence layers override lower-precedence layers only for fields whose schema permits override.
 
-Hash config, fixture, patch, screenshots, DOM, packet, decision, accounting. Hashes support integrity/cache invalidation, not signed attestation.
+The resolved configuration stores:
 
-## 11. Database
+- final normalized value;
+- source layer;
+- whether the value was explicit or defaulted;
+- schema version;
+- redaction classification;
+- canonical hash.
 
-No initial database. Later SQLite may index history and preferences; always rebuildable.
+Conflicting security or containment requirements fail validation rather than silently choosing the weaker value.
 
-## 12. Configuration
+## 7. Configuration format
 
-Use static JSONC:
+Project and user configuration use versioned JSONC or JSON validated by the shared schema package.
 
-```text
-visual-optimizer.config.jsonc
-```
+Rules:
 
-Human/agent readable, nonexecutable, strict validation, no YAML coercion.
+- unknown top-level fields are rejected unless namespaced extensions are allowed;
+- duplicate keys are rejected;
+- secret values are not stored in resolved canonical JSON;
+- executable commands use executable plus argument arrays;
+- shell execution requires an explicit shell executable and policy acknowledgement;
+- relative paths declare their base;
+- environment keys are individually classified.
 
-## 13. Loading
+## 8. Secret references
 
-Config loading does not execute JavaScript. Complex fixture code is separate explicitly trusted module.
+Secrets are supplied through approved references, not plaintext canonical files.
 
-## 14. Config areas
+A secret reference records:
 
-```ts
-interface ProjectConfig {
-  project: ProjectSection;
-  commands: CommandSection;
-  workspace: WorkspaceSection;
-  server: ServerSection;
-  captures: CaptureSection[];
-  gates: GateSection;
-  resources: ResourceSection;
-  agents: AgentSection;
-  judges: JudgeSection;
-  storage: StorageSection;
-  security: SecuritySection;
-}
-```
+- stable reference name;
+- provider or source class;
+- presence/absence;
+- scope;
+- redaction category;
+- whether external evaluator transmission is permitted.
 
-## 15. Commands
+Raw values are excluded from hashes where inclusion would leak them. Presence and reference identity may be hashed.
 
-Use executable, args, CWD, env allowlist, timeout, expected outputs. No implicit shell.
+## 9. Project trust
 
-## 16. Fixture module
+Before first execution, the user acknowledges that project commands run with the user's authority and are not a complete sandbox.
 
-Optional trusted file:
+Trust is invalidated or reviewed when:
 
-```text
-visual-optimizer.fixtures.ts
-```
+- repository identity changes;
+- command configuration changes materially;
+- containment capability is reduced;
+- privileged operations are introduced;
+- trust is explicitly revoked.
 
-May prepare state, mock network, reset database, login, identify state, implement custom settle.
+## 10. Path safety
 
-## 17. Workspace materials
+Every path is canonicalized before use.
 
-Declare required untracked resources. Doctor verifies in disposable worktree.
+Reject:
 
-## 18. Secret classification
+- traversal outside owned roots;
+- unsafe symlinks or junctions;
+- ambiguous case collisions;
+- NUL and invalid platform path forms;
+- project-provided absolute destinations where policy requires generated paths;
+- archive traversal during import.
 
-Credentials, personal data, API tokens, cookies, private database contents.
+Artifact serving accepts Artifact IDs, not arbitrary paths.
 
-## 19. Secret sources
+## 11. Local dashboard security
 
-Environment, declared local file, later OS secret store, one-session input.
+The dashboard:
 
-## 20. Secret rules
+- binds to `127.0.0.1` by default;
+- uses a per-session authentication token;
+- requires CSRF-safe mutation requests;
+- exposes only registered artifacts;
+- applies content-type and download headers;
+- blocks navigation or serving outside configured roots;
+- never treats browser UI connection as native supervisor authentication.
 
-Secrets absent from argv, patches, lifecycle JSON, terminal progress, dashboard responses, judge packets, exports.
+## 12. Native IPC security
 
-Raw child output may still print secrets; treat it as locally sensitive and exclude from export by default.
+Native endpoint identifiers and session nonces are passed through environment, never argv.
 
-## 21. Judge payload declaration
+The supervisor verifies:
 
-Record provider, model, screenshots, DOM/text, task brief, code excerpts, redactions, policy snapshot.
+- peer identity;
+- session nonce;
+- protocol version;
+- exact coordinator Node path;
+- containment/session membership where applicable;
+- single authenticated coordinator ownership.
 
-## 22. Local server
+## 13. Command execution
 
-Bind `127.0.0.1`, not all interfaces.
+Project and evaluator processes are launched only through the Rust supervisor.
 
-## 23. Dashboard auth
+Command records include:
 
-Random session token. Mutations require token. Short-lived URL bootstrap token may become HttpOnly cookie.
-
-## 24. Server protections
-
-- no broad CORS;
-- same-origin UI;
-- CSP;
-- path canonicalization;
-- no arbitrary local file endpoint;
-- content type validation;
-- CSRF protection;
-- per-session token.
-
-## 25. Evidence serving
+- executable identity;
+- redacted arguments;
+- working directory;
+- environment hash and redaction summary;
+- purpose;
+- resource policy;
+- process/containment identity;
+- output artifact IDs.
 
-Serve only files registered in manifest. Never accept arbitrary path.
+A stored PID is observational metadata, not durable identity.
 
-## 26. Path security
+## 14. Raw output
 
-Canonicalize roots, check containment, consider symlink traversal.
+Stdout and stderr are drained continuously by Rust into binary-safe files registered as sensitive local artifacts.
 
-## 27. Repository trust
+Raw output:
 
-Target repository executes as user. Not a sandbox.
+- may contain secrets;
+- is excluded from standard exports;
+- is not required to be UTF-8;
+- records truncation explicitly;
+- is parsed into semantic events only by versioned parsers;
+- is never silently discarded.
 
-Provide first-run warning, trust record, command preview, protected roots, later network policy.
+## 15. Artifact sensitivity
 
-## 28. Accounting package
+Sensitivity classes:
 
-```text
-packages/accounting
-```
+- `public`;
+- `project`;
+- `sensitive_local`.
 
-Owns generation, critique, selection, reversal, tie break, wall time, human time, CPU, memory, disk, vendor snapshot.
+Secret material is prohibited as a canonical artifact.
 
-## 29. Inference usage
+Sensitivity may become more restrictive automatically. Declassification requires an explicit review record.
 
-```ts
-interface InferenceUsage {
-  provider: string;
-  adapter: string;
-  model: string | null;
-  purpose: string;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  cachedInputTokens: number | null;
-  subscriptionUnits: number | null;
-  reportedCostUsd: number | null;
-  startedAt: string;
-  completedAt: string;
-  policySnapshotId: string;
-}
-```
+## 16. Redaction
 
-## 30. Experimental allocation
+Redaction occurs before structured logging, evaluator transmission, diagnostics, and standard export.
 
-```ts
-interface ExperimentAllocation {
-  generationCalls: number;
-  refinementCalls: number;
-  criticCalls: number;
-  selectorCalls: number;
-  orderReversalCalls: number;
-  tieBreakCalls: number;
-  humanComparisons: number;
-}
-```
+Supported mechanisms:
 
-## 31. Local resources
+- declared secret values;
+- secret environment keys;
+- authorization/header filtering;
+- cookie and storage filtering;
+- token-pattern matching;
+- user-defined regex rules;
+- home-directory normalization in portable diagnostics.
 
-```ts
-interface LocalResourceRecord {
-  peakMemoryMiB: number | null;
-  cpuTimeMs: number | null;
-  diskWrittenMiB: number | null;
-  wallTimeMs: number;
-  processPeak: number | null;
-}
-```
+Render Rivals does not claim to detect every arbitrary secret emitted by child code.
 
-## 32. Policy snapshot
+## 17. External evaluator data flow
 
-```ts
-interface VendorPolicySnapshot {
-  id: string;
-  provider: string;
-  capturedAt: string;
-  authenticationMode: string;
-  plan: string | null;
-  summary: string;
-  sourceReference: string | null;
-  uncertainty: string[];
-}
-```
+Before an evaluator invocation, the immutable packet records:
 
-## 33. Quality-first usage
+- provider;
+- adapter;
+- model when known;
+- artifact allowlist;
+- redactions;
+- excluded artifacts;
+- source-content policy;
+- user/project policy;
+- packet hash.
 
-No initial token cap. Accounting mandatory so later optimization can reduce candidates, critics, reversals, refinements, and ensemble size while measuring quality loss.
+The system records exactly what was sent. External evaluators cannot access arbitrary local files.
 
-## 34. Retention policy
+## 18. Accounting
 
-- manifests/decisions: retain;
-- screenshots: retain;
-- traces: configurable;
-- raw output: shorter retention;
-- worktrees: remove after export unless preserved;
-- secrets: delete after use.
+The sole canonical accounting interface is `InferenceUsage` from `schemas/domain-types.ts`.
 
-## 35. Export
+It includes:
 
-Sanitized bundle excludes secrets, env dumps, raw output by default, absolute paths where possible, private databases.
+- provider;
+- adapter;
+- model;
+- closed purpose enum;
+- start and completion timestamps;
+- nullable token counts;
+- nullable cost;
+- policy snapshot ID.
 
-## 36. Import
+Unknown values remain null. Accounting records are immutable invocation facts.
 
-Validate schema, hashes, path safety, archive traversal, provenance. Imported evidence read-only unless adopted.
+## 19. Process accounting
 
-## 37. Preferences
+Process usage may record:
 
-Append-only entries include project scope, candidates, selected/rejected characteristics, rationale, source, confidence, date. Learning deferred.
+- elapsed wall time;
+- CPU time;
+- peak memory;
+- process count;
+- bytes written to stdout/stderr;
+- termination reason;
+- resource-limit events.
 
-## 38. Suppressions
+Unavailable platform values remain unknown rather than estimated.
 
-Include fingerprint, reason, actor, scope, expiry, evidence. Cannot override protected gates during exploratory mode unless protocol says so.
+## 20. Configuration hashing
 
-## 39. Schemas
+The Run Configuration hash covers normalized, nonsecret semantics including:
 
-Use Zod internally; export JSON Schema for structured agent outputs. Do not claim public standard.
+- commands;
+- source declarations;
+- route and fixture;
+- viewports and browser policy;
+- gates;
+- factors and evaluator policy;
+- resource limits;
+- storage and retention policy;
+- export policy;
+- security policy references.
 
-## 40. Migrations
+Changing a frozen value requires a new run or superseding Run Configuration according to lifecycle policy.
 
-Every artifact has schema version. Migrations deterministic, tested, non-destructive, explicit.
+## 21. Retention
 
-## 41. Logging
+Retention classes and deletion protocol are owned by `spec/11`.
 
-Coordinator semantic logs; native raw output separate. Terminal logs are not run events.
+Policy must preserve every artifact cited by a retained recommendation, decision, or promotion.
 
-## 42. Redaction
+Raw logs, traces, and other diagnostic artifacts may have shorter retention when no retained entity references them.
 
-Declared values, token patterns, configured regexes, env-key classification. Redaction can fail; threat model states this.
+## 22. Database policy
 
-## 43. Security tests
+No database is canonical in the initial implementation.
 
-- `SEC-001`: dashboard cannot read arbitrary path.
-- `SEC-002`: mutation without token fails.
-- `SEC-003`: IPC inaccessible to another user.
-- `SEC-004`: wrong coordinator peer fails.
-- `SEC-005`: secret absent from lifecycle JSON.
-- `SEC-006`: secret excluded from export.
-- `SEC-007`: archive traversal rejected.
-- `SEC-008`: symlink escape rejected.
-- `SEC-009`: metacharacters inert.
-- `SEC-010`: cloud packet matches declaration.
+A later SQLite index may provide:
 
-## 44. Storage tests
+- search;
+- recent-run summaries;
+- dashboard projections;
+- aggregate metrics;
+- cached artifact metadata.
 
-- `STORE-001`: reconstruct after crash.
-- `STORE-002`: temp JSON does not replace valid manifest.
-- `STORE-003`: no index still preserves history.
-- `STORE-004`: hash mismatch detected.
-- `STORE-005`: invalid epoch not selectable.
-- `STORE-006`: unknown usage null.
-- `STORE-007`: cleanup persists after force.
+It must be fully rebuildable from canonical files. This section delegates persistence mechanics to `spec/11` rather than repeating them.
 
-## 45. Open items
+## 23. Import and export security
 
-- `OPEN-STORE-001`: platform cache roots.
-- `OPEN-STORE-002`: raw-output retention.
-- `OPEN-STORE-003`: export format after prototype.
-- `OPEN-STORE-004`: SQLite trigger point.
-- `OPEN-STORE-005`: cookie versus header dashboard token.
+Imports require:
+
+- checksum verification;
+- schema support;
+- archive traversal protection;
+- decompression limits;
+- provenance declaration;
+- no executable auto-run;
+- read-only status until adopted.
+
+Exports require:
+
+- allowlisted artifacts;
+- redaction report;
+- omission report;
+- checksums;
+- no raw secrets;
+- no raw process output by default;
+- no unrelated source content.
+
+## 24. Diagnostics
+
+Default diagnostic bundles include:
+
+- versions and capability report;
+- redacted resolved configuration;
+- failure records;
+- event and integrity summaries;
+- cleanup results;
+- selected structured logs;
+- artifact manifest without sensitive payloads;
+- explicit omissions.
+
+Source, screenshots, raw output, evaluator payloads, and environment values require explicit selection.
+
+## 25. Security invariants
+
+- Project code cannot select arbitrary canonical output paths.
+- Invalid or cross-run artifacts cannot enter evaluator packets.
+- External evaluator access is allowlist-based.
+- Secrets never appear in canonical resolved configuration.
+- Unknown containment capability is never represented as strong containment.
+- An optional database never becomes the only copy of a fact.
+- Standard exports are non-executable and sanitized.
+- Cleanup failure remains visible after a successful product outcome.
+
+## 26. Required tests
+
+- `.visual-optimizer` paths are rejected as canonical live storage;
+- resolved configuration records provenance and hash;
+- secret values do not appear in canonical JSON;
+- path traversal and unsafe symlink tests fail closed;
+- dashboard cannot serve unregistered paths;
+- evaluator packets contain only allowlisted artifacts;
+- `InferenceUsage` imports from `schemas/domain-types.ts`;
+- unknown usage values remain null;
+- database deletion leaves run reconstruction intact;
+- standard diagnostic export excludes raw output and source by default;
+- retained recommendation prevents deletion of cited evidence.
