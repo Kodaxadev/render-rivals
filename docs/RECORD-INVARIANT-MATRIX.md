@@ -11,6 +11,7 @@
 - Unknown measured values remain `null`; invalid values are rejected.
 - Every bound hash refers to the exact canonical input set and algorithm/version.
 - Entity ownership IDs must resolve within permitted aggregate scope.
+- Supersession and retry links remain within the same entity class and aggregate, point backward in time, and are acyclic.
 - Record-level invariants are enforced in Zod/JSON Schema-compatible validation and domain constructors/reducers.
 
 ## 2. Recommendation
@@ -26,9 +27,12 @@
 
 Additional rules:
 
+- `supersedesRecommendationId` is `null` for the first Recommendation and otherwise references the immediately superseded Recommendation in the same Run.
+- A superseding Recommendation must bind a new valid input/policy set or explicitly correct a prior invalid calculation; identical duplicate creation is rejected through operation idempotency.
 - `consideredCandidateIds` includes current plus every Candidate considered by policy, with no duplicates.
 - `gateResultIds` contains effective Results used by policy, including veto/failure Results.
 - `evidenceRecordIds` contains accepted Evidence only.
+- `reasonCodes` is nonempty, uses `RecommendationReasonCode`, and is compatible with the outcome.
 - `confidence` is finite `[0,1]` or `null`; invalid Run normally uses `null`.
 - `contender_recommended` cannot reference current Candidate.
 - `current_retained` cannot reference a Contender.
@@ -47,10 +51,12 @@ Additional rules:
 
 Rules:
 
+- `supersedesDecisionId` is `null` for the first Decision and otherwise references the prior effective Decision in the same Run.
+- Superseding a final Decision requires a nonempty rationale, current Recommendation context, and policy permission; prior history remains effective for audit but not current authorization.
 - `accept_recommendation` is invalid when Recommendation lacks selected Contender.
 - `retain_current` verifies selected ID is the Run's current Candidate.
 - declined/deferred/invalidated Decisions cannot authorize Promotion.
-- changing a final Decision requires explicit superseding Decision with reason and policy permission; history remains.
+- acknowledged warning codes must exist in the stable error-code registry.
 - Recommendation/evidence/source/policy hashes must match current bound set.
 
 ## 4. Promotion
@@ -73,17 +79,28 @@ Per kind:
 | `branch_create` | Valid nonconflicting local ref | Branch/commit manifest and verification |
 | `workspace_preserve` | Owned Workspace path retained | Preservation/ownership/cleanup policy record |
 
-Completed Promotion requires `completedAt`; nonterminal statuses require `completedAt = null`.
+Status and retry rules:
+
+- `retryOfPromotionId` is `null` for an original operation; a retry references one earlier failed/stale Promotion with the same Run, Candidate, Decision, and kind.
+- `requested`, `validating_preconditions`, `exporting`, and `verifying` require `terminalAt = null`, `completedAt = null`, and `failureCode = null`.
+- `completed` requires `terminalAt` and `completedAt`, and the two timestamps are equal; `failureCode = null`.
+- `failed` requires `terminalAt`, `completedAt = null`, and a registered `failureCode`.
+- `cancelled` requires `terminalAt`, `completedAt = null`, and no success output claim.
+- `stale` requires `terminalAt`, `completedAt = null`, and a recorded stale/precondition reason; it cannot be retried without revalidating current Decision/source context.
 
 ## 5. Export Operation
 
-- Run may be `null` for installation diagnostics/configuration template.
+- `projectId` and `runId` express scope: a Run-scoped Export has both and they must agree; a Project-scoped Export has `projectId` only; installation-scoped diagnostics/configuration may have both null.
 - Candidate/Decision are not required and are not represented by Promotion fields.
 - `sourceEntityIds` must match kind/scope and resolve.
-- `redactionPolicyId` always required, even when policy performs no substitutions.
-- output Artifacts appropriate to kind.
-- omission report required when any potentially sensitive default category is excluded or user customizes inclusion; otherwise may be null only when schema/policy proves no omission category applies.
-- completed requires `completedAt`; nonterminal requires null.
+- `redactionPolicyId` is always required, even when policy performs no substitutions.
+- output Artifacts are appropriate to kind.
+- omission report is required when any potentially sensitive default category is excluded or user customizes inclusion; otherwise it may be null only when schema/policy proves no omission category applies.
+- `retryOfExportOperationId` is `null` for an original operation; a retry references one earlier failed Export with matching kind, scope, source entities, redaction policy, and destination preconditions.
+- `requested`, `validating_preconditions`, `exporting`, and `verifying` require `terminalAt = null`, `completedAt = null`, and `failureCode = null`.
+- `completed` requires `terminalAt = completedAt` and `failureCode = null`.
+- `failed` requires `terminalAt`, `completedAt = null`, and a registered `failureCode`.
+- `cancelled` requires `terminalAt`, `completedAt = null`, and no completed-output claim.
 - report/diagnostics/Run/evidence/screenshots/config/logs never imply adoption.
 
 ## 6. Comparison
