@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 3.0  
+**Inventory format:** 3.1  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -29,8 +29,9 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 12. [`spec/12-cross-spec-normalization.md`](spec/12-cross-spec-normalization.md)
 13. [`spec/13-configuration-cli-and-local-api-contracts.md`](spec/13-configuration-cli-and-local-api-contracts.md)
 14. [`spec/14-git-source-snapshot-and-workspace-contracts.md`](spec/14-git-source-snapshot-and-workspace-contracts.md)
+15. [`spec/15-observability-diagnostics-and-telemetry-contracts.md`](spec/15-observability-diagnostics-and-telemetry-contracts.md)
 
-Specs 12–14 normalize shared vocabulary/authority, define configuration/CLI/API behavior, and lock Git/source/workspace semantics that would otherwise be left to scaffold implementers.
+Specs 12–15 normalize shared authority, lock configuration/CLI/API and Git behavior, and prevent local observability from becoming implicit remote telemetry.
 
 ## Shared schema sources
 
@@ -38,7 +39,7 @@ Specs 12–14 normalize shared vocabulary/authority, define configuration/CLI/AP
 - [`schemas/error-codes.ts`](schemas/error-codes.ts)
 - [`schemas/README.md`](schemas/README.md)
 
-These control shared IDs, enums, records, states, purposes, and stable errors. Full Zod/JSON Schema, fixtures, migrations, and compatibility tests remain scaffold work.
+These control shared IDs, enums, records, states, purposes, policy references, and stable errors. Full Zod/JSON Schema, fixtures, migrations, and compatibility tests remain scaffold work.
 
 ## Accepted ADRs
 
@@ -63,7 +64,10 @@ ADR-0011 is incorporated and now serves as history/rationale rather than active 
 - [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md)
 - [`security/THREAT-MODEL.md`](security/THREAT-MODEL.md)
 - [`docs/SCAFFOLD-DECISION-REGISTER.md`](docs/SCAFFOLD-DECISION-REGISTER.md)
+- [`docs/DEVELOPMENT-GAP-REGISTER.md`](docs/DEVELOPMENT-GAP-REGISTER.md)
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md)
+
+The gap register distinguishes remaining implementation evidence from architectural ambiguity.
 
 ## Product and public planning
 
@@ -72,13 +76,13 @@ ADR-0011 is incorporated and now serves as history/rationale rather than active 
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md)
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md)
 
-The UI/route plans expose only legal MVP controls. Marketing pages are claim-gated by implementation, package, license, and proof.
+UI/route plans expose only legal MVP controls. Marketing pages are claim-gated by implementation, package, license, and proof.
 
 ## Runtime source verification
 
 - [`sources/official-runtime-verification.md`](sources/official-runtime-verification.md)
 
-Version-sensitive claims are rechecked at scaffold and upgrades.
+Upstream documentation is separated from actual Render Rivals capability proof. Version-sensitive behavior is rechecked at scaffold and upgrades.
 
 ## Brand exploration
 
@@ -128,3 +132,7 @@ Archive never drives scaffolding.
 - package/native/browser distribution;
 - checksums/provenance/SBOM/notices;
 - tested support matrix and migration/rollback path.
+
+## Conformance note
+
+Intentional references to rejected old names or migration values exist in normalization, tests, ADR history, and archive. Future stale-token automation must use explicit path/section allowlists rather than fail on every raw string occurrence.
