@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-Render Rivals uses files and append-only streams as the source of truth. A database, search index, or UI cache may improve performance, but the complete Run remains understandable and recoverable without them.
+Render Rivals uses files and append-only streams as the source of truth. A database, index, or UI cache may improve performance, but a complete Run remains reconstructable without them.
 
 Domain meaning is defined by `spec/09`; lifecycle by `spec/10`; configuration/CLI/API by `spec/13`.
 
@@ -25,14 +25,14 @@ Disposable worktrees, browser downloads, package caches, and image-processing fi
 Rules:
 
 - source repositories are not canonical Run roots;
-- the data root is owned and writable;
+- data root is owned and writable;
 - every path is canonicalized and containment checked;
 - project strings cannot escape approved roots;
 - portable exports are separate from live storage.
 
-## 3. Repository marker
+## 3. Repository-local metadata
 
-The only required repository-local metadata is:
+Required marker:
 
 ```text
 <repository>/.render-rivals/project.json
@@ -53,6 +53,10 @@ No Run history, raw output, secrets, or large evidence is stored there.
   installation.json
   config/
     user.jsonc
+  exports/
+    <export-operation-id>/
+      export.json
+      files/
   projects/
     <project-id>/
       project.json
@@ -63,6 +67,10 @@ No Run history, raw output, secrets, or large evidence is stored there.
         <source-id>.json
       templates/
         <template-id>.json
+      exports/
+        <export-operation-id>/
+          export.json
+          files/
       runs/
         <run-id>/
           run.json
@@ -110,6 +118,10 @@ No Run history, raw output, secrets, or large evidence is stored there.
             <decision-id>.json
           promotions/
             <promotion-id>.json
+          exports/
+            <export-operation-id>/
+              export.json
+              files/
           cleanup/
             <cleanup-operation-id>.json
           artifacts/
@@ -124,50 +136,49 @@ No Run history, raw output, secrets, or large evidence is stored there.
           reports/
           tmp/
           quarantine/
-          exports/
 ```
 
-Empty directories need not exist before use.
+An Export Operation is stored under the narrowest owner scope: installation, Project, or Run. Promotion is always Run-scoped and remains under `promotions/`.
 
-`lock.json` and `tmp/` are operational, not portable canonical evidence. They remain inside the Run root so recovery can inspect them.
+Empty directories need not exist in advance. `lock.json` and `tmp/` are operational and excluded from portable evidence bundles unless needed for diagnostics.
 
-## 5. Canonical versus derived data
+## 5. Canonical versus derived
 
 Canonical:
 
-- entity JSON files;
-- project/Run semantic event streams;
-- artifact manifest and payloads;
-- process lifecycle and raw output;
-- evaluator input, raw output, validation, and accepted evidence;
-- recommendations, decisions, promotions;
+- entity JSON;
+- Project/Run event streams;
+- Artifact manifest and payloads;
+- process lifecycle/raw output;
+- evaluator input/raw/validation/accepted Evidence;
+- Recommendations, Decisions, Promotions, Export Operations;
 - cleanup, integrity, and recovery observations.
 
-Derived/rebuildable:
+Derived:
 
-- search/SQLite indexes;
-- recent lists and dashboard projections;
-- thumbnails, contact sheets, and cached image dimensions;
-- aggregate charts and metrics;
-- UI state not needed to interpret evidence.
+- SQLite/search indexes;
+- recent lists/dashboard projections;
+- thumbnails/contact sheets;
+- aggregate charts/metrics;
+- UI preferences not needed to interpret evidence.
 
-A derived projection never contains the only copy of a domain fact.
+Derived data never contains the only copy of a domain fact.
 
-## 6. JSON encoding and canonical hashing
+## 6. Encoding and hashes
 
 Canonical JSON:
 
 - UTF-8 without BOM;
-- LF endings and final newline;
+- LF and final newline;
 - RFC 8259;
-- RFC 3339 UTC timestamps with `Z`;
+- RFC 3339 UTC timestamps;
 - no duplicate keys, NaN, or infinity;
 - deterministic canonicalization for hashes;
-- no comments or trailing commas.
+- no comments/trailing commas.
 
-Configuration input may be JSONC, but resolved canonical entities are JSON.
+Input configuration may be JSONC; resolved entities are JSON.
 
-SHA-256 is encoded lowercase hexadecimal. A record states whether its hash covers raw bytes, canonical JSON bytes, or normalized manifest bytes.
+SHA-256 is lowercase hexadecimal. Records identify whether hashes cover raw bytes, canonical JSON, or normalized manifests.
 
 ## 7. Entity envelope
 
@@ -184,36 +195,28 @@ interface CanonicalEntity<T> {
 }
 ```
 
-Rules:
+Immutable entities use revision `1`; mutable summaries increment exactly once per replacement. Writers reject unknown top-level fields. Runtime validators enforce ID prefixes and ULIDs.
 
-- immutable entities use revision `1` and omit `updatedAt`;
-- mutable summaries increment revision exactly once per accepted replacement;
-- writers reject unknown top-level keys;
-- namespaced extensions cannot change core meaning;
-- IDs follow `spec/09` and runtime validators enforce prefix plus 26-character ULID.
+## 8. Schema registry
 
-## 8. Required schema registry
+Initial schemas include:
 
-Initial schema names include:
-
-- installation;
-- user/project configuration;
-- project and project event/head;
-- source snapshot;
+- installation, user/project configuration;
+- Project and Project event/head;
+- Source Snapshot;
 - Run and Run Configuration;
-- Candidate, Candidate Attempt, Workspace, Process;
-- Capture Plan, Capture Epoch, Capture;
-- Gate Definition and Gate Result;
-- Evaluation Factor, Comparison, Evaluation, Evaluation validation;
-- Evidence Record;
-- Recommendation, User Decision, Promotion;
+- Candidate, Attempt, Workspace, Process;
+- Capture Plan, Epoch, Capture;
+- Gate Definition/Result;
+- Evaluation Factor, Comparison, Evaluation, validation;
+- Evidence, Recommendation, Decision;
+- Promotion and Export Operation;
 - Artifact creation/amendment;
-- Run event and event head;
-- Cleanup result;
-- Integrity and recovery reports;
-- CLI/API envelopes where persisted as fixtures.
+- Run event/head;
+- Cleanup, Integrity, Recovery;
+- CLI/API envelopes used by fixtures.
 
-Implementation location:
+Implementation locations:
 
 ```text
 schemas/zod/
@@ -223,27 +226,19 @@ schemas/fixtures/invalid/
 schemas/migrations/
 ```
 
-Every schema has version, TypeScript type, Zod validator, generated JSON Schema, valid/invalid fixtures, migration list, and compatibility tests.
+Every schema has version, type, Zod validator, generated JSON Schema, fixtures, migration list, and compatibility tests.
 
-## 9. Run summary
+## 9. Run summary and configuration
 
-`run.json` is the latest atomic projection, not full history. It contains at minimum project/Run Configuration IDs, state, current/contender IDs, active Epoch, latest Recommendation/Decision, terminal timestamps/reasons, last checkpoint, last applied event sequence, recovery disposition, and failure summary.
+`run.json` is latest atomic projection, not history. It records Project/Configuration, state, Candidates, active Epoch, latest Recommendation/Decision, checkpoint, event sequence, recovery, and terminal/failure details.
 
-A summary is valid only when:
+It is valid only when referenced transition exists and snapshot revision/hash matches deterministic replay.
 
-- its `lastAppliedEventSequence` exists in the verified stream;
-- the referenced transition/checkpoint event is durable;
-- its revision and canonical hash match the snapshot-committed event or deterministic replay.
+`run-config.json` stores fully resolved frozen values/provenance, with secrets represented only by references and transmission policy.
 
-## 10. Immutable Run Configuration
+## 10. Semantic event streams
 
-`run-config.json` contains the fully resolved frozen values and provenance from `spec/13`, including source declarations, commands, route/origin, fixture/states/viewports/interaction, gates, factors, evaluator, resource/retry policy, storage/retention, security/redaction, export policy, and configuration hash.
-
-Secrets appear only as references and transmission policy.
-
-## 11. Semantic event stream
-
-`events.ndjson` contains one newline-terminated JSON event per line.
+Run event:
 
 ```ts
 interface RunEvent {
@@ -264,226 +259,137 @@ interface RunEvent {
 }
 ```
 
-`sequence` is a nonnegative safe integer. Writers fail before exceeding `Number.MAX_SAFE_INTEGER`; a future schema may migrate to decimal strings if ever required.
+Sequence is a safe integer; writer fails before overflow. Hash chain covers canonical event excluding `eventHash`.
 
-`eventHash` covers canonical event JSON excluding `eventHash`. The chain detects mutation, deletion, reorder, and accidental concatenation; it is not a signature.
+Project streams follow equivalent complete-line, sequence, hash, and recovery rules. Large bytes are Artifacts. Event paths are relative. Error payloads use stable codes.
 
-Event types use lowercase dotted namespaces and a versioned registry.
+Event heads store latest sequence/ID/hash, complete-line offset, length, and update time; they are rebuildable.
 
-Large bytes are Artifacts, not event payloads. Paths inside the Run are relative. Errors include stable code and human/technical summaries.
-
-## 12. Project streams
-
-`project-events.ndjson` and `run-index.ndjson` follow the same complete-line, sequence, hash, and recovery principles as Run streams, with project-scoped schemas and heads.
-
-A Run deletion or import cannot rely on a missing project index entry as proof; canonical Run directories and project events are reconciled during recovery.
-
-## 13. Event head
-
-Event-head files store latest sequence, event ID/hash, byte offset after the latest complete line, stream length, and update time.
-
-Heads are rebuildable optimizations. The stream remains canonical.
-
-## 14. Exact transition commit ordering
-
-For a state-changing command:
+## 11. Exact transition ordering
 
 1. validate command/state/revision;
-2. allocate operation and event IDs;
-3. append and fsync intent event when the operation can outlive the request;
+2. allocate operation/event IDs;
+3. append/fsync intent when operation can outlive request;
 4. perform side effect and collect observations;
-5. append and fsync completion/failure transition event;
-6. serialize the new summary snapshot with `lastAppliedEventSequence` set to that transition sequence;
-7. write sibling temp, flush/fsync, atomically replace summary, and fsync directory;
-8. append optional `snapshot.committed` observation containing snapshot revision/hash;
-9. return command result.
+5. append/fsync completion/failure transition;
+6. serialize summary with `lastAppliedEventSequence` set to transition;
+7. temp write, flush/fsync, atomic replace, directory fsync;
+8. optionally append `snapshot.committed` observation with revision/hash;
+9. return result.
 
-Recovery rules:
+Recovery:
 
-- transition event with old snapshot → replay and rewrite snapshot;
-- intent without completion → inspect operation/native facts and classify;
-- snapshot claiming nonexistent transition → quarantine snapshot and replay prior valid state;
-- no event is appended after a snapshot as the only proof of the state it contains.
+- event ahead/snapshot old → replay and rewrite;
+- intent without completion → inspect facts and classify;
+- snapshot claims nonexistent event → quarantine snapshot and replay prior state;
+- snapshot is never the sole proof of its state.
 
-This ordering replaces ambiguous event-first/snapshot-first alternatives.
+## 12. Artifact manifest and classes
 
-## 15. Artifact manifest
+`artifacts/manifest.ndjson` is append-only. Records include Artifact/Run/owner, class, path, media, length/hash, validity/sensitivity, retention, operation/creation event, redaction, Epoch/Candidate, and amendments.
 
-`artifacts/manifest.ndjson` is append-only. Creation/amendment records include:
+Classes include source; process output/lifecycle/usage; capture screenshot/DOM/accessibility/geometry/styles/console/network/interaction/metadata; gate observations; evaluation input/raw/validation/normalized; Evidence; Recommendation/Decision; Promotion outputs; Export Operation outputs; cleanup/diagnostic/integrity/recovery.
 
-- artifact ID, Run, owner, class, path, media type;
-- byte length and SHA-256;
-- validity and sensitivity;
-- retention;
-- operation ID and creation event ID;
-- redaction metadata;
-- Epoch/Candidate IDs where applicable;
-- supersession or deletion reason for amendments.
+New classes require schema registry updates.
 
-Status amendments never rewrite creation history.
+## 13. Artifact write protocol
 
-## 16. Artifact classes
+1. allocate Artifact/operation and safe path;
+2. exclusively create in same-filesystem `tmp/<operation-id>/`;
+3. stream while hashing/counting;
+4. flush/fsync/close;
+5. verify bytes/media;
+6. create destination;
+7. atomic rename and directory fsync;
+8. append/fsync Artifact record with operation;
+9. append semantic event;
+10. update owner summary through transition protocol.
 
-Initial classes include:
+Pre-rename bytes are noncanonical. Rename without manifest creates orphan reconciled only with exact operation proof; otherwise quarantine.
 
-- source manifest/patch;
-- process stdout/stderr/lifecycle/usage/endpoint observation;
-- screenshot, DOM summary, accessibility snapshot, geometry, computed styles, console, network, interaction trace, metadata, failure screenshot;
-- gate observation;
-- evaluation input, raw output, validation, normalized output;
-- evidence record;
-- recommendation/decision/report;
-- promotion patch/branch manifest;
-- cleanup, diagnostics, integrity, recovery.
+## 14. Process and evaluator bytes
 
-New classes require schema/registry documentation.
+Process directory contains canonical `process.json`, `lifecycle.json`, `usage.json`, and raw `stdout.bin`/`stderr.bin`, all registered/owned appropriately.
 
-## 17. Artifact write protocol
+Evaluator `raw-output.bin` stores exact post-transport bytes and may be invalid JSON/text/truncated. `validation.json` records parsing, schema, citations, provenance, normalization, and rejection.
 
-1. allocate Artifact and operation IDs plus safe final path;
-2. exclusively create under `tmp/<operation-id>/` on the same filesystem;
-3. stream bytes while hashing/counting;
-4. flush/fsync and close;
-5. reopen/stat and verify media-specific requirements;
-6. create destination directory;
-7. atomically rename to final path and fsync directory;
-8. append/fsync Artifact creation record with operation ID;
-9. append semantic event referencing Artifact;
-10. update owner summary through the transition protocol when required.
+Accepted Evidence cites only immutable input-manifest Artifacts.
 
-Failure before rename leaves noncanonical temp bytes. Rename without manifest creates an orphan that recovery reconciles only with exact operation proof; otherwise quarantine.
+## 15. Promotion persistence
 
-## 18. Process output
+A Promotion record:
 
-`stdout.bin` and `stderr.bin` are raw binary-safe bytes. `process.json`, `lifecycle.json`, and `usage.json` are canonical JSON.
+- is Run-scoped under `promotions/`;
+- always references authorizing Decision and selected Candidate;
+- records patch/branch/workspace kind;
+- records destination preconditions, output Artifacts, verification, status, failure, and timestamps;
+- never represents ordinary reports, diagnostics, or bundles.
 
-All are registered with process ownership and sensitivity. Raw output is excluded from standard exports and may be retention-limited only with explicit truncation/amendment records.
+## 16. Export Operation persistence
 
-## 19. Evaluator raw output
+An Export Operation record:
 
-`raw-output.bin` stores exact post-transport bytes and may contain invalid JSON, text, or truncated provider output. It is never named or parsed as canonical JSON merely because valid output is expected.
+- is stored under installation, Project, or Run scope;
+- may have no Candidate or Decision;
+- records source entity IDs, kind, redaction policy, omission report, output Artifacts, destination, verification, status, failure, and timestamps;
+- creates files only inside its generated operation directory or explicit user-selected destination after path/precondition validation;
+- never implies contender adoption.
 
-`validation.json` separately records parse, schema, citation, provenance, semantic validation, normalization, and rejection reasons.
+Run-bundle/report/evidence/screenshot/configuration/log/diagnostic output uses Export Operation.
 
-Accepted Evidence can cite only Artifacts in immutable `input-manifest.json`.
+## 17. Locks, temporary files, and quarantine
 
-## 20. Locks
+Only one coordinator mutates a Run. `lock.json` records Run, Session, identities, heartbeat, and format; file alone never proves ownership.
 
-Only one coordinator mutates a Run.
+`tmp/` is inspected before cleanup. `quarantine/` stores malformed/torn/hash-mismatched/orphan/unsafe/failed-migration content. Quarantined bytes are never normal evidence.
 
-`lock.json` records Run, Session, coordinator/native identity, acquired/heartbeat time, and format version.
+## 18. Path safety
 
-The file alone never proves ownership. Recovery verifies Session/process identity. Stale locks are not removed by age alone. UI readers do not require mutation lock. Cleanup may use a separate verified operation lock.
+Relative paths use `/`, no empty/`.`/`..`, no absolute/drive/UNC prefix, stay under owning root after canonicalization, reject disallowed symlink/junction/mount/case collisions, use generated IDs, and sanitize display names separately.
 
-## 21. Temporary and quarantine areas
+Violation is security failure.
 
-`tmp/` contains incomplete operations and is inspected before cleanup.
+## 19. Integrity and reconstruction
 
-`quarantine/` contains malformed JSON, partial streams, hash mismatches, orphan files, unsafe path content copied only when safe, partial evaluator output, and failed migration output.
+Integrity records stream/schema/manifest status, Artifact issues, checkpoint, cleanup, verifier/time.
 
-Quarantined content is never normal evidence and never silently restored.
+Recovery records verified state, interrupted operations, invalid Epochs, process facts, and permitted disposition.
 
-## 22. Path safety
+Reconstruction verifies stream/hash/schema, replays events, reconciles snapshot/entities/Artifacts/attempts/native facts, and produces Integrity/Recovery reports. Verified events take precedence.
 
-Canonical relative paths:
+## 20. Torn lines
 
-- use `/` in JSON;
-- contain no empty, `.`, or `..` segments;
-- contain no drive/UNC/absolute prefix;
-- resolve under owning root after canonicalization;
-- do not cross disallowed symlink, junction, mount, or case-collision boundaries;
-- use generated IDs for directories;
-- sanitize display names separately.
+Only complete newline-terminated lines are accepted. Partial final bytes are quarantined and truncated under recovery lock. Partial middle line is corruption. Sequence reuse occurs only when no complete event exists.
 
-Path-policy violation is security failure.
+## 21. Versioning and migration
 
-## 23. Integrity and reconstruction
+Patch = compatible clarification; minor = additive compatible change; major = incompatible meaning/shape. Unknown major is read-only.
 
-`integrity.json` records stream/schema/manifest status, artifact counts/violations, latest verified checkpoint, cleanup status, verifier version, and time.
+Migrations copy/validate/atomically adopt, record hashes/events, preserve original on failure, never rehabilitate invalid evidence/Epochs, and never infer unknown accounting.
 
-`recovery.json` records last verified state, interrupted operations, invalid Epochs, process observations, and permitted `RecoveryDisposition`.
+## 22. Redaction and sensitivity
 
-Reconstruction:
+Redaction precedes structured logs, external transmission, diagnostics, and standard export using declared values/keys, auth/cookie filtering, token patterns, user regex, and home-path normalization.
 
-1. locate Run summary/stream;
-2. verify complete lines, sequences, and hash chain;
-3. validate schema versions;
-4. replay events;
-5. compare/rebuild summary;
-6. validate entity references;
-7. apply Artifact amendments;
-8. verify checkpoint-required hashes;
-9. derive effective attempts/supersessions;
-10. reconcile native process/cleanup facts;
-11. produce integrity/recovery reports.
+Sensitivity: public, project, sensitive_local. Secret material is prohibited as canonical Artifact. Declassification requires explicit review.
 
-Verified events take precedence over a conflicting snapshot.
+## 23. Retention and deletion
 
-## 24. Incomplete stream lines
+Retention includes Run lifetime, decision/protected evidence, diagnostic-temporary, exported, explicit protection. Cited evidence cannot be deleted independently.
 
-- only complete newline-terminated lines are accepted;
-- partial final bytes are copied to quarantine then truncated under recovery lock;
-- partial middle line is corruption;
-- sequence may be reused only when no complete event exists;
-- recovery action is recorded after stream restoration.
+Whole-Run deletion requires confirmation, locks, no active ownership, Project deletion intent, atomic move to owned trash where possible, completion/tombstone, then explicit in-process/startup cleanup result. No hidden daemon is assumed.
 
-## 25. Schema versioning and migration
+Export Operation records remain according to their owner/retention policy even if an external destination is later deleted.
 
-- patch: compatible clarification without changed meaning;
-- minor: additive compatible fields/enums with capability checks;
-- major: incompatible structure or meaning.
+## 24. Portable export and import
 
-Unknown major versions are read-only.
+Portable output is produced by Export Operation and includes manifest/version, selected canonical entities, verified event/Artifact manifests, included payloads, integrity/redaction/omission reports, and checksums.
 
-Migrations:
+Default excludes source contents, raw process output, secrets, cookies/storage, absolute paths, and quarantine.
 
-- never mutate the only copy in place;
-- record input/output hashes and changed entities;
-- validate before atomic adoption;
-- preserve original on failure;
-- do not make invalid evidence valid;
-- do not resurrect invalid Epochs;
-- do not infer unknown accounting values.
+Import validates checksums, schemas, paths, decompression limits, provenance, no auto-execution, and read-only status until adoption.
 
-## 26. Redaction and sensitivity
-
-Redaction occurs before structured logs, evaluator transmission, diagnostics, and standard export using declared values/keys, authorization/cookie filtering, token patterns, user regex, and home-path normalization.
-
-Sensitivity:
-
-- `public`;
-- `project`;
-- `sensitive_local`.
-
-Secret material is prohibited as canonical Artifact. Declassification requires explicit review.
-
-## 27. Retention and deletion
-
-Retention classes include Run lifetime, decision/protected evidence, diagnostic-temporary, exported, and explicit protection.
-
-Required cited evidence cannot be deleted independently.
-
-Whole-Run deletion:
-
-1. explicit confirmation;
-2. project/Run deletion locks;
-3. verify no active ownership;
-4. append project deletion intent;
-5. atomically move Run to owned trash where possible;
-6. append project deletion completion/tombstone;
-7. delete trash through an in-process/startup cleanup operation with explicit result.
-
-No invisible background daemon is assumed.
-
-## 28. Export and import
-
-Portable export includes manifest/version, Run Configuration, selected entity files, verified event/artifact manifests, included Artifacts, integrity/redaction/omission reports, and checksums.
-
-Default excludes source contents, raw process output, secrets, cookies/storage, absolute local paths, and quarantined content.
-
-Import requires checksum/schema/path/decompression validation, provenance, no executable auto-run, and read-only status until adoption.
-
-## 29. Stable persistence errors
+## 25. Stable persistence errors
 
 At minimum:
 
@@ -504,22 +410,23 @@ At minimum:
 - `SCHEMA_MAJOR_UNSUPPORTED`
 - `MIGRATION_FAILED`
 
-## 30. Required tests
+## 26. Required tests
 
-- database/index deletion does not affect reconstruction;
+- reconstruction survives index deletion;
 - every schema has valid/invalid fixtures;
-- ID prefix/ULID validators match `spec/09` and `schemas/domain-types.ts`;
-- exact transition ordering survives crashes after every step;
-- snapshot ahead/behind event stream recovers correctly;
-- partial final line preserves earlier events;
-- middle corruption is detected;
-- process byte files and records resolve under canonical path;
-- malformed evaluator bytes remain preserved in `raw-output.bin`;
-- orphan Artifact is reconciled only with operation proof;
-- hash mismatch blocks citations/recommendation;
-- unknown major schema is read-only;
-- path traversal, junction, and case collisions fail closed;
-- standard exports exclude sensitive raw output/source;
-- cited evidence blocks selective deletion;
-- project streams and Run index rebuild/reconcile;
-- cleanup/deletion operation records exact partial results.
+- ID validators agree;
+- crash after every transition step recovers deterministically;
+- snapshot/event disagreement recovers correctly;
+- torn tail and middle corruption handled distinctly;
+- process bytes/records resolve under canonical path;
+- malformed evaluator bytes preserved;
+- orphan reconciles only with proof;
+- hash mismatch blocks citations;
+- unknown major read-only;
+- traversal/junction/case collision fail closed;
+- standard exports exclude sensitive bytes;
+- cited evidence blocks deletion;
+- Project streams/index reconcile;
+- Promotion requires Candidate/Decision;
+- report/diagnostic uses Export Operation with nullable Run/Candidate semantics;
+- cleanup/deletion/export partial results are explicit.
