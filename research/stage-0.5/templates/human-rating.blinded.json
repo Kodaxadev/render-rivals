@@ -1,0 +1,28 @@
+{
+  "schema": "render-rivals/stage-0.5-human-rating",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "presentation": {
+    "leftLabel": "A",
+    "rightLabel": "B",
+    "randomizationRecordHash": "sha256:<64 lowercase hexadecimal characters>"
+  },
+  "verdict": "unable_to_judge",
+  "confidence": null,
+  "factorNotes": {
+    "taskProductFit": "",
+    "primaryActionClarity": "",
+    "informationHierarchy": "",
+    "visualCoherence": "",
+    "responsiveQuality": "",
+    "emptyErrorQuality": "",
+    "interactionRecoveryClarity": ""
+  },
+  "protectedRegressionObservations": [],
+  "wouldAdoptPreferredImplementation": null,
+  "committedAt": "<UTC timestamp>",
+  "rater": "<actor>",
+  "selectorOutcomeVisibleBeforeCommit": false,
+  "sourceIdentityVisibleBeforeCommit": false
+}
