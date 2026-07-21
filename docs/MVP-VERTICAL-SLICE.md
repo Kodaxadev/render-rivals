@@ -3,7 +3,7 @@
 **Status:** Implementation contract  
 **Target:** First end-to-end usable alpha  
 **Primary platform:** Windows 11 x64 strong-containment reference path  
-**Depends on:** Specs 01–14, accepted ADRs, shared schemas/error codes, failure/recovery matrix, test strategy, threat model, and route wireframes
+**Depends on:** The maintained canonical specification reading order in `README.md` and `DOCUMENT-MANIFEST.md`, accepted ADRs, shared schema/error/API/Operation sources, failure/recovery matrix, test strategy, threat model, route wireframes, and the active security/storage/migration contracts
 
 ## 1. Product claim
 
@@ -134,9 +134,10 @@ Same sequence applies to both Candidates.
 
 Per state/viewport:
 
-- screenshot;
+- canonical PNG screenshot;
 - DOM summary;
-- accessibility snapshot;
+- raw Playwright ARIA YAML snapshot;
+- axe accessibility findings;
 - geometry;
 - selected computed styles;
 - console/network summaries;
@@ -146,7 +147,7 @@ Per state/viewport:
 
 Interaction additionally records ordered actions/assertions, step Captures, results, final fingerprint, console/network.
 
-Screenshot alone is incomplete.
+Screenshot alone is incomplete. ARIA snapshot is structural evidence and not a complete accessibility audit.
 
 ## 9. Comparison validity
 
@@ -355,8 +356,11 @@ Full catalog is `docs/TEST-AND-VALIDATION-STRATEGY.md`.
 
 - threat model controls implemented/tested;
 - local evaluator/Project commands presented as user-authority code, not sandboxed;
+- Session-only secret and browser-authentication-state lifecycle tested;
+- browser network controls and uncontrolled Project-process egress represented honestly;
 - diagnostic/export redaction and omissions;
 - package/native/browser integrity;
+- migration/backup/rollback safety tested before persistent-format upgrades;
 - license status honest;
 - public OSS claims blocked until real license/security/contribution policies.
 
