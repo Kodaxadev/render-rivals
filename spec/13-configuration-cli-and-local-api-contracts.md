@@ -2,7 +2,10 @@
 
 **Status:** Canonical implementation contract  
 **Scope:** Configuration files/precedence, CLI behavior, exit codes, local API, SSE, idempotency, revision preconditions, safe mode, Promotion, and Export Operation  
-**Shared types:** `schemas/domain-types.ts`
+**Shared domain types:** `schemas/domain-types.ts`  
+**Shared API types:** `schemas/api-types.ts`  
+**Dashboard authentication:** `spec/16-dashboard-session-authentication-and-pairing.md`  
+**Operation envelopes and pagination:** `spec/17-local-api-envelopes-operations-and-pagination.md`
 
 ## 1. Purpose
 
@@ -242,23 +245,27 @@ In `--json`, stdout contains one final document. Progress is NDJSON on stderr or
 
 Recommendation outcome is read from canonical JSON, not exit code.
 
-## 11. Local dashboard server
+## 11. Local dashboard server and pairing
 
-Serves loopback:
+The coordinator binds loopback only and chooses a randomized Session host and available port:
 
 ```text
-http://127.0.0.1:<port>/
+http://rr-<random-session-label>.localhost:<port>/
 ```
 
 Requirements:
 
-- random available port unless configured;
-- Session token never URL/query/log/page source;
-- HttpOnly SameSite=Strict cookie;
-- Origin verification and CSRF-safe custom mutation header;
-- restrictive CSP;
-- Artifact serving by registered ID only;
-- closes with coordinator.
+- bind only verified loopback addresses supported by the doctor fixture;
+- do not fall back to a shared `127.0.0.1` cookie origin when randomized `.localhost` behavior fails;
+- print the randomized origin and one-time pairing code to the terminal;
+- never auto-launch the user's browser in MVP;
+- `/session/pair` is the only pre-authentication browser route;
+- Session token never appears in URL/query/log/page source;
+- paired Session uses host-only HttpOnly SameSite=Strict cookie;
+- authenticated mutations require Host, Origin, and CSRF-safe custom-header validation;
+- use restrictive CSP;
+- serve Artifacts by registered ID only under spec/21;
+- close server with coordinator.
 
 ## 12. API version
 
@@ -270,9 +277,18 @@ Local product API, not public interoperability guarantee.
 
 ## 13. Query routes
 
+Pre-authentication route:
+
+```text
+POST /api/v1/session/pair
+```
+
+Authenticated query routes:
+
 ```text
 GET /api/v1/session
 GET /api/v1/capabilities
+GET /api/v1/operations/:operationId
 GET /api/v1/projects
 GET /api/v1/projects/:projectId
 GET /api/v1/runs
@@ -287,11 +303,14 @@ GET /api/v1/artifacts/:artifactId/content
 GET /api/v1/diagnostics
 ```
 
-Queries label derived projections explicitly.
+Collection queries use the cursor and bounded-page contract from spec/17. Queries label canonical versus derived projections explicitly.
 
 ## 14. Command routes
 
+Authenticated mutation routes:
+
 ```text
+POST /api/v1/session/logout
 POST /api/v1/projects/register
 POST /api/v1/projects/:projectId/doctor
 POST /api/v1/runs/create
@@ -308,30 +327,40 @@ POST /api/v1/cleanup
 
 No MVP pause endpoint. Run-scoped export uses `POST /api/v1/exports` with Run source entity; it is not nested as Promotion.
 
-## 15. Command envelope
+## 15. Command and operation envelopes
+
+`schemas/api-types.ts` is the sole canonical type authority. The serialized shapes are:
 
 ```ts
-interface CommandRequest<T> {
-  operationId: string;
-  expectedRevision: number | null;
-  command: string;
-  payload: T;
+interface ApiCommandRequest<TPayload> {
+  schema: "render-rivals/api-command-request";
+  schemaVersion: "1.0.0";
+  operationId: OperationId;
+  expectedRevision: Revision | null;
+  command: ApiCommandName;
+  payload: TPayload;
 }
 
-interface CommandAccepted {
-  operationId: string;
+interface ApiCommandAccepted {
+  schema: "render-rivals/api-command-accepted";
+  schemaVersion: "1.0.0";
+  ok: true;
   accepted: true;
-  currentRevision: number;
-  statusUrl: string;
+  operationId: OperationId;
+  command: ApiCommandName;
+  acceptedAt: CanonicalUtcTimestamp;
+  targetEntityId: string | null;
+  currentRevision: Revision | null;
+  statusPath: `/api/v1/operations/${string}`;
 }
 ```
 
-Acceptance means durable intent, not completed side effect.
+Acceptance means durable intent, not completed side effect. Clients poll `statusPath` or subscribe to relevant SSE notifications, then read canonical state.
 
 ## 16. Idempotency and conflicts
 
-- operation ID required for mutation;
-- repeated same ID/payload returns result;
+- Operation ID required for mutation;
+- repeated same ID/payload returns the same accepted or terminal result;
 - changed payload under same ID rejected;
 - expected revision protects stale clients;
 - revision/state/operation/destination conflict → `409`;
@@ -407,11 +436,16 @@ Changing sealed source, fixture, gates, factors, evaluator policy, protected dim
 - no-material-improvement exit `0`;
 - interrupted exit `5`;
 - stale revision `409`;
-- operation idempotency and changed replay rejection;
+- Operation idempotency and changed replay rejection;
+- accepted response conforms exactly to `schemas/api-types.ts` and its `statusPath` resolves;
+- pre-authentication pairing is limited to `/session/pair`;
+- logout invalidates the paired Session;
+- route inventory matches specs 16 and 17;
+- collection pagination is bounded and cursor-stable;
 - SSE resume/refetch after gap;
 - raw bytes absent from SSE;
 - safe mode blocks execution;
 - re-evaluation creates new Run/Epoch;
 - report export works without Candidate/acceptance;
 - patch/branch/workspace command fails without nonstale Decision;
-- Promotion and Export Operation status URLs resolve to different entity schemas.
+- Promotion and Export Operation status paths resolve to different entity schemas.
