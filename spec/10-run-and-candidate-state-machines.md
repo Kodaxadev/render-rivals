@@ -1,85 +1,74 @@
 # 10 — Run and Candidate State Machines
 
 **Status:** Canonical implementation contract  
-**Scope:** Authoritative lifecycle states, transitions, ownership, checkpoints, retries, interruption, cancellation, and recovery  
-**Shared types:** `schemas/domain-types.ts`  
-**Session/run integration:** `spec/12-cross-spec-normalization.md`
+**Shared states and enums:** `schemas/domain-types.ts`  
+**Session integration:** `spec/02-runtime-and-bootstrap.md` and `spec/12-cross-spec-normalization.md`  
+**Failure behavior:** `docs/FAILURE-RECOVERY-MATRIX.md`
 
 ## 1. Purpose
 
-Render Rivals coordinates untrusted child processes, browser capture, durable files, evaluator work, and explicit user decisions. Every state transition is represented by a durable event and reflected in an atomic summary snapshot.
+Render Rivals coordinates untrusted child processes, browser capture, durable files, evaluator work, explicit decisions, and non-destructive exports. Every domain transition is represented by durable semantic events and reflected in an atomic summary snapshot.
 
-The UI requests commands and renders durable state. It never assigns domain state directly.
+The UI and CLI request commands. They never assign domain state directly.
 
 ## 2. State authority
 
 ### Coordinator
 
-The TypeScript coordinator owns domain transitions for:
+Owns domain transitions for:
 
 - Run;
 - Candidate and Candidate Attempt;
 - Candidate Workspace;
 - Capture Plan, Capture Epoch, and Capture;
 - Gate Result;
-- Evaluation;
+- Evaluation and Evidence;
 - Recommendation creation;
 - User Decision recording;
 - Promotion.
 
 ### Supervisor
 
-The Rust supervisor owns observed native facts:
+Owns native observations:
 
-- process launch accepted or rejected;
-- containment assignment;
-- process exit;
-- process-tree cleanup;
+- managed root-process launch/rejection;
+- containment membership;
+- process exit and cleanup;
 - endpoint ownership;
-- signal receipt;
+- terminal/signal receipt;
 - resource-limit breach;
-- native IPC and session lifecycle.
+- native IPC and Session lifecycle.
 
-The coordinator may not invent a native success it has not observed.
-
-### UI
-
-The UI may request start, cancel, retry, decide, or export commands. Command acknowledgment is not completion.
+Coordinator cannot invent native success it has not observed.
 
 ## 3. Session and Run separation
 
 Session state and Run state are separate.
 
-A supervisor Session may host multiple sequential Run operations. A durable Run may survive one Session and resume under another.
+A supervisor Session may host multiple sequential Run operations. A durable Run may survive one Session and resume under another. `recoverable` and safe mode are not Run states; recovery is represented by `RecoveryDisposition` and safe mode by Session capability.
 
-Session states such as `authenticating_coordinator` or `draining` do not belong to `RunState`. `recoverable` is not a Run state; recovery is represented by `RecoveryDisposition`.
+## 4. Command transaction and idempotency
 
-## 4. Transition transaction
+A side-effecting command:
 
-A side-effecting transition follows:
+1. validates authentication, command schema, expected revision, and current state;
+2. allocates `operationId` and intent event;
+3. durably appends intent where required;
+4. performs the side effect through the owning subsystem;
+5. records native/browser/provider observations;
+6. appends a durable completion or failure event;
+7. atomically writes the summary snapshot referencing the completion sequence;
+8. returns the recorded result.
 
-1. validate command, expected state, and revision;
-2. allocate operation/event identity;
-3. append durable intent when required;
-4. atomically write the requested state/checkpoint;
-5. perform the side effect;
-6. record supervisor/browser/provider observation;
-7. append completion or failure event;
-8. atomically write resulting state and checkpoint.
+Rules:
 
-Requested, started, observed, completed, and failed are distinct facts.
+- same operation ID plus same canonical payload returns the recorded result;
+- same operation ID plus changed payload is rejected;
+- a failed semantic retry creates a new attempt/operation ID;
+- process identity is never inferred from PID alone;
+- command acceptance is not completion.
 
-## 5. Idempotency
-
-Every retryable command has an operation ID.
-
-- Completed operation repeated with same ID returns recorded result.
-- In-progress operation repeated with same ID attaches to the existing operation.
-- Failed semantic retry creates a new attempt ID unless failure was transport-only.
-- Export retries verify destination preconditions before writing.
-- Process launch retries never rely on stored PID alone.
-
-## 6. Run state machine
+## 5. Run state machine
 
 `RunState` is imported from `schemas/domain-types.ts`:
 
@@ -112,95 +101,121 @@ exporting -> completed | awaiting_decision | failed | cancelled | interrupted
 interrupted -> validating | preparing | capturing | gating | evaluating | awaiting_decision | failed | cancelled
 ```
 
-Terminal states are `completed`, `failed`, and `cancelled`. Retrying terminal work creates a superseding Run.
+Terminal states are `completed`, `failed`, and `cancelled`. Terminal work never reopens; changed or retried terminal work creates a superseding Run.
 
-## 7. Draft and validation
+## 6. Draft and validation
 
-`draft` permits changes to source inputs, route, fixture, states, interactions, commands, gates, factors, evaluator, limits, and display metadata.
-
-Transition to `validating` requires minimum complete inputs.
+`draft` permits edits to source inputs, route, fixture, states, interaction, commands, gates, factors, evaluator policy, limits, and display metadata.
 
 Validation checks:
 
 - project trust and identity;
 - source stability;
-- configuration resolution;
-- platform capability;
-- supervisor session;
-- storage admission;
-- command and path safety;
-- route/origin policy;
-- evaluator availability or approved human-only mode;
-- gate/factor semantics;
-- runtime limits.
+- configuration precedence and schema;
+- platform/runtime capability;
+- authenticated supervisor Session;
+- storage/resource admission;
+- command/path safety;
+- route/origin/fixture semantics;
+- evaluator or approved human-only mode;
+- gate dependencies and factor policy.
 
-Successful validation seals immutable Run Configuration and Source Snapshots, then enters `ready`.
+Success seals immutable Run Configuration and Source Snapshots, then enters `ready`.
 
-## 8. Ready and preparing
+After sealing, source/configuration change cannot transition back to `draft`. It requires a superseding Run.
 
-`ready` is a durable pause point with no candidate process required.
+## 7. Ready and preparing
+
+`ready` is a durable pause point with no active candidate process.
 
 `preparing` covers:
 
-- run directory allocation;
-- candidate workspace materialization;
-- workspace verification;
+- Run directory allocation;
+- workspace materialization and verification;
 - dependency preparation;
-- optional build/test preparation;
+- pre-capture build/test gates;
 - browser runtime verification;
 - Capture Plan creation;
-- strict port allocation.
+- port planning.
 
-Exit requires verified ready workspaces, committed Capture Plan, and no unexpected preparation process.
+Exit to `capturing` requires:
 
-## 9. Capturing
+- qualified current workspace;
+- every contender either prepared or terminally ineligible from pre-capture failure;
+- committed Capture Plan;
+- browser/runtime availability;
+- no unknown active preparation process.
+
+A pre-capture contender failure does not fail the Run when the current implementation remains qualified. It becomes a terminal Candidate Attempt and may lead to deterministic retention.
+
+## 8. Capturing
 
 Rules:
 
-- at most one Capture Epoch is active;
-- candidate workloads are sequential in the MVP;
-- current stability probe runs before selection captures;
-- current and contender receive the complete required matrix;
-- fresh browser contexts isolate candidates;
-- browser crash/disconnect invalidates the complete epoch;
-- invalid epoch artifacts remain diagnostic only;
-- retry creates a new epoch and recaptures all required candidates.
+- at most one active Capture Epoch;
+- one browser process per Epoch;
+- candidate workloads sequential in MVP;
+- current stability samples precede selectable capture;
+- current and every capture-capable contender receive the frozen matrix;
+- fresh contexts isolate samples/candidates;
+- invalid Epoch artifacts remain diagnostic only;
+- Epoch retry recaptures current plus every still-participating contender.
 
-Exit to `gating` requires one sealed valid epoch with every required artifact verified.
+A candidate-local failure follows `spec/05`:
 
-## 10. Gating
+- preserve diagnostics;
+- use bounded local retry;
+- terminally fail/invalidate that Candidate Attempt after exhaustion;
+- preserve valid evidence belonging to other candidates;
+- do not invalidate the Epoch unless environment continuity or comparability was compromised.
 
-Required and advisory gates are reduced from append-only Gate Result attempts.
+Exit to `gating` requires:
 
-Outcomes:
+- a sealed valid Epoch for the current implementation;
+- every Candidate has either a complete verified capture set in that Epoch or a terminal local failure/pre-capture failure result;
+- no active candidate/browser write operation;
+- artifact/event integrity through the capture checkpoint.
 
-- current invalid → deterministic `invalid_run` Recommendation or terminal failure according to policy;
-- contender ineligible with qualified current → deterministic `current_retained` Recommendation without aesthetic evaluator;
-- both eligible with valid comparison → `evaluating`;
-- integrity/security failure → failed or interrupted recovery path.
+The Run does not require a failed contender to have a complete capture matrix before gating.
 
-When a deterministic Recommendation is created during gating, the Run enters `awaiting_decision`.
+## 9. Gating
 
-## 11. Evaluating
+Gate Results are append-only attempts grouped by phase:
 
-The coordinator:
+- pre-capture;
+- runtime/capture;
+- post-capture evidence.
 
-- builds immutable comparison packets;
-- verifies allowed artifacts and hashes;
+Effective outcomes:
+
+- current invalid → `invalid_run` Recommendation when evidence supports an auditable invalid result, otherwise terminal failure;
+- contender ineligible with qualified current → `current_retained` Recommendation without aesthetic evaluator;
+- current and contender eligible with valid Comparison → `evaluating`;
+- no eligible contender → deterministic `current_retained`;
+- integrity/security ambiguity → failed/interrupted recovery path.
+
+A deterministic Recommendation created during gating moves the Run to `awaiting_decision`.
+
+## 10. Evaluating
+
+Coordinator:
+
+- builds immutable allowlisted comparison packets;
+- verifies artifacts, hashes, eligibility, and validity;
 - invokes evaluator attempts;
-- stores raw output;
+- stores raw output before normalization;
 - validates schema, provenance, citations, factor coverage, and confidence;
-- performs order reversal where configured;
+- performs order reversal;
 - creates immutable Evidence Records;
-- applies deterministic recommendation policy.
+- applies deterministic Recommendation policy.
 
-Exit requires a valid Recommendation using one of the canonical five outcomes.
+Exit requires a valid Recommendation using the canonical five outcomes.
 
-## 12. Awaiting decision
+## 11. Awaiting decision
 
-No candidate or browser process should remain unless explicitly retained in a separate supervised preview operation.
+No candidate/server/browser process remains unless an explicit read-only preview operation is separately supervised.
 
-Allowed decision commands use `UserDecisionAction`:
+Allowed `UserDecisionAction` values:
 
 - `accept_recommendation`;
 - `retain_current`;
@@ -211,18 +226,18 @@ Allowed decision commands use `UserDecisionAction`:
 
 Behavior:
 
-- `accept_recommendation` may authorize `exporting` when the Recommendation selects a contender;
-- `retain_current` completes without contender export;
-- `decline_recommendation` completes or returns to an allowed review flow without adopting the recommendation;
-- `select_other_eligible_candidate` is rejected in the one-contender MVP unless a later mode supplies another eligible Candidate;
-- `defer` records a Decision and remains `awaiting_decision`;
-- `invalidate_run` records the Decision and completes with invalidated disposition.
+- accept may authorize `exporting` when a contender is selected;
+- retain completes without contender export;
+- decline completes without adoption unless policy keeps review open;
+- select-other is invalid in one-contender MVP;
+- defer records Decision and remains awaiting decision;
+- invalidate records Decision and completes with invalidated reason.
 
-`exported_without_acceptance` is not a valid action.
+Export is never represented as a User Decision action.
 
-## 13. Exporting
+## 12. Exporting
 
-Promotion types in the MVP:
+Promotion kinds:
 
 - patch export;
 - local branch creation;
@@ -231,51 +246,40 @@ Promotion types in the MVP:
 
 Preconditions:
 
-- nonstale authorizing User Decision;
-- eligible selected Candidate where applicable;
+- nonstale authorizing Decision;
+- selected eligible Candidate where applicable;
 - source/recommendation/evidence/policy hashes match;
 - destination policy passes;
-- active working tree will not be overwritten.
+- active working tree is not overwritten;
+- exact output can be verified idempotently.
 
 Success enters `completed`. Destination conflicts return to `awaiting_decision`. Integrity failures enter `failed`.
 
-## 14. Terminal states
+## 13. Terminal states
 
 ### Completed
 
-A completed Run has:
-
-- terminal event and summary;
-- no active epoch;
-- Recommendation or explicit terminal reason;
-- User Decision where required;
-- sealed artifact manifest;
-- integrity report;
-- cleanup result or explicit cleanup incident.
+Has terminal event/summary, no active Epoch, Recommendation or explicit terminal reason, required Decision, sealed artifact manifest, integrity report, and cleanup result/incident.
 
 Completed does not imply contender recommendation or export.
 
 ### Failed
 
-Used when the current attempt cannot safely continue or recover.
-
-It records failure code, phase, technical artifact, retained evidence, recovery advice, and cleanup status.
+Records stable failure code, phase, retained evidence, technical artifact, recovery advice, and cleanup status.
 
 ### Cancelled
 
-Cancellation completes only after intent, process cleanup attempt, epoch invalidation, partial-artifact quarantine, terminal event, and summary are durable.
-
-Cleanup failure remains visible.
+Requires durable cancellation intent, cleanup attempt, active Epoch invalidation, partial-artifact quarantine, terminal event, and summary. Cleanup failure remains visible.
 
 ### Interrupted
 
-Used when authority is lost before terminal transition, including coordinator/session crash, OS shutdown, power loss, or stale active snapshot.
+Used when authority is lost before terminal transition. Recovery derives a disposition from verified events, artifacts, checkpoints, and native observations.
 
-Recovery derives disposition from verified events, artifacts, checkpoints, and native observations.
+## 14. Candidate and Candidate Attempt states
 
-## 15. Candidate state machine
+Candidate summary exposes effective status. Every retry/materialization/capture cycle creates a Candidate Attempt so history is never overwritten.
 
-Candidate summary states:
+Attempt states:
 
 - `registered`;
 - `materializing`;
@@ -294,28 +298,24 @@ Candidate summary states:
 - `cancelled`;
 - `cleaned`.
 
-Allowed flow:
-
 ```text
 registered -> materializing
 materializing -> workspace_ready | failed | cancelled
 workspace_ready -> installing | building | ready | failed | cancelled
 installing -> building | ready | failed | cancelled
 building -> ready | failed | cancelled
-ready -> starting | cancelled
+ready -> starting | ineligible | failed | cancelled
 starting -> serving | failed | cancelled
 serving -> capturing | failed | cancelled
-capturing -> captured | failed | cancelled
+capturing -> captured | ineligible | failed | cancelled
 captured -> gating | failed
 gating -> eligible | ineligible | failed
 eligible | ineligible | failed | cancelled -> cleaned
 ```
 
-A new epoch creates a new Candidate Attempt while preserving prior attempt history.
+A contender may become ineligible before capture from source/build/gate failure. A current attempt cannot be treated as retainable when its qualification fails.
 
-## 16. Workspace state machine
-
-States:
+## 15. Workspace states
 
 - `allocated`;
 - `materializing`;
@@ -327,11 +327,9 @@ States:
 - `cleanup_failed`;
 - `quarantined`.
 
-Only verified ready workspaces execute commands. A workspace outside the owned root is rejected and not automatically deleted.
+Only verified `ready` workspaces execute commands. Unsafe-root workspaces are rejected and not automatically deleted.
 
-## 17. Process state machine
-
-States:
+## 16. Process states
 
 - `launch_requested`;
 - `starting`;
@@ -344,20 +342,11 @@ States:
 - `cleanup_failed`;
 - `identity_lost`.
 
-`running` requires supervisor observation and containment verification. On recovery, unverifiable identity becomes `identity_lost`.
+`running` requires supervisor observation and containment verification. Recovery maps unverifiable identity to `identity_lost`.
 
-## 18. Capture Epoch state machine
+## 17. Capture Epoch states
 
-States:
-
-- `planned`;
-- `opening`;
-- `active`;
-- `sealing`;
-- `valid`;
-- `invalidating`;
-- `invalid`;
-- `failed`.
+`CaptureEpochState` is imported from `schemas/domain-types.ts`:
 
 ```text
 planned -> opening
@@ -367,44 +356,33 @@ sealing -> valid | invalidating | failed
 invalidating -> invalid
 ```
 
-Invalid triggers include browser crash/disconnect, context loss, environment mismatch, source mutation, artifact corruption, capture-plan mismatch, and origin/ownership violation.
+Invalidate on browser crash/disconnect/identity loss, context isolation leak, fixture/environment change, source mutation, Capture Plan mismatch, unsafe origin/ownership violation, or unscoped artifact corruption.
+
+Candidate-local page/readiness/interaction failure does not alone invalidate the Epoch.
 
 Invalid never returns to valid.
 
-## 19. Capture and Gate Result states
+## 18. Capture and Gate Result states
 
-Capture states:
+Capture:
 
 - `planned`, `navigating`, `settling`, `capturing`, `writing`, `verifying`, `valid`, `invalid`, `failed`.
 
-A Capture becomes valid only after every required artifact is atomically committed and verified.
-
-Gate Result states:
+Gate Result:
 
 - `pending`, `running`, `passed`, `failed`, `error`, `skipped`.
 
-Retries create new superseding attempts. `skipped` never satisfies a required gate.
+A Capture becomes valid only after required artifacts commit and verify. Gate retries create superseding attempts. `skipped` never satisfies a required gate.
 
-## 20. Evaluation states
+## 19. Evaluation, Recommendation, Decision, Promotion
 
-- `pending`;
-- `input_preparing`;
-- `ready`;
-- `running`;
-- `output_received`;
-- `validating`;
-- `completed`;
-- `rejected`;
-- `failed`;
-- `cancelled`.
+Evaluation states:
 
-Rejected output remains stored but cannot create Evidence or Recommendation.
+- `pending`, `input_preparing`, `ready`, `running`, `output_received`, `validating`, `completed`, `rejected`, `failed`, `cancelled`.
 
-## 21. Recommendation
+Rejected output remains stored but creates no accepted Evidence or Recommendation.
 
-Recommendation is created atomically and does not transition internally.
-
-Its exact outcomes are imported from `RecommendationOutcome`:
+Recommendation is immutable and uses:
 
 - `contender_recommended`;
 - `current_retained`;
@@ -412,38 +390,19 @@ Its exact outcomes are imported from `RecommendationOutcome`:
 - `human_review_required`;
 - `invalid_run`.
 
-A later valid evaluation creates a superseding Recommendation while retaining history.
+User Decisions are immutable append-only facts. A superseding Decision requires explicit reason and nonstale Recommendation context.
 
-## 22. User Decision
+Promotion states:
 
-User Decisions are append-only facts using the canonical six actions.
+- `requested`, `validating_preconditions`, `exporting`, `verifying`, `completed`, `failed`, `cancelled`, `stale`.
 
-A deferred decision may be followed by another decision. Reversing a final decision requires an explicit superseding Decision with reason and nonstale Recommendation context.
-
-## 23. Promotion state machine
-
-States:
-
-- `requested`;
-- `validating_preconditions`;
-- `exporting`;
-- `verifying`;
-- `completed`;
-- `failed`;
-- `cancelled`;
-- `stale`.
-
-A failed Promotion may be retried with a new Promotion ID. Matching already-created output may satisfy an idempotent retry after verification.
-
-## 24. Checkpoints
-
-Canonical checkpoints:
+## 20. Checkpoints
 
 - `validated`;
 - `prepared`;
 - `current_stability_checked`;
 - `current_captured`;
-- `contender_captured`;
+- `candidate_capture_attempts_resolved`;
 - `valid_epoch_sealed`;
 - `gates_resolved`;
 - `evaluation_input_committed`;
@@ -455,72 +414,69 @@ Canonical checkpoints:
 
 A checkpoint is valid only when referenced events and artifacts verify.
 
-## 25. Recovery
+## 21. Recovery targets
 
-On startup for each nonterminal Run:
+On startup:
 
 1. acquire recovery lock;
-2. verify event stream sequence/hash chain;
-3. compare snapshot revision to replayed events;
-4. inspect temporary/quarantined files;
-5. obtain supervisor session/containment observations;
-6. verify process identity, never PID alone;
-7. verify last checkpoint and artifacts;
-8. invalidate epochs whose browser continuity cannot be proven;
-9. derive `RecoveryDisposition`;
-10. append recovery assessment;
-11. perform or present the permitted action.
+2. verify event stream/hash chain and snapshot revision;
+3. inspect temp/quarantine;
+4. obtain native Session/process observations;
+5. verify process identity and latest checkpoint artifacts;
+6. invalidate Epochs whose browser continuity cannot be proven;
+7. derive `RecoveryDisposition`;
+8. append recovery assessment;
+9. perform/present the permitted action.
 
 Typical targets:
 
 - before validation → draft/validating;
-- after validation → preparing;
-- partial epoch → new epoch;
-- valid epoch → gating;
-- resolved gates → evaluating or awaiting decision;
+- sealed configuration with drift → superseding Run;
+- partial preparation → preparing;
+- partial Epoch → new Epoch;
+- valid Epoch → gating;
+- resolved gates → evaluating/awaiting decision;
 - valid Recommendation → awaiting decision;
-- valid Decision → pending export or completion;
-- terminal outcome with cleanup failure → cleanup only.
+- valid Decision → export/completion;
+- terminal result with cleanup failure → cleanup only.
 
-## 26. Retry policy
+## 22. Retry and cancellation
 
-- source mutation: no automatic retry;
-- install/build: none by default unless explicitly transient;
-- readiness: repeated probes inside one attempt;
-- browser launch: one bounded retry;
-- epoch restart: bounded by frozen policy;
-- artifact write: one retry only before canonical registration;
-- evaluator transport: bounded retries with identical packet hash;
-- invalid evaluator output: corrective retry only when adapter explicitly supports it;
-- export destination conflict: no automatic overwrite.
+Retry policy follows frozen Run Configuration and failure matrix. Every retry preserves prior attempts.
 
-Every retry preserves prior attempts.
+Cancellation:
 
-## 27. Invariants
+1. durable request;
+2. stop scheduling;
+3. graceful termination;
+4. bounded wait;
+5. containment termination;
+6. ownership/endpoint verification;
+7. active Epoch invalidation;
+8. partial-artifact quarantine;
+9. cleanup result;
+10. terminal state.
 
-- terminal Run states never reopen;
-- state revisions increase monotonically;
-- durable events drive transitions;
-- evaluator never runs on invalid comparison evidence;
-- Recommendation uses only canonical outcomes;
-- User Decision uses only canonical actions;
-- export is never represented as a User Decision action;
-- invalid epochs never become valid;
-- mixed-epoch evidence cannot support selection;
-- browser continuity is never inferred after restart;
-- cleanup status remains visible;
-- user-visible progress derives from durable state, not timers.
+There is no MVP pause/suspend transition.
 
-## 28. Required tests
+## 23. Invariants and tests
 
-- every allowed and forbidden Run transition;
-- deterministic current-retained path for ineligible Contender;
-- invalid baseline creates `invalid_run` or terminal failure per policy;
+Implementation enforces and tests:
+
+- all allowed/forbidden Run transitions;
+- terminal Runs never reopen;
+- revisions increase monotonically;
+- events drive transitions;
+- contender pre-capture/local failure can lead to deterministic retention;
+- current qualification failure cannot lead to retention;
+- candidate-local page crash does not invalidate Epoch;
+- browser disconnect invalidates full Epoch;
+- no evaluator runs on invalid/ineligible evidence;
 - all five Recommendation outcomes serialize;
-- all six User Decision actions serialize;
-- `exported_without_acceptance` is rejected;
-- partial epoch recovers by complete recapture;
-- valid sealed epoch resumes at gating;
-- stale decision blocks Promotion;
-- PID reuse produces `identity_lost`;
-- terminal Run with cleanup incident remains terminal and visibly unhealthy.
+- all six Decision actions serialize;
+- export is not a Decision action;
+- invalid Epoch never becomes valid;
+- mixed-Epoch evidence cannot support selection;
+- stale sealed inputs require superseding Run;
+- cleanup status remains visible;
+- user progress derives from durable state, not timers.
