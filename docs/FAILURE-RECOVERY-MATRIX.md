@@ -1,356 +1,284 @@
 # Render Rivals Failure and Recovery Matrix
 
 **Status:** Implementation and product-behavior contract  
-**Scope:** Detection, classification, automatic response, user communication, retained artifacts, capture validity, resume point, and terminal behavior
+**Scope:** Stable failure classification, automatic response, evidence impact, permitted recovery, retry limits, cleanup, and user messaging  
+**State authority:** `spec/10-run-and-candidate-state-machines.md`  
+**Storage authority:** `spec/11-artifact-event-and-schema-contracts.md`
 
 ## 1. Principles
 
-Render Rivals executes untrusted project code and produces evidence that may influence source changes. Recovery must prefer losing work over reusing questionable evidence.
-
-The system follows these rules:
-
 1. Never claim success from an unobserved side effect.
-2. Never trust a stored PID as proof of process identity.
-3. Never reuse captures after browser continuity is lost.
-4. Never evaluate corrupt, missing, stale, or cross-epoch artifacts.
-5. Never silently change source inputs after validation.
-6. Never overwrite canonical files with partial writes.
-7. Never hide incomplete process cleanup behind a successful product outcome.
-8. Never automatically retry an operation that could duplicate or overwrite user output.
-9. Preserve failed attempts and raw output for diagnosis.
-10. Make recovery actions explicit when user intent or evidence validity is uncertain.
+2. Never trust PID alone as process identity.
+3. Never reuse evidence from an invalid Capture Epoch.
+4. Never invalidate an entire Epoch for a candidate-local failure unless comparison continuity was compromised.
+5. Never evaluate corrupt, missing, stale, cross-Run, or ineligible evidence.
+6. Never change sealed source/configuration inputs in place.
+7. Never expose partial canonical files.
+8. Never hide incomplete cleanup behind successful product outcome.
+9. Never automatically retry an operation that could duplicate or overwrite user output.
+10. Preserve failed attempts and raw bytes for diagnosis.
+11. Prefer a conservative unusable/interrupted result over optimistic reuse.
 
 ## 2. Failure classes
 
-| Class | Meaning | Default behavior |
+| Class | Meaning | Default response |
 |---|---|---|
-| `user_correctable` | Configuration, source, or destination needs user action | Return to editable or decision state |
-| `retryable_transient` | Same immutable input may safely be retried | Bounded automatic or manual retry |
-| `epoch_invalidating` | Capture comparability can no longer be trusted | Invalidate full epoch and recapture all candidates |
-| `candidate_ineligible` | Contender completed enough to prove a required gate failure | Retain evidence, block recommendation |
-| `run_terminal` | Current Run cannot safely continue | Cleanup and fail Run |
-| `security_critical` | Ownership, containment, path, or integrity boundary violated | Stop scheduling, isolate, cleanup, fail, surface incident |
-| `cleanup_incident` | Business work ended but owned resources may remain | Surface persistent system warning until verified |
+| `user_correctable` | Draft input or destination requires correction | Return to editable state before sealing, otherwise create superseding Run |
+| `retryable_transient` | Identical immutable input may safely retry | Bounded new attempt |
+| `candidate_local` | One Candidate Attempt failed without wider environment corruption | Retry/fail that attempt; preserve other valid evidence |
+| `epoch_invalidating` | Browser/environment comparability cannot be trusted | Invalidate full Epoch and recapture participants |
+| `candidate_ineligible` | Required gate proves contender cannot advance | Retain evidence and current implementation path |
+| `run_terminal` | Qualified current or integrity needed to continue is unavailable | Fail or produce auditable `invalid_run` |
+| `security_critical` | Ownership, containment, path, authentication, or integrity boundary violated | Stop scheduling, isolate, cleanup, fail closed |
+| `cleanup_incident` | Product outcome exists but owned resources may remain | Persistent health warning and cleanup-only operation |
 
 ## 3. Recovery dispositions
 
-- `resume_from_checkpoint`: continue after the latest verified checkpoint;
-- `retry_current_phase`: repeat the current operation with a new attempt ID;
-- `restart_capture_epoch`: invalidate and recapture current plus contender;
-- `await_user_correction`: preserve state and request a corrected value;
-- `create_superseding_run`: terminalize this Run and start a new Run from valid inputs;
-- `cannot_recover`: fail and require diagnosis;
-- `cleanup_only`: no business work resumes; only owned-resource cleanup continues.
+Uses `RecoveryDisposition`:
 
-## 4. User-message structure
+- `resume_from_checkpoint`;
+- `retry_current_phase`;
+- `restart_capture_epoch`;
+- `await_user_correction`;
+- `create_superseding_run`;
+- `cannot_recover`;
+- `cleanup_only`.
+
+## 4. User-message contract
 
 Every surfaced failure includes:
 
-- plain-language title;
-- what Render Rivals observed;
-- what was affected;
-- whether evidence remains valid;
-- what was retained;
-- recommended next action;
-- stable error code;
-- expandable technical details and logs.
-
-Do not expose a raw stack trace as the primary message.
-
-## 5. Startup and session failures
-
-| Failure | Detection | Automatic action | Evidence impact | User action / recovery |
-|---|---|---|---|---|
-| Native supervisor binary missing | Bootstrap cannot resolve verified binary | Stop before session creation | None | Repair/reinstall; `SUPERVISOR_BINARY_MISSING` |
-| Supervisor checksum mismatch | Download/package hash differs | Quarantine binary; do not execute | None | Reinstall from trusted release; security-critical |
-| Supervisor fails to start | Child launch error or startup timeout | Capture bootstrap diagnostics; no retry by default | None | Retry after correcting installation |
-| IPC endpoint creation fails | Supervisor native observation | Cleanup partial endpoint and session | None | Retry session; fail if repeated |
-| IPC authentication fails | Nonce/session proof rejected | Close connection; terminate untrusted peer | None | Restart full session; security-critical if repeated |
-| Coordinator fails to start | Supervisor observes launch failure | Retain stderr; cleanup session | None | Repair Node/runtime configuration |
-| Bootstrap-supervisor version incompatible | Handshake version range mismatch | Stop before project execution | None | Update/downgrade compatible components |
-| Second coordinator attempts same Run | Run lock and live session verify owner | Reject second writer | None | Attach read-only or close first session |
-| Stale lock with no live session | Lock lease expired and supervisor confirms absence | Acquire recovery lock; assess Run | Existing valid checkpoints retained | Resume according to recovery assessment |
-| Lock identity cannot be verified | Supervisor session unavailable or ambiguous | Do not remove lock automatically | Evidence retained, Run unavailable | User chooses diagnostic recovery after warning |
-
-## 6. Project and configuration failures
-
-| Failure | Detection | Automatic action | Evidence impact | User action / recovery |
-|---|---|---|---|---|
-| Project path missing | Validation stat fails | Return to draft | None | Relink project path |
-| Project path moved | Fingerprint mismatch, old path absent | Search recent parent only when safe; never guess final link | Prior runs unaffected | Confirm new root |
-| Unsupported package manager | Detection/config validation | Return to draft | None | Supply explicit commands or use supported manager |
-| Development command absent | Resolved config incomplete | Return to draft | None | Enter command |
-| Invalid target route | URL/origin policy validation | Return to draft | None | Correct route |
-| Factor weights do not sum to 1 | Config schema validation | Return to draft | None | Correct weights |
-| Evaluator unavailable | Adapter capability check | Return to draft or ready-with-warning only if evaluation deferred | None | Configure available evaluator |
-| Data root not writable | Preflight write test | Stop validation | None | Choose writable location |
-| Insufficient projected disk | Capacity preflight | Warn or block according to threshold | None | Free space or reduce retention |
-| Platform containment below required level | Capability report | Block strong-mode run; do not downgrade silently | None | Change policy or use supported platform |
-| Secret reference unresolved | Config resolution | Return to draft without logging value | None | Provide secret through allowed mechanism |
-| Unknown major config schema | Reader validation | Open read-only | None | Migrate with supported version |
-
-## 7. Source and snapshot failures
-
-| Failure | Detection | Automatic action | Epoch impact | Recovery |
-|---|---|---|---|---|
-| Current repository dirty when clean required | Git validation | Return to draft | None | Commit, stash, or explicitly include changes |
-| Contender ref not found | Git/ref validation | Return to draft | None | Select valid ref |
-| Current and contender resolve to same content | Manifest hashes equal | Warn and block meaningless run by default | None | Select distinct contender |
-| Source changes during snapshot | Manifest differs between scan boundaries | Abort snapshot attempt | None | Retry snapshot after files settle |
-| Source changes after validation, before materialization | Revalidation mismatch | Mark source stale; do not use | No active epoch | Create new snapshot; restart validation |
-| Source changes after candidate launch | Workspace/source provenance mismatch | Stop candidate; security/integrity failure | Invalidate active epoch | New Run or new snapshot |
-| Symlink escapes allowed source boundary | Canonical path check | Reject snapshot/workspace | None | Remove link or explicitly change policy |
-| Protected path changed | Source diff policy gate | Candidate becomes ineligible | Epoch may remain valid for diagnosis | Keep current or provide corrected contender |
-| Lockfile missing or changed unexpectedly | Snapshot/workspace verification | Fail workspace verification | None | Recreate snapshot |
-| Patch does not apply cleanly | Workspace materialization | Candidate attempt fails | None | Supply corrected patch |
-| Workspace manifest differs from source snapshot | Hash verification | Quarantine workspace | None | Rematerialize; fail if repeated |
-
-## 8. Workspace and dependency failures
-
-| Failure | Detection | Automatic action | Evidence impact | Recovery |
-|---|---|---|---|---|
-| Workspace path outside owned root | Canonical path check | Stop immediately; do not delete external path | None | Security-critical failure |
-| Workspace creation fails | Filesystem error | Cleanup partial temp directory | None | Retry manually after correcting storage |
-| Dependency install exits nonzero | Supervisor exit observation | Store stdout/stderr; no automatic retry | Candidate not captured | Correct contender or command; superseding Run |
-| Dependency install times out | Runtime limit | Graceful then forceful termination | Candidate not captured | Increase limit or fix install |
-| Package script spawns stubborn descendants | Containment cleanup verification | Kill containment boundary | None unless epoch active | Retry only after cleanup verifies |
-| Dependency cache corruption | Known tool output plus repeatable failure | Do not delete global cache automatically | None | User clears cache or selects isolated install |
-| Build exits nonzero | Process exit | Store logs; candidate fails | Candidate ineligible/failed | Correct source and create new Run |
-| Build succeeds but expected output absent | Post-build assertion | Mark build attempt failed | None | Correct build configuration |
-| Build modifies protected source inputs | Pre/post manifest diff | Stop candidate; quarantine workspace | Invalidate epoch if launched | Correct build behavior |
-| Disk full during install/build | Write error or capacity monitor | Terminate candidate; cleanup partial owned files | None unless captures exist | Free disk; retry preparation |
-
-## 9. Process and containment failures
-
-| Failure | Detection | Automatic action | Epoch impact | Recovery |
-|---|---|---|---|---|
-| Process launch rejected | Supervisor API result | Record launch failure | None | Correct command/path |
-| Process launches outside containment | Membership verification fails | Terminate process immediately | Invalidate active epoch | Security-critical; fail Run |
-| PID reused during recovery | Native identity mismatch | Mark stored process `identity_lost` | Invalidate epoch if continuity needed | Cleanup by containment; restart phase |
-| Development process exits before readiness | Exit observation | Stop readiness polling | Current failure: Run fails; contender: ineligible/failed | Correct source/config |
-| Development process exits during capture | Exit observation | Stop browser work; preserve diagnostics | Epoch cannot become valid | New epoch after correction |
-| Resource limit exceeded | Supervisor native limit event | Terminate owned process tree | Invalidate active epoch | Increase limit or correct candidate |
-| Endpoint owned by unexpected process | Native endpoint inspection | Do not navigate; terminate candidate if owned conflict | Invalidate active epoch | Resolve port conflict; security-critical if impersonation suspected |
-| Port already occupied by unrelated process | Preflight/ownership check | Select another allowed port when config permits | None | Automatic retry with new port or user correction |
-| Child escapes strong boundary | Endpoint/process inspection finds attributable escaped child | Stop all scheduling; cleanup | Invalidate epoch | Security-critical terminal failure |
-| Graceful termination ignored | Grace timeout | Force terminate containment boundary | Active epoch invalid | Continue cleanup; record forceful termination |
-| Forceful cleanup cannot verify empty boundary | Native verification failure | Mark cleanup incident | Evidence retained but system health degraded | Diagnostics and manual cleanup required |
-| Supervisor crashes while children run | IPC loss plus OS observations on restart | Recovery supervisor claims owned boundary where possible | Active epoch invalid | Cleanup-only, then resume from safe checkpoint |
-
-## 10. Readiness and local-origin failures
-
-| Failure | Detection | Automatic action | Epoch impact | Recovery |
-|---|---|---|---|---|
-| Readiness timeout | Poll deadline | Capture final logs and optional diagnostic screenshot | Epoch fails/incomplete | Increase timeout or fix app |
-| HTTP endpoint responds but process ownership fails | Endpoint inspection | Reject endpoint | Invalidate epoch | Resolve conflicting service |
-| Route returns fatal status | Navigation response policy | Gate failure or candidate failure per config | Epoch may continue for diagnostics but cannot validate candidate | Correct route/app |
-| Redirect leaves allowed local origin | Navigation policy | Abort navigation | Invalidate epoch | Correct app or origin policy |
-| TLS/local certificate error | Browser navigation error | Fail route readiness | Epoch incomplete | Configure supported local URL |
-| Readiness selector never appears | Poll timeout | Save failure screenshot/DOM | Candidate gate fails | Correct selector or app |
-| Readiness passes then root disappears | Capture-time assertion | Capture invalid | Epoch may fail | Fix unstable app and recapture |
-| Network dependency unavailable | Browser/network observation | Record failed requests; apply configured gate | Depends on required gate | Restore dependency or provide deterministic fixture |
-
-## 11. Browser and capture failures
-
-| Failure | Detection | Automatic action | Epoch impact | Recovery |
-|---|---|---|---|---|
-| Browser launch fails | Playwright launch rejection | One bounded retry with same version | Epoch opening fails | Repair browser bundle |
-| Browser crashes | Process/disconnect event | Stop all capture work | Invalidate full epoch | Start new browser and recapture all candidates |
-| Browser disconnects | Playwright disconnect | Stop and seal diagnostics | Invalidate full epoch | Start new epoch |
-| Context identity lost | Registered context unavailable/mismatch | Abort | Invalidate full epoch | Start new epoch |
-| Page crash | Page crash event | Save available diagnostics | Invalidate full epoch in MVP | Start new epoch after correction |
-| Navigation timeout | Playwright timeout | Save diagnostics | Epoch incomplete | Correct app or timeout; new epoch |
-| Fonts fail readiness | `document.fonts.ready` timeout | Apply configured failure policy; MVP fails capture | Epoch incomplete | Fix fonts or explicitly change policy |
-| Settle period never stabilizes | Mutation/layout policy timeout | Mark capture unstable | Epoch cannot validate | Fix animation/streaming behavior |
-| Screenshot API fails before commit | Capture error | One retry within same page only when browser continuity intact | Epoch remains active if retry succeeds | Otherwise invalidate/restart epoch |
-| Screenshot write fails | Atomic artifact protocol error | Quarantine temp file | Epoch incomplete | Free storage; new epoch unless retry before candidate teardown is safe |
-| Screenshot hash mismatch | Verification | Quarantine artifact | Invalidate epoch | New epoch |
-| DOM summary serialization fails | Browser or writer error | Retain screenshot diagnostic | Required capture incomplete | New epoch after fix |
-| Console summary missing | Writer/instrumentation error | Required capture incomplete | Epoch invalid/incomplete | New epoch |
-| Viewport differs from plan | Metadata verification | Reject capture | Invalidate epoch | New epoch |
-| Browser version changes mid-run | Runtime fingerprint mismatch | Abort | Invalidate epoch | Start new epoch with pinned browser |
-| Current captured, then contender capture fails | Candidate/browser failure | Preserve current diagnostics | Epoch not valid | Correct cause and recapture both |
-| Coordinator crashes after current capture | Recovery finds no provable browser continuity | Cleanup browser | Invalidate epoch | Recapture current and contender |
-| Coordinator crashes after valid epoch sealed | Verify epoch and artifact hashes | Do not recapture | Epoch remains valid | Resume gating |
-
-## 12. Gate failures
-
-| Failure | Detection | Automatic action | Evidence impact | Recovery |
-|---|---|---|---|---|
-| Required gate condition fails | Gate result `failed` | Mark contender ineligible | Captures remain valid evidence of failure | Create current-retained recommendation |
-| Advisory gate fails | Gate result `failed` | Record warning | Evaluation may proceed | Surface limitation |
-| Gate implementation throws | Gate result `error` | One retry only if declared safe | Required gate blocks eligibility | Fix gate/runtime or retry attempt |
-| Gate cites missing artifact | Result validation | Reject result as error | Candidate not eligible | Repair artifact/re-run epoch |
-| Gate config changed after run start | Config hash mismatch | Reject changed definition | Existing results remain tied to old config | New Run required |
-| Current reference fails required gate | Effective current eligibility false | Do not compare quality | No valid recommendation against broken reference | Fail Run or require new current snapshot |
-| Retried gate conflicts with prior result | Supersession validation | Use explicit latest completed attempt only | Prior attempt retained | Surface retry history |
-
-## 13. Evaluator failures
-
-| Failure | Detection | Automatic action | Evidence impact | Recovery |
-|---|---|---|---|---|
-| Evaluator command fails to launch | Supervisor result | Store adapter diagnostics | No recommendation | Retry after correcting adapter |
-| Evaluator times out | Runtime deadline | Terminate evaluator process | No accepted evidence | One bounded retry with immutable input |
-| Evaluator transport disconnects | Adapter protocol | Preserve partial raw output in quarantine | No accepted evidence | Retry new Evaluation attempt |
-| Output is not valid JSON | Parser | Store raw output, mark rejected | None accepted | Corrective retry only if adapter supports it |
-| Output schema invalid | Schema validator | Mark rejected with field errors | None accepted | New attempt |
-| Factor missing | Semantic validation | Reject output | None accepted | New attempt |
-| Confidence outside `[0,1]` | Semantic validation | Reject output | None accepted | New attempt |
-| Citation not in input manifest | Citation validator | Reject output | None accepted | Security/integrity failure for attempt |
-| Cited artifact missing or hash changed | Integrity validation | Reject output and mark artifact incident | Existing evaluation unusable | Repair from valid source or new epoch |
-| Evaluator references external unstored evidence | Output validation/rationale policy | Reject or require human review according to policy | Not reproducible | New attempt with constrained adapter |
-| Prompt injection-like instructions in page content alter evaluator format | Schema/provenance validation or explicit adapter defense | Reject malformed output; retain diagnostics | None accepted | Harden adapter; no blind retry |
-| Aggregate confidence below threshold | Decision policy | Produce human-review-required | Evidence remains valid but insufficient | Human chooses or runs new evaluation |
-| Evaluator contradicts required gate | Decision policy | Gate wins; contender cannot be recommended | Evidence retained as conflicting | Surface contradiction |
-| Evaluator output accepted, coordinator crashes before recommendation | Recovery verifies immutable output | Re-run deterministic policy only | Evidence valid | Resume evaluating |
-
-## 14. Recommendation and decision failures
-
-| Failure | Detection | Automatic action | Evidence impact | Recovery |
-|---|---|---|---|---|
-| Deterministic policy throws | Coordinator error | Preserve validated evaluation | Evidence valid | Retry policy calculation after fix/restart |
-| Reproducibility hash mismatch | Recalculation | Reject recommendation | Evidence may remain valid | Recompute from canonical inputs; investigate code/version |
-| Recommendation references ineligible contender | Invariant check | Reject recommendation; fail phase | Evidence retained | Fix policy implementation |
-| UI closes while awaiting decision | Session loss | No mutation | Recommendation valid | Reopen directly to decision page |
-| Duplicate accept command | Same operation ID | Return recorded decision | None | No duplicate decision/export |
-| Conflicting accept and decline commands | Revision/operation precondition | First durable command wins; reject stale command | None | Show current decision history |
-| Recommendation superseded before decision | New evaluation/recommendation | Mark prior recommendation superseded | Prior evidence retained | User decides on latest recommendation |
-
-## 15. Promotion and export failures
-
-| Failure | Detection | Automatic action | Evidence impact | Recovery |
-|---|---|---|---|---|
-| Patch generation fails | Exporter error | Store logs; no partial canonical export | Recommendation unaffected | Retry new Promotion attempt |
-| Patch destination exists | Exclusive create/precondition | Do not overwrite | None | Choose new destination |
-| Branch name already exists | Git preflight | Do not modify existing branch | None | Choose another name |
-| Project working tree changed since decision | Precondition hash mismatch | Block branch/export action that assumes prior state | Evidence remains tied to old snapshot | Review changes or export standalone patch |
-| Git branch creation partially succeeds | Git observation | Verify branch ref target | None | Record completed if exact target; otherwise fail and request cleanup |
-| Export write interrupted | Atomic write protocol | Quarantine temp output | None | Retry |
-| Exported file hash mismatch | Verification | Mark Promotion failed; quarantine | Recommendation unaffected | Retry |
-| Remote push requested | Unsupported in MVP | Reject command | None | User pushes manually |
-| Merge requested | Unsupported/non-goal | Reject command | None | Use patch or local branch |
-| Coordinator crashes after export before record | Recovery inspects destination and operation manifest | Adopt only when identity/hash/preconditions exactly match | None | Complete record or quarantine ambiguous output |
-
-## 16. Storage and integrity failures
-
-| Failure | Detection | Automatic action | Evidence impact | Recovery |
-|---|---|---|---|---|
-| Data root disappears | Filesystem operation | Stop scheduling and terminate active work safely | Active epoch invalid/incomplete | Restore storage; verify integrity |
-| Disk fills during canonical write | Write failure | Abandon temp; do not expose partial canonical file | Depends on artifact | Free disk; retry safe phase |
-| Atomic rename unsupported/fails | Filesystem result | Do not fall back to unsafe overwrite | No canonical commit | Choose supported data root |
-| Partial final event line | Recovery scan | Quarantine partial bytes and truncate under lock | Prior complete events valid | Resume from last complete event |
-| Event sequence gap | Recovery verification | Open Run read-only; stop mutation | Evidence cannot be fully trusted | Diagnose/restore backup; cannot auto-repair |
-| Event hash mismatch | Recovery verification | Quarantine Run from mutation | Evidence integrity compromised | Restore or export diagnostics only |
-| Run snapshot ahead of event stream | Revision/sequence comparison | Rebuild from verified events; quarantine snapshot | Event-backed evidence may remain valid | Write repaired snapshot through recovery event |
-| Event stream ahead of snapshot | Replay | Rebuild snapshot | Evidence valid if artifacts verify | Resume |
-| Canonical artifact exists without manifest record | Recovery scan | Move to quarantine | Not usable | Reconcile only with matching operation/event proof |
-| Manifest record exists but file missing | Integrity scan | Mark Artifact missing | Any citation invalid | Recreate through new epoch/evaluation; no silent repair |
-| Artifact hash mismatch | Integrity scan | Mark corrupt; quarantine payload | Citations invalid | New capture/evaluation |
-| Unknown major entity schema | Reader | Read-only | Existing bytes retained | Use compatible migration tool |
-| Migration fails | Migration validation | Preserve original; delete/quarantine output | Original remains canonical | Fix migrator |
-| Backup/restore introduces path changes | Import validation | Rebind only through explicit import provenance | Evidence content may remain valid | Create imported Run identity |
-
-## 17. Application, coordinator, and OS interruption
-
-| Interruption point | Recovery assessment | Safe resume point |
-|---|---|---|
-| Before configuration sealed | Discard incomplete draft write; keep UI draft backup if valid | `draft` |
-| After validation checkpoint | Verify snapshots/config | `ready` or `preparing` |
-| During workspace materialization | Remove/quarantine partial workspace | Restart `preparing` |
-| After prepared checkpoint | Verify workspaces | New capture epoch |
-| During current capture | Browser continuity cannot be proven after restart | New capture epoch |
-| Between current and contender capture | Same | New capture epoch |
-| During contender capture | Same | New capture epoch |
-| After valid epoch sealed | Verify artifacts/hashes | `gating` |
-| During gates | Preserve completed attempts | Resume missing gates |
-| After gates resolved | Verify effective results | `evaluating` or eligibility recommendation |
-| During evaluator run | Reattach only with verified process/operation identity; otherwise terminate | New Evaluation attempt |
-| After raw evaluator output | Validate stored raw output | Continue validation |
-| After recommendation | Verify reproducibility hash | `awaiting_decision` |
-| After user decision | Verify decision event | Export or complete |
-| During export | Inspect exact destination and operation manifest | Adopt exact result or retry new Promotion |
-| After terminal event, before cleanup summary | Run business outcome terminal; cleanup assessment pending | `cleanup_only` |
-
-## 18. Cleanup matrix
-
-| Resource | Normal cleanup | Failure behavior |
-|---|---|---|
-| Install/build process | Terminate after exit observation | Verify boundary empty |
-| Development server | Graceful request, then containment kill | Persistent cleanup incident if unverifiable |
-| Browser | Close contexts/browser, then process cleanup | Active epoch invalidated |
-| Evaluator process | Terminate after result or timeout | Raw partial output quarantined |
-| Temporary artifact files | Delete after operation | Quarantine if ownership/path uncertain |
-| Candidate workspace | Retain or delete by policy after processes stop | `cleanup_failed`; retry later |
-| Port reservation | Release after owning process exit | Inspect listener ownership |
-| Run lock | Release after final snapshot and event flush | Stale-lock recovery protocol |
-
-## 19. Automatic retry limits
-
-Default MVP policy:
-
-- browser launch: 1 retry;
-- screenshot call before artifact commit: 1 retry while browser continuity remains intact;
-- evaluator transport/timeout: 1 retry with same immutable input;
-- event or artifact write: retry only when no canonical commit occurred and storage is healthy;
-- port selection: up to 3 allowed ports when dynamic selection is enabled;
-- readiness polling: repeated polls within one configured deadline;
-- build/install: 0 automatic retries;
-- invalid evaluator output: 0 blind retries;
-- export destination conflict: 0 automatic retries;
-- security-critical failure: 0 retries.
-
-## 20. No-reuse rules
-
-The following are never reused after the stated failure:
-
-- any capture from an invalid epoch;
-- a workspace with manifest mismatch;
-- evaluator output with invalid citations;
-- an artifact with hash mismatch;
-- a process identity that cannot be verified;
-- a Run Configuration changed after sealing;
-- a Source Snapshot whose source changed;
-- partial export output without exact operation proof.
-
-## 21. Product-state requirements
-
-Every failure state must expose:
-
-- phase and affected candidate;
-- retained valid checkpoint;
-- whether current and contender captures are still comparable;
+- stable code and plain-language title;
+- exact observation and affected entity;
+- phase and attempt;
+- evidence validity and Epoch effect;
+- retained artifacts/checkpoint;
 - cleanup status;
-- available action: retry, restart epoch, edit configuration, create new Run, export diagnostics, or abandon;
-- links to relevant event and log ranges.
+- automatic retries already used;
+- one recommended permitted action;
+- expandable technical details and linked logs/events.
 
 A generic “Something went wrong” page is nonconforming.
 
-## 22. Acceptance tests
+## 5. Startup and Session
 
-The failure system is accepted only when automated fixtures demonstrate:
+| Code | Failure | Automatic response | Recovery |
+|---|---|---|---|
+| `BOOT_NATIVE_MISSING` | Native package absent | Stop before Session | Repair installation |
+| `BOOT_NATIVE_INTEGRITY` | Native checksum/metadata mismatch | Quarantine; do not execute | Reinstall trusted release |
+| `BOOT_NODE_UNSUPPORTED` | Bootstrap Node unsupported | Stop | Use pinned Node line |
+| `BOOT_EXACT_NODE_MISMATCH` | Rust verifies different Node path/version | Terminate startup | Repair bootstrap/runtime |
+| `SESSION_ENDPOINT_FAILED` | IPC endpoint cannot be secured/created | Cleanup partial Session | Retry fresh Session once after cause fixed |
+| `SESSION_AUTH_FAILED` | Nonce/peer/PID/Node/protocol mismatch | Reject peer; cleanup | Security-critical; restart after diagnosis |
+| `SESSION_PROTOCOL_INCOMPATIBLE` | Major mismatch/required capability absent | Stop before project commands | Upgrade/downgrade compatible components |
+| `SESSION_COORDINATOR_CRASH` | Authenticated coordinator exits unexpectedly | Cleanup Session payload; active Run interrupted | New Session recovery |
+| `SESSION_BOOTSTRAP_LOST` | Liveness EOF | Emergency cleanup | Recover Run later |
+| `SESSION_SAFE_MODE_UNAVAILABLE` | Native/IPC startup failed | Do not fake safe mode | Print installation diagnostics and exit |
 
-- browser disconnect invalidates current and contender captures;
-- coordinator crash after a valid epoch resumes at gates without recapture;
-- coordinator crash mid-epoch forces complete recapture;
-- stubborn descendants are terminated by the supervisor boundary;
-- PID reuse is not treated as process continuity;
-- disk-full simulation never leaves a partial canonical artifact;
-- partial NDJSON final line is safely recovered;
-- middle-stream event corruption is detected and not auto-repaired;
-- invalid evaluator citations cannot produce a recommendation;
-- duplicate decision commands are idempotent;
-- branch destination conflicts never overwrite existing branches;
-- source mutation after validation blocks continuation;
-- cleanup failure remains visible after cancellation;
-- completed runs reconstruct without a database.
+## 6. Project and configuration
 
-## 23. Escalation rule
+| Code | Failure | Automatic response | Recovery |
+|---|---|---|---|
+| `PROJECT_PATH_MISSING` | Registered source absent | Mark project unavailable | Explicit relink after identity check |
+| `PROJECT_IDENTITY_MISMATCH` | Marker/fingerprint conflict | Block commands | Adopt/move explicitly or create new Project |
+| `PROJECT_NOT_TRUSTED` | Trust absent/revoked | Block project execution | Review commands and accept trust |
+| `CONFIG_SCHEMA_INVALID` | JSONC/schema/semantic failure | Keep draft | Correct input |
+| `CONFIG_SECURITY_CONFLICT` | Layer weakens mandatory security/capability | Fail validation | Resolve conflicting layer |
+| `CONFIG_SECRET_MISSING` | Required secret reference unresolved | Block before launch | Bind secret for Session |
+| `CONFIG_STORAGE_ADMISSION` | Data root unavailable or reserve fails | Stop scheduling | Repair/select storage |
+| `CONFIG_CAPABILITY_BLOCKED` | Platform below frozen minimum | Block Run | Use supported platform or create new policy/Run |
+| `CONFIG_SEALED_CHANGED` | Source/fixture/gates/factors/policy changed after seal | Mark current Run stale | `create_superseding_run` |
 
-When the implementation cannot determine whether evidence or ownership remains valid, it must choose the more conservative state:
+## 7. Source and workspace
 
-- evidence becomes unusable;
-- active work stops;
-- resources are cleaned where ownership is proven;
-- ambiguous external resources are not deleted;
-- the Run becomes interrupted or failed;
-- the user receives a diagnostic path rather than an optimistic resume button.
+| Code | Failure | Epoch effect | Recovery |
+|---|---|---|---|
+| `SOURCE_UNSTABLE_DURING_SNAPSHOT` | Files change while snapshot sealing | None | Retry after source settles |
+| `SOURCE_CHANGED_AFTER_SEAL` | Manifest differs after validation | Invalidate active Epoch if started | Superseding Run with new Source Snapshot |
+| `SOURCE_PROTECTED_PATH` | Contender changes protected path | Candidate local/ineligible | Retain current or new contender/Run |
+| `SOURCE_DEPENDENCY_POLICY` | Package/lockfile policy violated | Candidate local/ineligible | New contender/Run |
+| `SOURCE_SYMLINK_ESCAPE` | Link/junction escapes approved root | Security critical | Reject source/workspace |
+| `WORKSPACE_CREATE_FAILED` | Materialization filesystem failure | None | Retry after storage correction |
+| `WORKSPACE_MANIFEST_MISMATCH` | Materialized bytes differ from snapshot | Candidate local; quarantine workspace | Rematerialize once, then superseding Run |
+| `WORKSPACE_OUTSIDE_ROOT` | Workspace canonicalizes outside cache root | Security critical | Reject; do not delete external path |
+| `DEPENDENCY_FAILED` | Install exits/times out | Candidate local | No automatic retry unless classifier proves transient |
+| `BUILD_FAILED` | Build/output assertion fails | Current: terminal; contender: ineligible | Current requires baseline recovery; contender retains current |
+| `WORKSPACE_UNEXPECTED_MUTATION` | Command modifies disallowed input | Candidate local/security depending path | Quarantine; new source/Run |
+
+## 8. Process, containment, ports, readiness
+
+| Code | Failure | Epoch effect | Recovery |
+|---|---|---|---|
+| `PROCESS_LAUNCH_REJECTED` | Native validation/spawn fails | Candidate local if candidate-scoped | Correct command/path/policy |
+| `PROCESS_CONTAINMENT_FAILED` | Managed root/descendant not in required boundary | Invalidate active Epoch; security critical | Cleanup and fail reference Run |
+| `PROCESS_IDENTITY_LOST` | Recovery cannot prove recorded process | Invalidate Epoch if continuity required | Treat process absent/unowned; never kill by PID alone |
+| `PROCESS_RESOURCE_LIMIT` | Hard limit crossed | Candidate local unless wider storage/session issue | New Run with changed limits/source |
+| `OUTPUT_DURABILITY_FAILED` | Rust cannot preserve required output | Stop affected process; possibly Session-wide | Repair storage and recover |
+| `PORT_COLLISION` | Selected port owned by unrelated process | None | Try up to 3 allowed ports |
+| `LISTENER_OWNER_MISMATCH` | Endpoint belongs outside candidate group | Candidate local/security | Stop candidate; never kill unrelated process |
+| `LISTENER_OWNER_UNAVAILABLE` | Platform cannot verify | None if frozen policy permits limitation | Mark limited or block according to policy |
+| `SERVER_EXITED_EARLY` | Process exits before readiness/capture | Candidate local | Bounded retry only if transient |
+| `READINESS_TIMEOUT` | Required probes fail deadline | Candidate local | Correct app/config; new attempt/Run |
+| `ORIGIN_OR_REDIRECT_INVALID` | Navigation leaves allowed local origin | Candidate local or security | Correct app/origin policy |
+| `FIXTURE_SETUP_FAILED` | Required state cannot be established | Candidate local | Retry only if fixture operation is declared idempotent |
+
+## 9. Browser and capture
+
+| Code | Failure | Scope | Recovery |
+|---|---|---|---|
+| `BROWSER_LAUNCH_FAILED` | Chromium cannot launch/connect | Epoch opening | One bounded launch retry |
+| `BROWSER_DISCONNECTED` | Playwright disconnect | Entire Epoch invalid | New Epoch; recapture current and participants |
+| `BROWSER_PROCESS_CHANGED` | Browser identity changes | Entire Epoch invalid | New Epoch |
+| `CONTEXT_ISOLATION_LEAK` | Storage/cookie/service-worker leakage | Entire Epoch invalid | Fix isolation; new Epoch |
+| `FIXTURE_OR_ENV_CHANGED` | Fixture/environment hash drifts | Entire Epoch invalid | Restore/freeze; new Epoch |
+| `PAGE_CRASHED` | One page crashes while Chromium remains connected | Candidate local | Preserve diagnostics; one fresh-context retry |
+| `PAGE_CRASH_REPEATED` | Candidate page crashes again | Current: invalid baseline; contender: ineligible | Current → invalid/failed; contender → retain current |
+| `NAVIGATION_FAILED` | Candidate route fails without wider browser loss | Candidate local | Bounded retry only for classified transient race |
+| `REQUIRED_STATE_MISSING` | State/selector/assertion absent | Candidate local/ineligible | New contender/Run after correction |
+| `INTERACTION_FAILED` | Action/assertion/final fingerprint fails | Candidate local/ineligible | Preserve trace; retain current path |
+| `BLANK_OR_LOGIN_CAPTURE` | Evidence does not represent target state | Candidate local/ineligible | One retry when safe |
+| `FONT_OR_SETTLE_TIMEOUT` | Required capture condition fails | Candidate local | Fix fixture/policy in superseding Run |
+| `STABILITY_PROBE_FAILED` | Current variation exceeds policy | Run comparison invalid | New fixture/policy/Run |
+| `CAPTURE_WRITE_UNCOMMITTED` | Artifact write fails before registration | Candidate local while continuity active | One identical write retry |
+| `CAPTURE_ARTIFACT_CORRUPT` | Registered required bytes mismatch | Entire Epoch invalid when capture evidence trust affected | New Epoch |
+| `CAPTURE_MATRIX_INCOMPLETE` | Candidate lacks required cells | Candidate local | Retry missing cells only while same Epoch/browser continuity remains; otherwise candidate fails |
+
+A failed contender does not force recapture of valid current evidence unless the active Epoch itself became invalid.
+
+## 10. Gates
+
+| Code | Failure | Response | Recovery |
+|---|---|---|---|
+| `GATE_REQUIRED_FAILED` | Required condition false | Contender ineligible; current invalid if current-scoped | Deterministic retention or invalid Run |
+| `GATE_REQUIRED_ERROR` | Required gate cannot produce trusted result | One safe retry, then ineligible/invalid | Repair gate/evidence |
+| `GATE_ADVISORY_FAILED` | Advisory condition false | Continue with warning | Human/evaluator sees limitation |
+| `GATE_DEPENDENCY_NOT_READY` | Scheduler tries gate before required evidence | Implementation invariant failure | Fix gate phase/dependency graph |
+| `GATE_CITATION_INVALID` | Result cites missing/wrong artifact | Reject result | Repair artifact or recapture |
+| `GATE_SUPERSESSION_CONFLICT` | Retry chain inconsistent | Integrity failure | Read-only recovery/diagnosis |
+
+## 11. Evaluation and Recommendation
+
+| Code | Failure | Response | Recovery |
+|---|---|---|---|
+| `EVALUATION_PACKET_INCOMPLETE` | Required evidence cannot form packet | Do not invoke evaluator | Repair/recapture or deterministic outcome |
+| `EVALUATOR_LAUNCH_FAILED` | Adapter process fails | Store diagnostics | One bounded new attempt after correction |
+| `EVALUATOR_TIMEOUT` | Deadline exceeded | Terminate; preserve partial raw bytes | One retry with identical packet |
+| `EVALUATOR_OUTPUT_INVALID` | Non-JSON/schema/factor/confidence failure | Store raw output; accept no Evidence | Corrective retry only if adapter explicitly supports it |
+| `EVALUATOR_CITATION_INVALID` | Citation outside allowlist or hash mismatch | Reject output | Security/integrity diagnosis or new valid packet |
+| `EVALUATOR_ORDER_CONFLICT` | A/B and B/A materially disagree | No automatic contender recommendation | `tie`, `human_review_required`, or retain per policy |
+| `EVALUATOR_PROTECTED_REGRESSION` | Valid evidence finds veto | Contender cannot be recommended | `current_retained` |
+| `RECOMMENDATION_POLICY_FAILED` | Deterministic reducer throws/mismatches hash | Preserve valid evidence; no Recommendation | Retry after code recovery; do not reinvoke evaluator unnecessarily |
+| `RECOMMENDATION_STALE` | Bound inputs changed | Disable Decision/Promotion | New Evaluation/Run as required |
+
+Unknown token/cost usage remains null and does not fail evaluation.
+
+## 12. Decision and Promotion
+
+| Code | Failure | Response | Recovery |
+|---|---|---|---|
+| `DECISION_STALE` | Recommendation/evidence/source/policy hash changed | Reject mutation/export | Review new Recommendation |
+| `DECISION_CONFLICT` | Competing commands/revision mismatch | First durable valid command wins | Refresh current state |
+| `DECISION_WRITE_FAILED` | Approval artifact not durable | No Decision accepted | Repair storage; retry same operation ID |
+| `PROMOTION_PRECONDITION` | Decision/source/destination mismatch | Mark stale/failed before mutation | Return to decision or choose new destination |
+| `PROMOTION_DESTINATION_EXISTS` | Patch/branch path exists | Never overwrite | User selects new destination or exact idempotent match verifies |
+| `PROMOTION_PARTIAL` | Export/branch side effect may have occurred | Inspect operation manifest and exact output | Adopt only exact match, otherwise fail/quarantine |
+| `PROMOTION_REDACTION_FAILED` | Export safety cannot be verified | Block export | Repair policy and retry |
+| `PROMOTION_REMOTE_OR_MERGE` | Push/PR/merge requested | Reject as unsupported MVP command | User performs manually outside product |
+
+## 13. Storage and integrity
+
+| Code | Failure | Response | Recovery |
+|---|---|---|---|
+| `STORAGE_ROOT_UNAVAILABLE` | Data root missing/read-only | Stop side effects safely | Restore/select root; integrity scan |
+| `STORAGE_OUT_OF_SPACE` | Reserve/write fails | Stop admission/output producer as needed | Free space; retry uncommitted work |
+| `ATOMIC_RENAME_FAILED` | Canonical replace unavailable | Keep old canonical file | Use supported filesystem/root |
+| `EVENT_PARTIAL_FINAL_LINE` | Torn final NDJSON record | Quarantine/truncate under lock | Resume previous complete sequence |
+| `EVENT_SEQUENCE_GAP` | Missing/mutated/reordered event | Read-only/corrupt | Restore backup or diagnostics only |
+| `SNAPSHOT_BEHIND_STREAM` | Completion event durable, snapshot old | Replay and rewrite snapshot | Resume from verified state |
+| `SNAPSHOT_AHEAD_OF_STREAM` | Snapshot claims nonexistent event | Quarantine snapshot | Replay prior valid state |
+| `ARTIFACT_ORPHANED` | Payload exists without registration | Not evidence | Reconcile only with exact operation proof; otherwise quarantine |
+| `ARTIFACT_MISSING` | Registration points to absent bytes | Invalidate citations | Recapture/reevaluate |
+| `ARTIFACT_HASH_MISMATCH` | Bytes changed | Quarantine; block Recommendation | New trusted artifact |
+| `SCHEMA_MAJOR_UNSUPPORTED` | Reader cannot safely interpret | Read-only | Compatible upgrade/migration |
+| `MIGRATION_FAILED` | Migrated copy invalid/interrupted | Original remains canonical | Fix migrator |
+
+## 14. Interruption checkpoints
+
+| Interruption | Safe target |
+|---|---|
+| Before seal | `draft` |
+| After seal but source/config drifted | `create_superseding_run` |
+| During preparation | restart/resume `preparing` after verification |
+| During partial Epoch | invalidate and start new Epoch |
+| After current valid but contender candidate-local failure | preserve current, resolve candidate attempt, then `gating` |
+| After valid Epoch seal | `gating` |
+| During gates | resume missing Gate Results |
+| After gates | `evaluating` or deterministic Recommendation |
+| During evaluator | verified reattach or new Evaluation attempt |
+| After raw output | validate stored bytes |
+| After Recommendation | `awaiting_decision` |
+| After Decision | export or complete |
+| During Promotion | verify exact destination/operation |
+| Terminal outcome before cleanup report | `cleanup_only` |
+
+## 15. Cleanup matrix
+
+| Resource | Normal cleanup | Failure behavior |
+|---|---|---|
+| dependency/build/test root | observe exit then group verification | cleanup incident if descendants remain |
+| candidate server | graceful request then group termination | block next candidate if ownership uncertain |
+| browser | close contexts/browser then verify descendants | invalidate active Epoch if continuity lost |
+| evaluator | terminate after result/timeout | quarantine partial raw bytes |
+| temp artifact | delete after operation | quarantine when ownership/path uncertain |
+| workspace | retain/delete by policy after process cleanup | explicit `cleanup_failed` and retry |
+| port lease | release after owner exit | inspect remaining listener |
+| Run lock | release after events/snapshot flush | stale-lock recovery with identity verification |
+
+## 16. Automatic retry defaults
+
+- browser launch: 1;
+- complete Epoch restart: 2;
+- page/context candidate-local retry: 1;
+- screenshot write before registration: 1;
+- evaluator transport/timeout: 1 identical-packet retry;
+- event/artifact write: only when no canonical commit occurred;
+- port selection: up to 3 allowed ports;
+- readiness: repeated polls in one deadline;
+- build/install: 0 unless classified transient;
+- invalid evaluator output: 0 blind retries;
+- destination/security/integrity conflict: 0 automatic retries.
+
+Every retry preserves prior attempt records.
+
+## 17. No-reuse rules
+
+Never reuse:
+
+- any Artifact from invalid Epoch;
+- mismatched workspace;
+- invalid-citation evaluator output;
+- hash-mismatched Artifact;
+- unverifiable process identity;
+- changed sealed Run Configuration;
+- changed Source Snapshot;
+- ambiguous partial export;
+- stale Decision.
+
+## 18. Acceptance tests
+
+- browser disconnect invalidates complete Epoch;
+- one contender page crash retries locally and preserves current evidence;
+- repeated contender crash yields ineligible/retention path without full recapture;
+- repeated current crash yields invalid baseline;
+- source drift after seal creates superseding Run;
+- coordinator crash after valid Epoch resumes at gates;
+- coordinator crash mid-Epoch recaptures all participants;
+- stubborn descendants cleaned by verified boundary;
+- PID reuse never proves identity;
+- disk-full leaves no partial canonical Artifact;
+- exact event/snapshot crash points recover deterministically;
+- invalid evaluator citation cannot produce Recommendation;
+- duplicate Decision/Promotion commands are idempotent;
+- existing destination never overwritten;
+- cleanup failure remains visible after terminal outcome;
+- completed Runs reconstruct without database.
