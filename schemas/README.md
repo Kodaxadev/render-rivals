@@ -1,13 +1,28 @@
 # Render Rivals Schemas
 
-**Status:** Shared domain/API types and stable error registry established; executable validation scaffold pending  
+**Status:** Shared primitive/domain/API types and stable error registry established; executable validation scaffold pending  
 **Storage contract:** [`spec/11-artifact-event-and-schema-contracts.md`](../spec/11-artifact-event-and-schema-contracts.md)  
 **Configuration/API routes:** [`spec/13-configuration-cli-and-local-api-contracts.md`](../spec/13-configuration-cli-and-local-api-contracts.md)  
 **Dashboard authentication:** [`spec/16-dashboard-session-authentication-and-pairing.md`](../spec/16-dashboard-session-authentication-and-pairing.md)  
 **API envelopes/operations:** [`spec/17-local-api-envelopes-operations-and-pagination.md`](../spec/17-local-api-envelopes-operations-and-pagination.md)  
+**Primitive wire formats:** [`spec/18-canonical-primitives-json-hashing-and-measurements.md`](../spec/18-canonical-primitives-json-hashing-and-measurements.md)  
 **Cross-record invariants:** [`docs/RECORD-INVARIANT-MATRIX.md`](../docs/RECORD-INVARIANT-MATRIX.md)
 
 ## 1. Canonical shared sources
+
+### [`primitives.ts`](primitives.ts)
+
+Sole TypeScript vocabulary for shared JSON-facing primitives:
+
+- full `sha256:` digest strings;
+- canonical UTC timestamps;
+- canonical decimal strings;
+- canonical relative paths;
+- safe integers/revisions/sequences/counts;
+- byte/duration/confidence aliases;
+- exact `MonetaryAmount` and cost basis.
+
+`spec/18` defines the runtime lexical/range/canonicalization rules. Template/string aliases alone never validate a value.
 
 ### [`domain-types.ts`](domain-types.ts)
 
@@ -20,7 +35,7 @@ Sole TypeScript authority for shared persisted-domain vocabulary:
 - Pairwise verdicts;
 - Evaluation and Process purposes;
 - Recovery/Comparison validity;
-- `InferenceUsage`;
+- `InferenceUsage` with safe integer tokens and exact monetary cost;
 - Recommendation, Decision, Promotion, and Export Operation records;
 - supersession/retry/terminal-status fields used by those records.
 
@@ -47,21 +62,22 @@ Command-specific payload/result schemas remain under the executable schema regis
 
 Authoritative cross-record requirements that interfaces cannot express alone, including outcome-dependent cardinality, nullability, ownership, completion timestamps, allowed empty arrays, supersession/retry lineage, and valid relationships between Recommendation, Decision, Promotion, Export, Evaluation, Gate, Capture, Process, Event, and Artifact records.
 
-Markdown specifications reference these sources rather than define incompatible local unions, registries, command names, envelopes, or cross-field meanings.
+Markdown specifications reference these sources rather than define incompatible local primitives, unions, registries, command names, envelopes, or cross-field meanings.
 
 ## 2. Required executable contents
 
 Before scaffold Stage 1 is accepted:
 
-- versioned Zod schemas for every canonical entity/stream/API/CLI/native command envelope;
+- versioned Zod schemas for every canonical primitive/entity/stream/API/CLI/native command envelope;
+- RFC 8785 canonical JSON implementation and cross-language golden fixtures;
 - generated JSON Schema;
 - generated command registry/client types where practical;
 - valid and invalid fixtures;
 - migration functions/metadata;
 - compatibility tests;
-- canonical JSON/hashing tests;
+- hash/timestamp/decimal/unit tests;
 - schema writer/reader support declarations;
-- duplicate enum/error/command drift checks;
+- duplicate primitive/enum/error/command drift checks;
 - Rust/TypeScript protocol fixture generation;
 - documentation/schema/invariant/API registry conformance script;
 - one valid fixture and targeted invalid fixtures for every applicable Record Invariant Matrix rule.
@@ -70,6 +86,7 @@ Before scaffold Stage 1 is accepted:
 
 At minimum:
 
+- every primitive from `primitives.ts`;
 - installation and user/project configuration;
 - Project, trust, Source Snapshot;
 - Run and Run Configuration;
@@ -94,6 +111,7 @@ At minimum:
 
 ```text
 schemas/
+  primitives.ts
   domain-types.ts
   error-codes.ts
   api-types.ts
@@ -112,6 +130,7 @@ Implementation packages may generate compiled artifacts elsewhere, but source re
 ```text
 Zod/source declarations
   -> inferred TypeScript types where practical
+  -> RFC 8785 canonical values/hashes
   -> generated JSON Schema
   -> generated command/client registry
   -> valid/invalid fixtures
@@ -119,14 +138,18 @@ Zod/source declarations
   -> Rust/TypeScript golden protocol fixtures
 ```
 
-One generation direction must be selected so shared record/command shapes are not manually maintained in multiple sources. Until then, CI drift tests compare source types, runtime schemas, JSON Schema, command routes, and fixtures.
+One generation direction must be selected so shared primitive/record/command shapes are not manually maintained in multiple sources. Until then, CI drift tests compare source types, runtime schemas, JSON Schema, command routes, and fixtures.
 
 ## 6. Runtime rules
 
 - unknown top-level fields reject unless namespaced extensions allowed;
 - duplicate JSON keys reject;
 - IDs require exact prefix + lowercase ULID;
-- finite numeric/confidence/token/cost rules enforce explicit null;
+- SHA-256 fields require full lowercase `sha256:<64 hex>`;
+- canonical value hashes use validated RFC 8785 bytes;
+- timestamps use exact millisecond UTC form;
+- finite numeric/confidence/token rules enforce safe ranges and explicit null;
+- monetary cost uses canonical decimal strings, not floating JSON dollars;
 - unknown major schema read-only;
 - migrations never rewrite the only copy;
 - output schemas distinguish raw bytes from parsed JSON;
@@ -138,4 +161,4 @@ One generation direction must be selected so shared record/command shapes are no
 
 ## 7. Current limitation
 
-The shared vocabulary, stable error/API registries, and cross-record invariant contract exist, but executable Zod/JSON Schema, generated clients, fixtures, migrations, and compatibility tests do not. This is a visible scaffold prerequisite, not evidence that persistence or API validation is implemented.
+The shared primitive/domain/error/API registries and cross-record invariant contract exist, but executable Zod/JSON Schema, canonical JSON implementation, generated clients, fixtures, migrations, and compatibility tests do not. This is a visible scaffold prerequisite, not evidence that persistence or API validation is implemented.
