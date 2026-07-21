@@ -1,376 +1,288 @@
-# 07 — Storage Policy, Configuration, Security, and Accounting
+# 07 — Storage Policy, Configuration, Security, Accounting, and Data Flow
 
 **Status:** Canonical implementation contract  
 **Filesystem authority:** `spec/11-artifact-event-and-schema-contracts.md`  
-**Shared types:** `schemas/domain-types.ts`  
-**Normalization:** `spec/12-cross-spec-normalization.md`
+**Configuration/API:** `spec/13-configuration-cli-and-local-api-contracts.md`  
+**Observability:** `spec/15-observability-diagnostics-and-telemetry-contracts.md`  
+**Threat model:** `security/THREAT-MODEL.md`  
+**Shared types/errors:** `schemas/domain-types.ts`, `schemas/error-codes.ts`
 
 ## 1. Scope
 
-This specification defines storage policy, configuration precedence, security boundaries, redaction, accounting, retention, and data-flow requirements.
+This specification defines storage policy, configuration security, trust, redaction, accounting, retention, external data flow, and privacy invariants.
 
-It does not define a second filesystem layout. All live canonical paths and filenames come from `spec/11`.
+It does not define a second filesystem layout, CLI/API contract, or telemetry policy. Those are owned by specs 11, 13, and 15.
 
 ## 2. Canonical principle
 
-Files and append-only event streams are canonical. A database may later index them, but deleting the index must leave the full run reconstructable.
+Files and append-only Event/Artifact streams are canonical. A database may later index them, but deleting the index leaves every retained Run reconstructable.
 
-Canonical data includes:
+Canonical data includes Project identity/trust, resolved Run Configuration and Policy Snapshots, Source Snapshots, Events, Process records/output, Artifacts, Gates, Evaluations, Evidence, Recommendations, Decisions, Promotions, Export Operations, Cleanup, Integrity, and Recovery.
 
-- project identity;
-- resolved run configuration;
-- source snapshots;
-- semantic events;
-- artifact registrations and payloads;
-- gate results;
-- evaluator input and output;
-- evidence;
-- recommendations;
-- user decisions;
-- promotions;
-- cleanup and integrity results.
+## 3. Storage roots and old names
 
-## 3. Storage roots
+Canonical durable roots and exact layout come only from `spec/11`.
 
-Canonical durable storage uses the platform data roots defined by `spec/11`.
-
-The repository marker is:
+Repository-local metadata:
 
 ```text
 <repository>/.render-rivals/project.json
+<repository>/.render-rivals/config.jsonc
 ```
 
-The following older names are superseded and must not be implemented:
+The following are superseded and rejected as canonical live storage/configuration names:
 
 - `.visual-optimizer/`;
-- `visual-optimizer/sessions/` as canonical storage;
-- session cache directories containing the only copy of run history.
+- `visual-optimizer/sessions/`;
+- `VISOPT_*` variables;
+- Session cache containing the only Run history;
+- top-level old `manifest.json`, `decision.json`, `metrics.json`, `accounting.json`, or `cleanup.json` layouts.
 
-Disposable worktrees, browser downloads, package caches, and image-processing files may use a separate cache root.
+Disposable Workspaces, browser downloads, package stores, and image caches use separate owned cache roots.
 
-## 4. Run layout
+## 4. Configuration authority
 
-The canonical run root is:
+Exact files, discovery, precedence, merge rules, reserved environment variables, CLI flags, and safe mode are defined by `spec/13`.
 
-```text
-<data-root>/projects/<project-id>/runs/<run-id>/
-```
+Security rules:
 
-Its exact files and directories are defined only in `spec/11`.
+- resolved Run Configuration becomes immutable after validation;
+- unknown fields and duplicate keys reject;
+- executable commands are executable plus argument arrays;
+- explicit shell use requires policy acknowledgement;
+- relative paths declare base;
+- environment keys are classified individually;
+- higher-precedence layers cannot silently weaken mandatory containment/security;
+- provenance and canonical hash are stored for every resolved field;
+- sealed changes create a superseding Run.
 
-Older examples such as top-level `manifest.json`, `decision.json`, `metrics.json`, `accounting.json`, and `cleanup.json` are superseded. Their canonical replacements are described in `spec/12`.
+## 5. Secret references
 
-## 5. Configuration sources
-
-Configuration may come from:
-
-1. built-in defaults;
-2. user-global configuration;
-3. project configuration;
-4. run-template values;
-5. explicit CLI or dashboard overrides;
-6. session-only secret references.
-
-Resolved Run Configuration is immutable after validation.
-
-## 6. Precedence
-
-Higher-precedence layers override lower-precedence layers only for fields whose schema permits override.
-
-The resolved configuration stores:
-
-- final normalized value;
-- source layer;
-- whether the value was explicit or defaulted;
-- schema version;
-- redaction classification;
-- canonical hash.
-
-Conflicting security or containment requirements fail validation rather than silently choosing the weaker value.
-
-## 7. Configuration format
-
-Project and user configuration use versioned JSONC or JSON validated by the shared schema package.
-
-Rules:
-
-- unknown top-level fields are rejected unless namespaced extensions are allowed;
-- duplicate keys are rejected;
-- secret values are not stored in resolved canonical JSON;
-- executable commands use executable plus argument arrays;
-- shell execution requires an explicit shell executable and policy acknowledgement;
-- relative paths declare their base;
-- environment keys are individually classified.
-
-## 8. Secret references
-
-Secrets are supplied through approved references, not plaintext canonical files.
+Secrets are supplied through approved references/session bindings, never plaintext canonical configuration.
 
 A secret reference records:
 
 - stable reference name;
-- provider or source class;
-- presence/absence;
+- source/provider class;
+- presence;
 - scope;
 - redaction category;
-- whether external evaluator transmission is permitted.
+- allowed recipients/process purposes;
+- whether remote evaluator transmission is permitted.
 
-Raw values are excluded from hashes where inclusion would leak them. Presence and reference identity may be hashed.
+Raw secret values are excluded from canonical hashes when inclusion would leak them; reference identity and presence may be hashed.
 
-## 9. Project trust
+Secrets are passed only to processes explicitly authorized by frozen policy. Project/evaluator child environments do not inherit coordinator/supervisor Session secrets.
 
-Before first execution, the user acknowledges that project commands run with the user's authority and are not a complete sandbox.
+## 6. Project and local evaluator trust
 
-Trust is invalidated or reviewed when:
+Before first execution, user acknowledges:
 
-- repository identity changes;
-- command configuration changes materially;
-- containment capability is reduced;
-- privileged operations are introduced;
-- trust is explicitly revoked.
+- Project commands run with the user's OS authority;
+- local evaluator commands also run with the user's OS authority;
+- process containment focuses on lifecycle/resource control, not filesystem/network sandboxing;
+- commands may technically read user-accessible files or use network unless the host independently restricts them;
+- Render Rivals minimizes environment/CWD/paths but cannot guarantee hostile-code isolation.
 
-## 10. Path safety
+Trust is reviewed/invalidated when repository or executable identity, command configuration, containment level, privilege, or declared data access changes, or when explicitly revoked.
 
-Every path is canonicalized before use.
+Project trust and local evaluator trust may be separate records because their executables/data access differ.
+
+## 7. Path and source safety
+
+Every path is canonicalized and validated against an approved purpose/root.
 
 Reject:
 
-- traversal outside owned roots;
-- unsafe symlinks or junctions;
-- ambiguous case collisions;
-- NUL and invalid platform path forms;
-- project-provided absolute destinations where policy requires generated paths;
-- archive traversal during import.
+- traversal;
+- absolute/drive/UNC forms where generated relative path required;
+- unsafe symlink/junction/mount escape;
+- case/Unicode collision;
+- NUL/invalid platform forms;
+- Project-selected canonical output paths;
+- archive traversal/decompression abuse;
+- source/workspace semantics unsupported by spec14.
 
-Artifact serving accepts Artifact IDs, not arbitrary paths.
+Artifact serving accepts registered Artifact ID, not arbitrary path.
 
-## 11. Local dashboard security
+## 8. Dashboard security
 
-The dashboard:
+Dashboard:
 
-- binds to `127.0.0.1` by default;
-- uses a per-session authentication token;
-- requires CSRF-safe mutation requests;
-- exposes only registered artifacts;
-- applies content-type and download headers;
-- blocks navigation or serving outside configured roots;
-- never treats browser UI connection as native supervisor authentication.
+- binds loopback by default;
+- uses per-Session HttpOnly SameSite=Strict authentication cookie;
+- validates Origin and CSRF-safe mutation header;
+- uses restrictive CSP and `nosniff`;
+- serves only registered Artifacts through media policy;
+- never injects untrusted Artifact text as HTML;
+- uses revision and operation idempotency;
+- never treats browser connection as native supervisor authentication.
 
-## 12. Native IPC security
+Active HTML/SVG or similar content is downloaded or isolated according to the threat model; it is not rendered with dashboard origin privileges by default.
 
-Native endpoint identifiers and session nonces are passed through environment, never argv.
+## 9. Native IPC and managed commands
 
-The supervisor verifies:
+Endpoint/nonce use environment, never argv/URL/logs. Supervisor verifies peer identity, Session, nonce, protocol, exact Node, containment, and one coordinator.
 
-- peer identity;
-- session nonce;
-- protocol version;
-- exact coordinator Node path;
-- containment/session membership where applicable;
-- single authenticated coordinator ownership.
+All Project, evaluator, Git, browser-root, fixture, and utility managed roots are authorized/launched through supervisor. Approved descendants follow specs 02–04.
 
-## 13. Command execution
+Command/process records include executable identity, redacted args, CWD, environment hash/redaction, purpose, resource/output policy, stable Process/Group identity, containment, and output Artifacts.
 
-Project and evaluator processes are launched only through the Rust supervisor.
+PID is observation only.
 
-Command records include:
+## 10. Raw output and Artifact sensitivity
 
-- executable identity;
-- redacted arguments;
-- working directory;
-- environment hash and redaction summary;
-- purpose;
-- resource policy;
-- process/containment identity;
-- output artifact IDs.
-
-A stored PID is observational metadata, not durable identity.
-
-## 14. Raw output
-
-Stdout and stderr are drained continuously by Rust into binary-safe files registered as sensitive local artifacts.
+Rust drains stdout/stderr continuously into binary-safe sensitive-local Artifacts.
 
 Raw output:
 
 - may contain secrets;
-- is excluded from standard exports;
-- is not required to be UTF-8;
-- records truncation explicitly;
-- is parsed into semantic events only by versioned parsers;
+- is not required UTF-8;
+- records truncation/discard ranges/termination explicitly;
+- is excluded from standard exports and remote telemetry;
+- is parsed into semantic facts only by versioned parsers;
 - is never silently discarded.
 
-## 15. Artifact sensitivity
+Sensitivity:
 
-Sensitivity classes:
+- public;
+- Project;
+- sensitive_local.
 
-- `public`;
-- `project`;
-- `sensitive_local`.
+Secret material is prohibited as canonical Artifact. Sensitivity can become more restrictive automatically; declassification requires explicit review.
 
-Secret material is prohibited as a canonical artifact.
+## 11. Redaction
 
-Sensitivity may become more restrictive automatically. Declassification requires an explicit review record.
+Redaction occurs before structured logs, remote evaluator transmission, diagnostic/export output, telemetry/crash upload, and any user-approved sharing.
 
-## 16. Redaction
+Mechanisms:
 
-Redaction occurs before structured logging, evaluator transmission, diagnostics, and standard export.
-
-Supported mechanisms:
-
-- declared secret values;
-- secret environment keys;
-- authorization/header filtering;
-- cookie and storage filtering;
+- declared secret values/keys;
+- authorization/header/cookie/storage filtering;
 - token-pattern matching;
-- user-defined regex rules;
-- home-directory normalization in portable diagnostics.
+- user regex;
+- path normalization;
+- field allowlists;
+- size/content limits.
 
-Render Rivals does not claim to detect every arbitrary secret emitted by child code.
+Render Rivals does not claim to detect every arbitrary secret emitted or rendered by child code. Raw logs/captures remain sensitive even after best-effort redaction.
 
-## 17. External evaluator data flow
+## 12. Remote evaluator data flow
 
-Before an evaluator invocation, the immutable packet records:
+A remote provider adapter receives only the immutable allowlisted/redacted packet through Render Rivals-owned transport code.
 
-- provider;
-- adapter;
-- model when known;
-- artifact allowlist;
-- redactions;
-- excluded artifacts;
+Before invocation, record/show:
+
+- provider/adapter/model when known;
+- exact Artifact allowlist and hashes;
+- redactions/exclusions;
 - source-content policy;
-- user/project policy;
-- packet hash.
+- provider/policy snapshot;
+- packet hash;
+- destination/retention/terms metadata available to the product.
 
-The system records exactly what was sent. External evaluators cannot access arbitrary local files.
+The system records exactly what it intentionally transmitted.
 
-## 18. Accounting
+A **remote provider** cannot request arbitrary local filesystem paths through the adapter contract. This is distinct from a **local evaluator executable**, which is trusted user-authority code and is not OS-sandboxed by the packet allowlist.
 
-The sole canonical accounting interface is `InferenceUsage` from `schemas/domain-types.ts`.
+## 13. Candidate page network/data flow
 
-It includes:
+Capture policy declares:
 
-- provider;
-- adapter;
-- model;
-- closed purpose enum;
-- start and completion timestamps;
-- nullable token counts;
-- nullable cost;
-- policy snapshot ID.
+- permitted local origin(s);
+- external request allow/block/report behavior;
+- fixture/network mocks;
+- authentication/cookie/storage policy;
+- whether Project server may access network;
+- redaction/exclusion for request/response summaries.
 
-Unknown values remain null. Accounting records are immutable invocation facts.
+Browser navigation and request policy reduce accidental exfiltration but do not sandbox the Project server's own filesystem/network authority.
 
-## 19. Process accounting
+## 14. Accounting
 
-Process usage may record:
+Canonical `InferenceUsage` records provider, adapter, model, closed purpose, timestamps, nullable token/cost fields, and typed Policy Snapshot ID.
 
-- elapsed wall time;
-- CPU time;
-- peak memory;
-- process count;
-- bytes written to stdout/stderr;
-- termination reason;
-- resource-limit events.
+Process accounting may record wall/CPU time, memory, process count, stdout/stderr bytes, termination reason, resource events, and capability/measurement source.
 
-Unavailable platform values remain unknown rather than estimated.
+Unknown values remain null/unknown, never estimated silently.
 
-## 20. Configuration hashing
+Accounting is local canonical/derived data. Remote telemetry policy is separate and cannot transmit Project-specific accounting detail by default.
 
-The Run Configuration hash covers normalized, nonsecret semantics including:
+## 15. Configuration and policy hashes
 
-- commands;
-- source declarations;
-- route and fixture;
-- viewports and browser policy;
-- gates;
-- factors and evaluator policy;
-- resource limits;
-- storage and retention policy;
-- export policy;
-- security policy references.
+Run Configuration hash covers normalized nonsecret semantics: commands, sources, route/fixture/states/interaction, browser/viewports, Gates/Factors/evaluator, limits/retry, storage/retention, Promotion/Export policy, security/redaction references.
 
-Changing a frozen value requires a new run or superseding Run Configuration according to lifecycle policy.
+Policy Snapshots bind specific Gate, evaluation, security, redaction, retry/resource/output, telemetry, and export semantics used by records.
 
-## 21. Retention
+Changing frozen semantics requires a new/superseding Run or new explicitly scoped Export Operation, never reinterpretation of old evidence.
 
-Retention classes and deletion protocol are owned by `spec/11`.
+## 16. Retention and deletion
 
-Policy must preserve every artifact cited by a retained recommendation, decision, or promotion.
+Exact classes/protocol come from `spec/11` and spec15.
 
-Raw logs, traces, and other diagnostic artifacts may have shorter retention when no retained entity references them.
+Policy preserves every Artifact needed by retained Evidence, Recommendation, Decision, Promotion, Export manifest, Integrity, or security/cleanup fact.
 
-## 22. Database policy
+Raw logs/traces may have shorter retention only when unreferenced and deletion is explicit. No hidden daemon is assumed; cleanup runs during application startup/active command.
 
-No database is canonical in the initial implementation.
+Uninstall does not silently delete data.
 
-A later SQLite index may provide:
+## 17. Import, Promotion, and Export security
 
-- search;
-- recent-run summaries;
-- dashboard projections;
-- aggregate metrics;
-- cached artifact metadata.
+Imports require checksum/schema/path/decompression/provenance validation, no executable auto-run, and read-only status until adoption.
 
-It must be fully rebuildable from canonical files. This section delegates persistence mechanics to `spec/11` rather than repeating them.
+Promotion requires selected eligible Candidate, authorizing nonstale Decision, safe destination, source/result verification, no active-tree overwrite, and no automatic push/merge.
 
-## 23. Import and export security
+Export Operation requires source-entity integrity appropriate to kind, redaction/omission report, checksums, safe destination, and no executable auto-run.
 
-Imports require:
+Report/diagnostics/bundle Export never implies Contender adoption.
 
-- checksum verification;
-- schema support;
-- archive traversal protection;
-- decompression limits;
-- provenance declaration;
-- no executable auto-run;
-- read-only status until adopted.
+## 18. Observability and telemetry
 
-Exports require:
+`spec/15` controls logs, metrics, traces, diagnostic bundles, crash records, optional telemetry, consent, and uploads.
 
-- allowlisted artifacts;
-- redaction report;
-- omission report;
-- checksums;
-- no raw secrets;
-- no raw process output by default;
-- no unrelated source content.
+Locked defaults:
 
-## 24. Diagnostics
+- local observability enabled;
+- remote telemetry disabled;
+- automatic crash upload disabled;
+- no third-party analytics script;
+- no background analytics daemon;
+- no source/capture/command/path/evaluator content sent as ordinary telemetry.
 
-Default diagnostic bundles include:
+Telemetry is never required for Run operation.
 
-- versions and capability report;
-- redacted resolved configuration;
-- failure records;
-- event and integrity summaries;
-- cleanup results;
-- selected structured logs;
-- artifact manifest without sensitive payloads;
-- explicit omissions.
+## 19. Database policy
 
-Source, screenshots, raw output, evaluator payloads, and environment values require explicit selection.
+No database is canonical. A later SQLite index may provide search/recent summaries/aggregate metrics/cached metadata, but is fully rebuildable and contains no sole domain fact.
 
-## 25. Security invariants
+## 20. Security invariants
 
-- Project code cannot select arbitrary canonical output paths.
-- Invalid or cross-run artifacts cannot enter evaluator packets.
-- External evaluator access is allowlist-based.
-- Secrets never appear in canonical resolved configuration.
-- Unknown containment capability is never represented as strong containment.
-- An optional database never becomes the only copy of a fact.
-- Standard exports are non-executable and sanitized.
-- Cleanup failure remains visible after a successful product outcome.
+- Project/local evaluator code is never represented as sandboxed.
+- Project code cannot choose arbitrary canonical output path.
+- invalid/cross-Run/unallowlisted Artifacts cannot enter evaluator packet.
+- remote evaluator transport sends only declared packet.
+- local evaluator trust is separate from remote packet allowlist.
+- secrets never appear in resolved canonical configuration.
+- unknown containment is never strong.
+- optional database is never sole fact.
+- Promotion and Export Operation remain distinct.
+- standard outputs are sanitized/non-executable by default.
+- cleanup/security incidents remain visible.
+- remote telemetry/crash upload are off by default and consented separately.
 
-## 26. Required tests
+## 21. Required tests
 
-- `.visual-optimizer` paths are rejected as canonical live storage;
-- resolved configuration records provenance and hash;
-- secret values do not appear in canonical JSON;
-- path traversal and unsafe symlink tests fail closed;
-- dashboard cannot serve unregistered paths;
-- evaluator packets contain only allowlisted artifacts;
-- `InferenceUsage` imports from `schemas/domain-types.ts`;
-- unknown usage values remain null;
-- database deletion leaves run reconstruction intact;
-- standard diagnostic export excludes raw output and source by default;
-- retained recommendation prevents deletion of cited evidence.
+- old paths/env names rejected;
+- resolved configuration provenance/hash;
+- secrets absent canonical JSON and child envs unless authorized;
+- Project/local evaluator trust review triggers;
+- traversal/symlink/case/archive tests;
+- dashboard auth/Origin/CSRF/CSP/media tests;
+- remote packet contains only allowlisted redacted Artifacts;
+- local evaluator warning/non-sandbox guarantee visible;
+- unknown accounting null;
+- index deletion leaves reconstruction;
+- Promotion/Export security separation;
+- standard diagnostics exclude source/raw/captures/evaluator payloads;
+- telemetry/crash defaults send nothing;
+- retained references block unsafe deletion.
