@@ -1,363 +1,401 @@
 # 08 — Language, Stack, Repository Layout, Support Policy, and Build Sequence
 
-## 1. Primary language
+**Status:** Canonical implementation contract  
+**Ownership boundary:** `adr/ADR-0001-typescript-rust-boundary.md`, clarified by `spec/02`  
+**CLI/API contract:** `spec/13-configuration-cli-and-local-api-contracts.md`  
+**Scaffold decisions:** `docs/SCAFFOLD-DECISION-REGISTER.md`
 
-TypeScript owns domain types, state, experiments, adapters, Playwright, evidence, evaluation, accounting, config, server, and dashboard.
+## 1. Language boundary
 
-## 2. Native language
+TypeScript owns:
 
-Rust owns session supervision, containment, process creation/I/O, termination, resource accounting, listener ownership, secure IPC, and terminal signals.
+- domain policy and state reducers;
+- Git/source/workspace strategy;
+- Playwright and browser orchestration;
+- fixtures, gates, evidence, evaluation, and accounting;
+- configuration and adapters;
+- local API/server, CLI semantics, and dashboard.
 
-## 3. Why not all Rust
+Rust owns:
 
-All-Rust adds friction around Playwright, agent CLIs, React, structured model output, and changing JSON protocols. Most workload is I/O orchestration.
+- Session supervision;
+- managed root-process launch authorization/creation;
+- containment assignment and termination;
+- native process I/O and resource enforcement;
+- listener ownership inspection;
+- secure native IPC;
+- terminal signals and restoration.
 
-## 4. Why not all TypeScript
+Approved contained descendants may spawn only under `spec/02` and `spec/03` inheritance rules.
 
-Pure Node is weak for Windows Job Objects, descendant cleanup, secure native pipes, crash cleanup, and endpoint owner lookup.
+## 2. Runtime policy
 
-## 5. Boundary
-
-Rust does not contain promotion policy, visual rules, Git strategy, provider parsing, evidence interpretation, or dashboard behavior.
-
-TypeScript does not emulate Job Objects, delegated cgroup kill, peer credentials, or native listener ownership.
-
-## 6. Runtime policy
-
-Scaffold pins exact active Node LTS release. Architecture specifies support line, not patch.
-
-Initial support:
+Initial tested support:
 
 ```text
-tested: Node 24 LTS
-newer Node lines: unsupported until matrix passes
+Node 24 LTS
+ESM only
+Playwright-managed Chromium
+Windows x64 reference platform
 ```
 
-## 7. Exact pins at scaffold
-
-Pin:
+Exact active versions are pinned in the first scaffold commit:
 
 - `.node-version`;
-- package manager;
-- lockfile;
-- TypeScript;
-- Playwright/browser;
-- Rust toolchain;
-- Cargo lockfile;
+- package manager and lockfile;
+- TypeScript and lint/test toolchain;
+- Playwright and browser revision;
+- Rust toolchain and `Cargo.lock`;
 - CI image.
 
-## 8. Node upgrades
+New Node/browser/toolchain lines require the compatibility matrix and fixture suites to pass before support is claimed.
 
-New LTS support requires unit, capture, containment, adapter, dashboard, native package, and benchmark-fixture tests. Update `engines` deliberately.
+## 3. Package manager and module system
 
-## 9. TypeScript policy
+- pnpm workspaces for the implementation monorepo;
+- ESM-only JavaScript packages initially;
+- no CommonJS dual publishing;
+- shared content-addressed package store, but worktree-local dependency links/tree;
+- generated declarations for public internal package boundaries.
 
-Use latest stable compiler proven compatible with ESLint parser, build, tests, editor, declarations, and libraries. No calendar promise for future compiler API.
+## 4. Repository layout
 
-## 10. Module system
-
-ESM only. No CommonJS dual publishing initially.
-
-## 11. Package manager
-
-pnpm workspaces for monorepo, shared content-addressed store, and worktree-local dependency links.
-
-## 12. Repository layout
+Target scaffold layout:
 
 ```text
-visual-optimizer/
+render-rivals/
   apps/
-    bootstrap/
-    cli/
-    dashboard/
+    bootstrap/             # minimal npm bin
+    cli/                   # CLI composition over domain services
+    dashboard/             # React/Vite local UI
+    coordinator/           # local server and orchestration entry
 
   packages/
-    core/
-    config/
-    store/
-    accounting/
-    supervisor-client/
-    git/
-    workspace/
-    capture/
-    gates/
-    evaluate/
-    agents/
-    server/
+    core/                  # pure domain reducers and invariants
+    config/                # JSONC loading, precedence, schema-backed diagnostics
+    store/                 # canonical files, events, recovery, exports
+    accounting/            # inference/process/human usage records
+    supervisor-client/     # typed IPC client and protocol fixtures
+    git/                   # system Git invocation and source snapshots
+    workspace/             # materialization, dependencies, ports/readiness
+    capture/               # Playwright, fixture/state/interaction, epochs
+    gates/                 # phased deterministic gates
+    evaluate/              # packets, adapters, reversal, policy, controls
+    adapters/              # generic command adapter and future providers
+    server/                # Fastify REST/SSE/auth/artifact serving
 
   native/
     supervisor/
     doctor-fixtures/
 
+  schemas/
+    domain-types.ts
+    zod/
+    json-schema/
+    fixtures/valid/
+    fixtures/invalid/
+    migrations/
+
   fixtures/
     repositories/
-    agent-streams/
+    evaluator-streams/
     evidence/
+    failures/
 
   research/
     analysis/
 
+  spec/
+  adr/
   docs/
-    spec/
-    adr/
+  sources/
+  archive/
+  brand/
 
   pnpm-workspace.yaml
   Cargo.toml
 ```
 
-## 13. `apps/bootstrap`
+The current documentation repository may be scaffolded in place into this layout. Canonical architecture documents remain at root-level `spec/`, `adr/`, and `docs/`.
 
-Minimal npm bin. No product policy.
+## 5. Application responsibilities
 
-## 14. `apps/cli`
+### `apps/bootstrap`
 
-Commands:
+Minimal npm `bin`. Validates Node/native package, launches Rust, owns no product policy.
 
-- doctor;
-- run;
-- inspect;
-- export;
-- cleanup.
+### `apps/coordinator`
 
-## 15. `apps/dashboard`
+JavaScript bundle launched by Rust using exact Node. Hosts domain services, local API, dashboard assets, Playwright orchestration, and recovery composition.
 
-Local interface for progress, evidence, comparisons, ratings, cleanup, history.
+### `apps/cli`
 
-## 16. `packages/core`
+Commands from `spec/13`:
 
-Pure domain:
+- `init`;
+- `doctor`;
+- `run`;
+- `inspect`;
+- `resume`;
+- `export`;
+- `cleanup`.
 
-- session/run states;
-- champion/challenger;
-- eligibility;
-- promotion;
-- retention;
-- escalation;
-- invariants.
+CLI and dashboard call the same application/domain services.
 
-No Playwright, Git, Fastify, Rust, or provider import.
+### `apps/dashboard`
 
-## 17. `packages/config`
+Local browser UI for projects, Runs, evidence, decisions, diagnostics, artifacts, and non-destructive exports. It never mutates canonical files directly.
 
-JSONC, Zod, defaults, diagnostics, migrations.
+## 6. Package responsibilities
 
-## 18. `packages/store`
+### `packages/core`
 
-Files, events, manifests, recovery, hashes, exports.
+Pure domain types, reducers, state transitions, commands, recommendation policy, and invariants. It imports shared schema types but no Playwright, Fastify, Git subprocess, Rust, provider SDK, or UI dependency.
 
-## 19. `packages/accounting`
+Canonical terms are current implementation, contender, candidate, Recommendation, User Decision, and Promotion.
 
-Model usage, allocation, wall/human time, local resources, policy snapshots.
+### `packages/config`
 
-## 20. `packages/supervisor-client`
+Loads the exact files and precedence from `spec/13`, validates through Zod, produces provenance diagnostics, and resolves immutable Run Configuration.
 
-IPC client, framing, native interface, output reads, subscriptions.
+### `packages/store`
 
-## 21. `packages/git`
+Implements `spec/11`: canonical entities, event and artifact streams, hashes, locking, recovery, integrity, retention, import, and export.
 
-System Git invocation, worktrees, status, patch, cleanup. No JavaScript Git reimplementation initially.
+### `packages/accounting`
 
-## 22. `packages/workspace`
+Stores `InferenceUsage`, process usage, wall time, local resources, policy snapshots, and human-time observations. Unknown values remain null.
 
-Materialization, dependencies, server profiles, ports, readiness.
+### `packages/supervisor-client`
 
-## 23. `packages/capture`
+Framing, authentication, operation idempotency, process/output APIs, subscriptions, golden protocol fixtures, and compatibility negotiation.
 
-Playwright, fixtures, Clock, states, screenshots, DOM, accessibility, traces, epochs.
+### `packages/git`
 
-## 24. `packages/gates`
+System Git invocation through supervised process roots, source snapshots, worktrees, status, patches, branch export, and cleanup. No JavaScript Git reimplementation initially.
 
-Build, tests, accessibility, protected files, route, content, capture validity.
+### `packages/workspace`
 
-## 25. `packages/evaluate`
+Materialization, dependency preparation, server profiles, port leases, readiness, workspace verification, and cleanup policy.
 
-Packets, critics, reversal, selector, human aggregation, controls, metrics.
+### `packages/capture`
 
-## 26. `packages/agents`
+Playwright, contained browser lifecycle, Capture Plans/Epochs, clock/random fixtures, states, viewports, interaction scripts, screenshots, DOM/accessibility/geometry/style evidence, and capture validation.
 
-Common adapter, replay/mock, first real provider, raw events, usage parser.
+### `packages/gates`
 
-## 27. `packages/server`
+Pre-capture, runtime/capture, and post-capture gates. A gate declares its required evidence phase so it cannot run before dependencies exist.
 
-Fastify API, SSE, static dashboard, auth, evidence serving.
+### `packages/evaluate`
 
-## 28. Browser stack
+Immutable packets, generic evaluator adapter, factor evidence, order reversal, human-only ratings, deterministic Recommendation policy, experimental controls, and metrics.
 
-Official Playwright for Node. Initial browser: Playwright-managed Chromium only.
+### `packages/adapters`
 
-Use Playwright Test for harness integration, dashboard E2E, fixture repositories.
+Replay/mock plus generic external-command JSON adapter. In-run generation/provider-specific adapters are post-MVP.
 
-## 29. Accessibility
+### `packages/server`
 
-axe-core through Playwright. No complete WCAG claim.
+Fastify local API, SSE, session authentication, CSRF/origin protection, static dashboard, artifact serving, and safe-mode enforcement from `spec/13`.
 
-## 30. Image processing
+## 7. Browser and frontend stack
 
-Sharp for thumbnails, contact sheets, crops, masks, overlays, metadata normalization. Pixel diff is diagnostic, not quality score.
+- official Playwright for Node;
+- Playwright-managed Chromium only for MVP;
+- Playwright Test for harness integration and dashboard E2E;
+- axe-core through Playwright, without complete WCAG claim;
+- Sharp for thumbnails, crops, masks, overlays, and metadata normalization;
+- pixel difference remains diagnostic, never the quality score;
+- React, Vite, TypeScript, CSS Modules, and CSS variables;
+- no Next.js, Electron, or Tauri initially.
 
-## 31. Server
+## 8. Server and client state
 
-Fastify current supported major at scaffold. REST for commands/queries; SSE for events. No WebSocket initially.
+- Fastify supported major pinned at scaffold;
+- REST queries/commands and SSE from `spec/13`;
+- no WebSocket initially;
+- typed fetch client;
+- URL state for shareable local navigation;
+- local component state;
+- add a query cache library only after measured need;
+- SSE is notification, not source of truth.
 
-## 32. Dashboard
+## 9. Persistence
 
-React current stable, Vite current stable, TypeScript, CSS Modules, CSS variables. No Next.js.
+Files and append-only event/artifact streams are canonical. SQLite may later be a rebuildable index. No database appears in the critical path for reconstruction.
 
-## 33. Client state
+## 10. Testing and formatting
 
-Typed fetch, SSE hook, URL state, local component state. Add query library only when needed.
+- TypeScript unit/integration: Vitest-compatible stable toolchain;
+- browser/UI: Playwright Test;
+- Rust: Cargo test;
+- cross-language: golden protocol, schema, event, and adversarial fixtures;
+- lint/format: ESLint/typescript-eslint, React hooks, Prettier, Rustfmt, Clippy.
 
-## 34. Persistence
+No generic workflow engine such as Temporal, Inngest, BullMQ, Redis, LangChain, Mastra, or XState.
 
-Files initially; SQLite later as rebuildable index.
+## 11. Distribution
 
-## 35. Testing
-
-- TypeScript: compatible stable Vitest.
-- Browser: Playwright Test.
-- Rust: Cargo test.
-- Cross-language: golden protocol fixtures and adversarial tests.
-
-## 36. Lint/format
-
-ESLint, compatible typescript-eslint, React hooks, Prettier, Rustfmt, Clippy.
-
-## 37. No generic workflow framework
-
-Do not add Temporal, Inngest, BullMQ, Redis, LangChain, Mastra, or XState. Domain state machine remains explicit.
-
-## 38. No desktop shell initially
-
-Use `npx visual-optimizer`. Ordinary browser dashboard. Tauri may come later. Electron not planned.
-
-## 39. Agent adapter order
-
-1. replay/mock;
-2. one real CLI;
-3. second provider only after selector proof;
-4. ACP later.
-
-Do not scaffold three unstable providers first.
-
-## 40. First adapter criteria
-
-Choose by current workflow, reliable headless mode, structured events, evidence support, usage reporting, and Windows reliability.
-
-## 41. Distribution
-
-Main npm package plus platform-native packages, e.g.:
+Working conceptual packages:
 
 ```text
-@project/visual-optimizer
-@project/supervisor-win32-x64
-@project/supervisor-linux-x64
-@project/supervisor-darwin-arm64
+render-rivals
+<selected-scope>/supervisor-win32-x64
+<selected-scope>/supervisor-linux-x64
+<selected-scope>/supervisor-darwin-arm64
 ```
 
-Users do not install Rust.
+The exact public npm scope/name is a product decision before publication. Internal code and metadata must use Render Rivals naming and must not retain `visual-optimizer`.
 
-## 42. Native resolution
+Bootstrap selects native package by platform, architecture, and libc where needed and verifies package metadata/checksum.
 
-Bootstrap selects by platform, architecture, libc where needed, and package metadata. Verify integrity metadata.
+Build artifacts:
 
-## 43. Build artifacts
-
+- minimal bootstrap JavaScript;
 - coordinator JavaScript bundle;
 - Rust platform binary;
-- static dashboard assets.
+- static dashboard assets;
+- schema artifacts and protocol fixtures.
 
-## 44. Support matrix
+Users do not install Rust to consume a packaged release.
 
-### v0 reference
+## 12. Support matrix
 
-- Windows x64;
+### MVP reference
+
+- Windows 10/11 x64;
 - Node 24 LTS;
 - Chromium;
-- pnpm/npm repositories;
-- one active candidate.
+- pnpm and npm target repositories;
+- one active current/contender workload;
+- pipe-driven evaluators;
+- local dashboard and CLI.
 
 ### Experimental
 
-- Linux x64 strong/managed;
+- Linux x64 strong/managed according to measured capability;
 - macOS best effort;
-- other package managers.
+- yarn and other package managers;
+- external-server mode.
 
-## 45. Benchmark mode
+Benchmark mode uses a pinned controlled Linux environment, fonts, locale/time zone, fixtures, and dependency hashes. Native product mode remains valid for local comparison but does not claim cross-host pixel parity.
 
-Pinned Linux container, Playwright image, fonts, locale/timezone, fixtures, dependency hashes.
+## 13. Scaffold sequence
 
-Native product mode remains valid for local A/B.
+### Stage 0 — Documentation and decision gate
 
-## 46. Scaffold sequence
+- canonical specs/ADRs accepted;
+- cross-spec normalization complete;
+- scaffold decision register resolved/deferred;
+- source verification recorded;
+- license explicitly marked pending;
+- exact config/CLI/API contracts accepted.
 
-### Stage 0 — Documentation gate
+### Stage 1 — Schemas and domain primitives
 
-Canonical specs/ADRs accepted; old docs archived; source notes recorded.
+- shared IDs/types;
+- Zod and JSON Schema;
+- valid/invalid fixtures;
+- state reducers and transition tests;
+- canonical JSON/hash utilities.
 
-### Stage 1 — Bootstrap/supervisor spike
+### Stage 2 — Bootstrap/supervisor spike
 
-JavaScript bootstrap, exact Node, Rust terminal, secure IPC, Windows Job, console isolation, output capture.
+- minimal bootstrap;
+- exact Node;
+- Rust terminal and Session;
+- secure IPC;
+- Windows Job and console isolation;
+- output capture;
+- browser-descendant containment proof.
 
-### Stage 2 — Doctor
+### Stage 3 — Doctor and local API shell
 
-Normal tree, detached child, browser containment, endpoint ownership, Ctrl+C, crash cleanup.
+- containment/detachment/browser/endpoint fixtures;
+- data root and configuration discovery;
+- loopback auth, REST commands, SSE, safe mode;
+- CLI `init`, `doctor`, and `inspect`.
 
-### Stage 3 — Files/state
+### Stage 4 — Canonical store and recovery
 
-Session/run manifests, event log, recovery, cleanup result.
+- Run/entity files;
+- event/artifact streams;
+- atomic commit ordering;
+- locks, integrity, reconstruction, cleanup;
+- failure fixtures.
 
-### Stage 4 — Repository qualification
+### Stage 5 — Repository qualification
 
-Git worktree, materialization, dependencies, build/test, readiness.
+- project trust;
+- Git/source snapshots;
+- workspaces/materialization;
+- dependencies/build/test;
+- ports/readiness.
 
-### Stage 5 — Capture
+### Stage 6 — Capture
 
-One epoch, champion recapture, clock fixture, states, evidence, crash invalidation.
+- fixture/state/interaction contracts;
+- current stability samples;
+- one Epoch and complete matrix;
+- candidate-local versus epoch-wide failure behavior;
+- artifact validation.
 
-### Stage 6 — Human comparison
+### Stage 7 — Gates and human comparison
 
-Randomized A/B, dimensions, human decision, random/retain/oracle.
+- phased gates;
+- side-by-side comparison;
+- evidence citations;
+- typed human decision;
+- deterministic retention for ineligible contender.
 
-### Stage 7 — Model judge
+### Stage 8 — Model-backed pairwise evaluation
 
-Critics, reversal, selector recommendation, accounting.
+- generic command adapter;
+- immutable packets;
+- output/citation validation;
+- order reversal;
+- deterministic Recommendation;
+- accounting.
 
-### Stage 8 — Personal experiment
+### Stage 9 — Promotion/export and acceptance suite
 
-One project, multiple challengers, linear and selector conditions.
+- report and patch export;
+- local branch creation;
+- stale-decision checks;
+- idempotent retry;
+- full golden and failure fixtures.
 
-### Stage 9 — Continuation decision
+### Stage 10 — Personal experiment and continuation decision
 
-Stop, pivot, or proceed.
+Run the first real project experiment, compare against controls, then stop, pivot, or proceed.
 
-## 47. Solo-maintenance constraint
+## 14. Deferrals
 
-Minimize provider adapters, platform breadth, concurrency, distributed services, premature standards, and packaging polish.
-
-## 48. Deferrals
-
+- in-run contender generation;
 - preference learning;
 - automatic merge;
-- multi-user;
-- hosted service;
-- public protocol;
+- multi-user/team collaboration;
+- hosted service/cloud synchronization;
+- public protocol/plugin marketplace;
 - MCP server;
-- marketplace;
 - parallel search;
-- multi-browser judging;
-- mobile device lab;
+- multi-browser/device lab;
 - Figma round trip;
-- remote worker fleet.
+- remote worker fleet;
+- Run pause/suspend;
+- ConPTY adapters unless justified.
 
-## 49. Acceptance criteria
+## 15. Acceptance criteria
 
-Stack is accepted when runtime ownership is unambiguous, exact Node launch specified, terminal policy specified, IPC secure, evidence invalidation specified, platform guarantees explicit, and initial scope solo-buildable.
+The stack is accepted when:
 
-## 50. Open items
+- runtime ownership and descendant policy are unambiguous;
+- exact Node and terminal behavior are tested;
+- IPC and local dashboard mutation surfaces are authenticated and idempotent;
+- canonical schemas and storage reconstruct without a database;
+- candidate-local failures and epoch invalidation are distinguished;
+- all enabled UI commands have legal domain transitions;
+- platform guarantees are explicit;
+- the Windows reference vertical slice is solo-maintainable.
 
-- `OPEN-STACK-001`: package name.
-- `OPEN-STACK-002`: first real adapter.
-- `OPEN-STACK-003`: Rust libraries.
-- `OPEN-STACK-004`: exact scaffold versions.
-- `OPEN-STACK-005`: Windows native-package CI.
-- `OPEN-STACK-006`: dashboard tokens.
+Historical `OPEN-STACK-*` items are resolved, deferred, or assigned to milestones in `docs/SCAFFOLD-DECISION-REGISTER.md`.
