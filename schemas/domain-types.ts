@@ -120,7 +120,7 @@ export type RunState =
   | "gating"
   | "evaluating"
   | "awaiting_decision"
-  | "exporting"
+  | "promoting"
   | "completed"
   | "failed"
   | "cancelled"
