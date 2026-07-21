@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 4.0  
+**Inventory format:** 4.1  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -38,8 +38,10 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 21. [`spec/21-artifact-serving-preview-and-active-content-security.md`](spec/21-artifact-serving-preview-and-active-content-security.md)
 22. [`spec/22-retention-trash-garbage-collection-and-storage-admission.md`](spec/22-retention-trash-garbage-collection-and-storage-admission.md)
 23. [`spec/23-locking-leases-concurrency-and-multi-session-ownership.md`](spec/23-locking-leases-concurrency-and-multi-session-ownership.md)
+24. [`spec/24-secrets-authentication-state-and-network-egress-policy.md`](spec/24-secrets-authentication-state-and-network-egress-policy.md)
+25. [`spec/25-component-upgrades-schema-migrations-backups-and-rollback.md`](spec/25-component-upgrades-schema-migrations-backups-and-rollback.md)
 
-Specs 12–23 normalize shared authority, make Rust/TypeScript records byte-compatible, provide durable command reconciliation, register complete Capture evidence, prevent same-origin Artifact execution, and define recoverable deletion plus cross-Session ownership.
+Specs 12–25 normalize shared authority, make Rust/TypeScript records byte-compatible, provide durable command reconciliation, register complete Capture evidence, prevent same-origin Artifact execution, define recoverable deletion and cross-Session ownership, constrain secret/network behavior, and make upgrades/migrations recoverable.
 
 ## Shared schema and invariant sources
 
@@ -83,6 +85,13 @@ ADR-0011 is incorporated history. ADR-0012 makes `promoting` the Run adoption ph
 
 The invariant matrix defines semantic record combinations; the gap register distinguishes implementation proof from architecture; the test strategy turns those requirements into release gates.
 
+## Documentation conformance
+
+- [`conformance/README.md`](conformance/README.md)
+- [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json)
+
+The initial negative fixture records real repository drift before repair. The first executable checker must prove it catches equivalent mutations and passes the repaired tree.
+
 ## Product and public planning
 
 - [`docs/DASHBOARD-PAIRING-ROUTE.md`](docs/DASHBOARD-PAIRING-ROUTE.md)
@@ -97,8 +106,9 @@ The pairing route is the only pre-authentication browser surface. Authenticated 
 
 - [`sources/official-runtime-verification.md`](sources/official-runtime-verification.md)
 - [`sources/playwright-capture-api-verification.md`](sources/playwright-capture-api-verification.md)
+- [`sources/playwright-network-api-verification.md`](sources/playwright-network-api-verification.md)
 
-Upstream documentation is separated from Render Rivals capability proof. Current Playwright ARIA/screenshot APIs are noted, but exact pinned package and fixture behavior remain authoritative.
+Upstream documentation is separated from Render Rivals capability proof. Current Playwright ARIA, screenshot, routing, Service Worker and WebSocket facts are noted, but exact pinned package and fixture behavior remain authoritative.
 
 ## Brand exploration
 
@@ -107,7 +117,7 @@ Upstream documentation is separated from Render Rivals capability proof. Current
 - `brand/concepts/01-arena-purple-orange.webp`
 - `brand/concepts/02-evidence-editorial.webp`
 - `brand/concepts/03-premium-champion.webp`
-- `brand/concepts/04-neon-creative-technology.webp`
+- `brand/concepts/04-neon-creative-tech.webp`
 - `brand/concepts/05-minimal-r-monogram.webp`
 - `brand/concepts/06-twin-slash-lime.webp`
 
@@ -115,15 +125,10 @@ Brand files are exploratory and not architecture inputs. Legacy words in histori
 
 ## Historical archive
 
-- `archive/README.md`
-- `archive/SUPERSEDED-RUNTIME-DECISIONS.md`
-- `archive/original-design-warden-part-01.md`
-- `archive/original-design-warden-part-02.md`
-- `archive/original-design-warden-part-03.md`
-- `archive/original-design-warden-part-04.md`
-- `archive/original-roadmap.md`
+- [`archive/SUPERSEDED-RUNTIME-DECISIONS.md`](archive/SUPERSEDED-RUNTIME-DECISIONS.md)
+- [`archive/original-design-warden-part-01.md`](archive/original-design-warden-part-01.md)
 
-Archive never drives scaffolding.
+Only files that actually exist in Git history are listed. The partial Design Warden fragment explicitly states that the full draft was never preserved in this repository. Archive never drives scaffolding.
 
 ## Root documents
 
@@ -139,9 +144,9 @@ Archive never drives scaffolding.
 - Run-state fixture migration from pre-scaffold `exporting` to `promoting`;
 - Operation reconciliation, store crash-injection, Capture completeness, active-content preview, trash and lock suites;
 - generated API command/client registry;
-- documentation conformance script;
+- executable documentation-conformance checker using the committed real-drift fixture;
 - implementation monorepo;
-- randomized-host pairing and Windows native/package/browser proof.
+- randomized-host pairing and Windows 11 native/package/browser proof.
 
 ## Public release blockers
 
@@ -154,4 +159,4 @@ Archive never drives scaffolding.
 
 ## Conformance note
 
-Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, and archive. Future automated checks must use explicit path and context allowlists rather than fail on every raw occurrence.
+Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, fixtures and archive. Future automated checks must use explicit path and context allowlists rather than fail on every raw occurrence.
