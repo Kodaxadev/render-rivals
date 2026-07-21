@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 4.1  
+**Inventory format:** 4.2  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -9,7 +9,7 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 ## Repository status
 
 - Architecture/MVP contracts: established.
-- Executable implementation: pre-scaffold.
+- Executable implementation: pre-scaffold, except for the dependency-free documentation-conformance checker.
 - License: placeholder only; no general reuse or contribution permission yet.
 - Public packages: unavailable.
 
@@ -88,9 +88,11 @@ The invariant matrix defines semantic record combinations; the gap register dist
 ## Documentation conformance
 
 - [`conformance/README.md`](conformance/README.md)
+- [`conformance/check.mjs`](conformance/check.mjs)
+- [`conformance/check.test.mjs`](conformance/check.test.mjs)
 - [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json)
 
-The initial negative fixture records real repository drift before repair. The first executable checker must prove it catches equivalent mutations and passes the repaired tree.
+Run `node conformance/check.mjs` for the clean-tree check and `node --test conformance/check.test.mjs` for the mutation suite. The ten negative cases are real pre-repair defects; the tests recreate them in owned temporary copies and require class-specific detection.
 
 ## Product and public planning
 
@@ -144,7 +146,6 @@ Only files that actually exist in Git history are listed. The partial Design War
 - Run-state fixture migration from pre-scaffold `exporting` to `promoting`;
 - Operation reconciliation, store crash-injection, Capture completeness, active-content preview, trash and lock suites;
 - generated API command/client registry;
-- executable documentation-conformance checker using the committed real-drift fixture;
 - implementation monorepo;
 - randomized-host pairing and Windows 11 native/package/browser proof.
 
@@ -159,4 +160,4 @@ Only files that actually exist in Git history are listed. The partial Design War
 
 ## Conformance note
 
-Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, fixtures and archive. Future automated checks must use explicit path and context allowlists rather than fail on every raw occurrence.
+Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, fixtures and archive. Automated checks use explicit path and context rules rather than fail on every raw occurrence.
