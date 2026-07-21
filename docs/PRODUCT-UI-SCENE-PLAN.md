@@ -1,1168 +1,542 @@
 # Render Rivals Product UI and Scene Plan
 
-**Status:** Product-planning baseline  
-**Surface:** Local desktop application  
-**Purpose:** Define every route, workflow scene, persistent shell element, overlay, and required state before wireframing or implementation.
+**Status:** Implementation-facing product plan  
+**Surface:** Local browser application served by the coordinator  
+**MVP contract:** `docs/MVP-VERTICAL-SLICE.md`  
+**Commands/API:** `spec/13-configuration-cli-and-local-api-contracts.md`  
+**Route geometry:** `docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`
 
-## Product principles
+## 1. Purpose and availability labels
+
+This document defines product scenes and availability. It does not authorize commands outside the domain/state/API contracts.
+
+Every scene or control is labeled conceptually as:
+
+- **MVP enabled:** implemented and acceptance-tested;
+- **Read-only:** visible data with no mutation;
+- **Conditional:** shown only when current durable state and capability permit it;
+- **Post-MVP:** planning only; hidden or visibly disabled in MVP builds.
+
+The wireframe specification owns exact route decomposition. This document owns product meaning and feature availability.
+
+## 2. Product principles
 
 Render Rivals is a precise local development instrument, not an esports product or autonomous design casino.
 
-The product UI should be:
+The UI is:
 
-- competitive without aggression;
-- analytical without becoming clinical;
-- technical without obscuring meaning;
-- quiet enough for long work sessions;
-- explicit about evidence, uncertainty, and destructive actions;
-- usable in light and dark themes;
-- accessible without relying on red/green distinctions.
+- evidence-first;
+- explicit about uncertainty and invalidity;
+- accessible without red/green-only meaning;
+- clear about local data and external evaluator transmission;
+- explicit about destructive and source-affecting operations;
+- honest about containment and cleanup capability;
+- usable in light/dark themes and compact laptop windows.
 
-Preferred product language:
+Canonical language:
 
-- Current
-- Contender
-- Candidate
-- Comparison
-- Evidence
-- Promotion
-- Run
-- Round
-- Capture
-- Decision
+- Current implementation;
+- Contender;
+- Candidate;
+- Run;
+- Capture;
+- Evidence;
+- Recommendation;
+- User Decision;
+- Promotion;
+- Export Operation.
 
-Avoid trophies, crowns, crossed weapons, arena staging, glowing `VS` graphics, and other sports-game metaphors inside the application.
+Avoid champion/challenger/winner/battle as stable labels and avoid trophies, crowns, crossed weapons, glowing VS, and arena staging.
 
----
+## 3. Global shell
 
-# 1. Application shell
+### MVP enabled navigation
 
-## 1.1 Global sidebar
+- Home;
+- Projects;
+- Runs;
+- Artifacts;
+- Diagnostics;
+- Settings.
 
-Primary destinations:
+### Post-MVP navigation
 
-- Home
-- Projects
-- Runs
-- Rule Sets
-- Artifacts
-- Diagnostics
-- Settings
+- Rule Sets, until reusable rule-set entities/editing are implemented and schema-backed.
 
-The active project and run belong in the context bar rather than permanently expanding the sidebar.
+### Context bar
 
-## 1.2 Top context bar
+Shows current Project, Source Snapshot, active Run, runtime health, containment capability, storage state, command palette, and help.
 
-Shows:
+### Run navigation
 
-- current project;
-- Git branch or source snapshot;
-- active run;
-- runtime health;
-- containment capability;
-- artifact-storage state;
-- command-palette trigger;
-- help menu.
+- Overview;
+- Contenders;
+- Compare;
+- Evidence;
+- Decision;
+- Timeline.
 
-## 1.3 Active-run navigation
+Preparation and Capture are operational routes linked from Overview, not permanent top-level tabs.
 
-When a run is selected:
+### Global overlays
 
-- Overview
-- Contenders
-- Compare
-- Evidence
-- Decision
-- Timeline
+MVP:
 
-## 1.4 Global overlays
+- activity drawer;
+- runtime logs;
+- destructive confirmation;
+- unsaved draft warning;
+- runtime-health details;
+- help/shortcuts.
 
-- Command palette
-- Activity drawer
-- Runtime-log drawer
-- Help panel
-- Keyboard-shortcut panel
-- Destructive-action confirmation
-- Unsaved-configuration warning
-- Runtime-health details
+Post-MVP:
 
----
+- extensible command palette actions beyond existing legal commands.
 
-# 2. Launch and onboarding
+## 4. Launch, onboarding, and safe mode
 
-## 2.1 Launch screen
+### Launch
 
-Communicates actual startup work:
+Shows actual operations:
 
-- starting the native supervisor;
-- opening the local data directory;
-- verifying browser runtime;
-- restoring the previous session;
-- recovering an interrupted run.
+- verify native package;
+- start supervisor;
+- authenticate coordinator;
+- open data root;
+- verify browser runtime;
+- assess interrupted Runs;
+- start local dashboard.
 
-States:
+Failure shows exact code, operation, logs, retry when legal, and installation diagnostics.
 
-- initializing;
-- taking longer than expected;
-- safe-mode available;
-- startup failed;
-- recovery available.
+### Safe mode
 
-## 2.2 First-run welcome
+**Conditional.** Available only after supervisor and coordinator authenticate.
 
-Core message: Render Rivals runs locally, captures comparable evidence, and never promotes silently.
+Permits:
 
-Actions:
+- read-only Project/Run/Artifact inspection;
+- integrity and recovery assessment;
+- verified cleanup;
+- sanitized diagnostic Export Operation.
 
-- Set up Render Rivals
-- Open documentation
-- Exit
+Prohibits Project commands, browser/evaluator execution, source/workspace mutation, new Runs, and unsafe Promotion.
 
-## 2.3 Local access and permissions
+Native package, endpoint, or authentication failure cannot offer safe mode.
 
-Explain access to:
+### First-run onboarding
 
-- project directories;
-- temporary build processes;
-- browser automation;
-- local ports;
-- artifact storage.
+MVP steps:
 
-For each permission, explain why it is needed, what can be accessed, what is excluded, and where data is written.
+1. product/local execution explanation;
+2. project-command trust and data access;
+3. runtime/containment/storage check;
+4. data-root and retention setup;
+5. setup complete.
 
-## 2.4 Runtime compatibility check
+Results use Ready, Limited, or Blocked—not one opaque score.
 
-Checks:
+## 5. Home
 
-- operating system;
-- Node runtime;
-- browser availability;
-- native supervisor;
-- Git availability;
-- available storage;
-- local port allocation;
-- project-directory permissions;
-- process-containment capability.
+MVP shows:
 
-Results are labeled `Ready`, `Limited`, or `Blocked`; do not collapse them into one opaque health score.
-
-## 2.5 Containment capability
-
-Detected modes:
-
-- Strong containment
-- Limited containment
-- Best effort
-
-The page must state the exact enforcement available and the consequences of missing capabilities.
-
-## 2.6 Storage setup
-
-Configure:
-
-- artifact directory;
-- maximum retained storage;
-- cleanup threshold;
-- screenshot retention;
-- build-output retention;
-- log retention.
-
-## 2.7 Setup complete
-
-Actions:
-
-- Open a project
-- Explore a sample project
-- Read the workflow guide
-
----
-
-# 3. Home and workspace
-
-## 3.1 Home dashboard
-
-Shows:
-
-- recent projects;
-- interrupted runs;
-- runs awaiting decisions;
-- recent promotions;
-- runtime health;
-- disk usage;
+- recent Projects;
+- interrupted Runs;
+- Runs awaiting Decision;
+- recent Promotions;
+- recent Export Operations;
+- runtime/storage health;
 - actionable warnings.
 
-Primary action: `Open project`.
+Primary action: Open Project.
 
-## 3.2 Empty home
+Empty state offers Open Project, sample fixture, and workflow documentation.
 
-Shows:
+## 6. Project lifecycle
 
-- Open local project
-- Try sample project
-- Import Render Rivals configuration
+### Open/inspect Project
 
-Include a compact workflow diagram:
+MVP detects and shows:
 
-`Current implementation -> contenders -> comparable captures -> evidence -> decision`
+- canonical root and nested-repository ambiguity;
+- Git status/commit/branch;
+- package manager/lockfile/framework hints;
+- install/build/development commands;
+- default URL/route;
+- existing marker/config;
+- trust state;
+- storage/capability risks.
 
-## 3.3 Recent activity drawer
+Detection never overwrites configuration.
 
-Chronological events linking to their source:
+### Project configuration
 
-- project opened;
-- run created;
-- capture completed;
-- candidate invalidated;
-- evidence generated;
-- promotion approved;
-- artifacts exported;
-- runtime warning.
+MVP sections:
 
----
+- Commands;
+- Environment/secret references;
+- Routes and fixture states;
+- Viewports/interaction;
+- Source policy/protected paths;
+- Artifact/retention policy;
+- Runtime limits;
+- Privacy/evaluator transmission;
+- Danger zone.
 
-# 4. Project lifecycle
+Exact filenames and precedence come from `spec/13`.
 
-## 4.1 Open project
-
-File-system selection with:
-
-- recent locations;
-- framework detection;
-- package-manager detection;
-- Git status;
-- existing Render Rivals configuration.
-
-Warnings:
-
-- uncommitted changes;
-- unsupported framework;
-- nested repository;
-- very large workspace;
-- missing build command.
-
-## 4.2 Project inspection
-
-Pre-import summary:
-
-- project name;
-- framework;
-- package manager;
-- detected scripts;
-- application entry point;
-- development command;
-- build command;
-- default URL;
-- Git branch and commit;
-- existing configuration.
-
-Actions: accept detection, edit setup, cancel.
-
-## 4.3 Project configuration
-
-Configure:
-
-- install command;
-- build command;
-- development command;
-- expected local URL;
-- startup timeout;
-- working directory;
-- environment-file policy;
-- allowed ports;
-- ignored paths;
-- artifact path.
-
-## 4.4 Project overview
-
-Shows:
-
-- project identity;
-- current source snapshot;
-- last successful run;
-- pending decisions;
-- saved rule sets;
-- recent artifacts;
-- runtime-configuration summary.
-
-Primary action: `New run`.
-
-## 4.5 Project health
-
-Checks:
-
-- build command;
-- application startup;
-- route availability;
-- browser connection;
-- capture readiness;
-- Git status;
-- environment variables;
-- storage access.
-
-## 4.6 Project settings
-
-Sections:
-
-- Commands
-- Environment
-- Routes
-- Viewports
-- Source-control behavior
-- Artifact storage
-- Runtime limits
-- Privacy
-- Danger zone
-
-## 4.7 Remove project
+### Remove Project
 
 Choices:
 
-- remove project reference only;
-- remove reference and Render Rivals artifacts;
-- cancel.
+- remove registration only;
+- remove registration and owned Render Rivals data after explicit confirmation.
 
-Never imply that source code will be deleted unless an explicit destructive option says so.
+Never imply source deletion.
 
----
+## 7. New Run wizard
 
-# 5. New run wizard
+The wizard uses persistent steps and creates a draft. Validation seals immutable configuration.
 
-Use a persistent step list rather than a carousel.
+### Intent
 
-## 5.1 Run intent
+**MVP enabled:** Compare existing implementations.
 
-Choose:
+**Post-MVP:** Generate contenders, combined generation/import, and tournament/round modes.
 
-- compare existing implementations;
-- generate new contenders;
-- combine existing and generated contenders;
-- re-evaluate a previous decision.
+**Re-evaluate prior decision:** creates a new draft Run from selected prior configuration/provenance and must recapture all selectable evidence.
 
-Fields:
+Fields: name, objective, task/design brief, success criteria.
 
-- run name;
-- objective;
-- design brief;
-- success criteria.
+### Scope
 
-## 5.2 Scope selection
+**MVP enabled:** one configured route, three required states, two viewports, one critical interaction.
 
-Choose:
+**Post-MVP:** entire application, component/section-only capture as independent scope types, arbitrary responsive sequences, multi-route Runs.
 
-- entire application;
-- route;
-- component;
-- page section;
-- responsive state;
-- interaction flow.
+Authentication is allowed only through deterministic fixture references; interactive login recording is post-MVP.
 
-Configure route, selector, application state, authentication state, and seed data.
+### Current implementation
 
-## 5.3 Current implementation
+Select immutable Source Snapshot or explicit working-tree snapshot. Show commit/dirty patch, staleness, route preview, and warning that it will be recaptured.
 
-Show:
+### Contender
 
-- source snapshot;
-- branch;
-- commit;
-- target route;
-- preview;
-- last-capture age;
-- staleness warning.
+**MVP enabled:** exactly one from branch, commit, worktree, folder snapshot, patch, or valid previous Candidate snapshot.
 
-The current implementation is always recaptured in the valid capture epoch.
+**Post-MVP:** generated contender, manual external URL as reference-equivalent Candidate, duplicate-and-live-edit, multiple contenders.
 
-## 5.4 Contender sources
+### Environment
 
-Sources:
+MVP defaults desktop/mobile, one theme, locale, time zone, reduced motion, deterministic data/clock/random policy. Show capture/artifact estimate.
 
-- existing branch;
-- existing worktree;
-- local folder;
-- patch;
-- generated contender;
-- previous-run candidate;
-- manual URL;
-- duplicate current implementation for controlled modification.
+Tablet, multiple themes/locales, and matrix explosion controls are post-MVP.
 
-## 5.5 Generation configuration
+### Gates
 
-When generation is enabled:
+MVP shows phase and dependencies:
 
-- number of contenders;
-- allowed files;
-- protected files;
-- maximum changed lines;
-- model/provider;
-- iteration limit;
-- dependency policy;
-- asset policy;
-- accessibility constraints.
+- pre-capture source/dependency/build/readiness;
+- runtime route/state/interaction/console/network;
+- post-capture completeness/accessibility/responsive/integrity.
 
-## 5.6 Viewport and environment matrix
+A gate cannot be enabled when its required evidence/capability is unavailable.
 
-Configure:
+### Evaluation
 
-- desktop, tablet, and mobile widths;
-- device-pixel ratio;
-- color scheme;
-- reduced motion;
-- locale;
-- time zone;
-- test data;
-- authentication state.
+MVP factor set comes from frozen contract. Each factor shows definition, weight, evidence, confidence, missing-data, tie, and protected status.
 
-Show estimated capture count.
+Changing Gates/Factors after validation creates a superseding Run; it never mutates the sealed Run.
 
-## 5.7 Functional gates
+### Limits and review
 
-Available gates:
+Show resource/time/output/retry limits, capability enforcement, capture/storage estimate, risks, external evaluator data flow, and validation status.
 
-- route loads;
-- no uncaught browser errors;
-- required selectors exist;
-- interaction script passes;
-- links work;
-- forms remain usable;
-- no severe accessibility violations;
-- performance threshold;
-- screenshot stability.
+Actions: Back, Save Template, Validate/Start.
 
-## 5.8 Evaluation factors
+## 8. Active Run
 
-Factors may include:
+### Overview
 
-- visual hierarchy;
-- clarity;
-- consistency;
-- information density;
-- alignment;
-- readability;
-- accessibility;
-- responsive behavior;
-- task completion;
-- custom project criteria.
+Shows durable state/checkpoint, current operation, Candidate Attempt, Capture Epoch, browser/process/resources, warnings, and next legal action.
 
-Every factor defines weight, evidence source, minimum confidence, and tie behavior.
+MVP actions:
 
-## 5.9 Runtime limits
+- Cancel;
+- Open Logs;
+- Retry current legal operation;
+- Perform permitted recovery action;
+- Hide/freeze live preview rendering.
 
-- per-process memory;
-- total run memory;
-- candidate timeout;
-- build timeout;
-- capture timeout;
-- evaluation timeout;
-- maximum artifact size;
-- maximum retries.
+**No MVP Pause command.** Hiding preview does not pause execution.
 
-## 5.10 Review run
+### Preparation
 
-Summary:
+Shows workspace, dependencies, build/test gates, launch, listener ownership, readiness, and exact retry availability.
 
-- source snapshot;
-- contenders;
-- capture count;
-- gates;
-- factors;
-- runtime limits;
-- estimated disk use;
-- estimated duration range;
-- detected risks.
+### Capture
 
-Actions: start run, save template, go back.
+Shows Candidate, state, viewport, interaction step, Epoch/browser identity, Artifact commit progress, and immediate invalidation banner.
 
----
+A visible preview is never represented as valid evidence until committed/verified.
 
-# 6. Active run
+### Timeline and logs
 
-## 6.1 Run overview
+Timeline derives from canonical Events. Logs expose Supervisor, Coordinator, Dependency/Build/Test, Application, Browser, Evaluator, Git/Export, and System streams.
 
-Shows:
+Raw logs are sensitive local data; exporting them creates a redacted Export Operation.
 
-- current phase;
-- overall progress;
-- current operation;
-- completed contenders;
-- invalid contenders;
-- runtime usage;
-- capture-epoch status;
-- warnings;
-- next expected action.
+## 9. Contenders
+
+### Gallery/detail
+
+MVP has current plus one Contender but uses scalable list/card components.
+
+Shows stable ID, source, Attempt, eligibility, gates, capture completeness, source-change summary, and failure.
+
+No winner styling before Recommendation.
+
+### Actions
+
+- Retry: creates a new Candidate Attempt only when sealed inputs remain identical and state policy permits it.
+- Revise source/configuration: creates a superseding Run.
+- Exclude: not available as an arbitrary post-seal mutation; exclusion is a presealed policy or a terminal eligibility result.
+- Open workspace: read-only/external inspection, with stale warning.
+
+### Capture/Gate/Source views
+
+Show registered Artifacts, hashes, validity, phase, retry history, evidence links, and source changes. This is inspection, not editing.
+
+## 10. Comparison and Evidence
+
+### MVP comparison mode
+
+- side-by-side desktop/mobile/state/interaction-step comparison;
+- synchronized scroll/zoom where technically reliable;
+- explicit current/contender labels;
+- validity and limitation indicators;
+- cited Evidence rail.
+
+### Conditional/P1
+
+- simple overlay if it does not delay required MVP;
+- interaction replay navigator beyond step-by-step static capture;
+- responsive sequence.
+
+### Post-MVP
+
+- pixel/difference workspace as an authored analysis mode;
+- flicker mode;
+- annotation authoring/pins;
+- region issue collaboration;
+- tournament rounds/pair queue.
+
+Difference diagnostics never equal quality judgment.
+
+### Evidence
+
+Show factor verdict, confidence/null, citations, limitations, conflicts, protected regressions, eligibility, provenance, evaluator/order-reversal Attempts, and missing evidence.
 
 Actions:
 
-- Pause
-- Cancel
-- Open logs
-- Open current contender
-- Continue after recoverable failure
+- rerun identical failed/missing operation when legal;
+- create superseding Run to change factor, Gate, viewport, interaction, or policy;
+- request human review;
+- export report/evidence through Export Operation.
 
-## 6.2 Environment preparation
+There is no post-seal “exclude factor and continue” mutation.
 
-Operations:
+## 11. Decision, Promotion, and Export
 
-- create isolated workspace;
-- install dependencies;
-- build contender;
-- launch application;
-- wait for readiness;
-- connect browser;
-- verify route.
+### Decision states
 
-## 6.3 Baseline capture
-
-Shows current implementation, viewport, interaction step, epoch identifier, browser state, capture progress, and artifacts being written.
-
-## 6.4 Contender execution
-
-One contender at a time in the first scheduler:
-
-- contender identifier;
-- source;
-- build state;
-- process state;
-- capture progress;
-- resource usage;
-- active viewport;
-- interaction step.
-
-## 6.5 Live capture preview
-
-Controls:
-
-- pause preview;
-- fit to window;
-- inspect step;
-- hide preview;
-- open logs.
-
-A visible preview is not automatically valid evidence.
-
-## 6.6 Run timeline
-
-Append-only events with timestamp, source process, contender, artifact link, and technical detail.
-
-## 6.7 Runtime logs
-
-Filters:
-
-- Supervisor
-- Coordinator
-- Build
-- Application
-- Browser
-- Evaluator
-- System
-
-Features: follow mode, search, severity filter, copy selection, export, jump to event.
-
-## 6.8 Pause run
-
-Explain platform behavior, epoch invalidation risk, process suspension or termination, and retained artifacts.
-
-## 6.9 Cancel run
-
-Explain completed work, retained artifacts, process termination, and treatment of incomplete output.
-
----
-
-# 7. Contenders
-
-## 7.1 Contender gallery
-
-Grid or dense list containing:
-
-- stable contender ID;
-- source;
-- eligibility;
-- current phase;
-- gate summary;
-- capture completeness;
-- preliminary evidence;
-- source-change size.
-
-Do not emphasize a winner before evaluation is complete.
-
-## 7.2 Contender detail
-
-Tabs:
-
-- Summary
-- Source
-- Captures
-- Gates
-- Evidence
-- Logs
-- Artifacts
-
-## 7.3 Source-change view
-
-- changed files;
-- added/deleted lines;
-- protected-file warnings;
-- dependency changes;
-- configuration changes;
-- patch viewer.
-
-This is inspection, not source editing.
-
-## 7.4 Capture set
-
-Organize by route, viewport, interaction step, theme, and locale.
-
-Each capture exposes screenshot, DOM snapshot, accessibility snapshot, console output, network summary, and metadata.
-
-## 7.5 Gate results
-
-Separate required and advisory gates. Every result includes rule, evidence, timestamp, retry count, and blocking effect.
-
-## 7.6 Invalid contender
-
-Reasons may include build failure, readiness failure, interaction failure, incomplete capture, severe accessibility failure, or source-policy violation.
-
-Actions: retry, duplicate and revise, exclude, open logs.
-
----
-
-# 8. Comparison workspace
-
-## 8.1 Compare workspace
-
-Layout zones:
-
-- candidate rail;
-- main comparison canvas;
-- evidence-summary rail;
-- view controls;
-- viewport selector;
-- interaction-step selector.
-
-Modes:
-
-- side by side;
-- overlay;
-- difference;
-- flicker;
-- DOM structure;
-- responsive sequence.
-
-## 8.2 Side-by-side
-
-- synchronized scrolling;
-- synchronized zoom;
-- shared viewport frame;
-- matching interaction state;
-- explicit labels;
-- capture-validity indicator;
-- annotation pins.
-
-## 8.3 Overlay
-
-Controls:
-
-- opacity;
-- split position;
-- stacking order;
-- alignment reference;
-- pixel-offset display.
-
-## 8.4 Difference view
-
-Show differences in position, size, contrast, typography, density, wrapping, missing elements, and responsive behavior.
-
-A difference is not automatically an improvement or defect.
-
-## 8.5 Flicker view
-
-Controls: interval, pause, order, full-page or selected region. Respect reduced-motion settings.
-
-## 8.6 Responsive sequence
-
-Modes:
-
-- candidate-focused;
-- viewport-focused;
-- current-versus-contender at each width.
-
-## 8.7 Interaction replay
-
-Synchronized navigation through scripted states such as initial, hover, menu open, populated form, submission, success, and error.
-
-## 8.8 Region focus
-
-Focus on semantic regions while retaining enough surrounding context for fair comparison.
-
-## 8.9 Annotations
-
-Types:
-
-- improvement;
-- regression;
-- neutral change;
-- question;
-- gate issue;
-- evidence reference.
-
----
-
-# 9. Evidence
-
-## 9.1 Evidence overview
-
-Shows eligible contenders, factor results, confidence, gate outcomes, missing evidence, provenance, and recommendation state.
-
-Avoid one unexplained master score.
-
-## 9.2 Evidence matrix
-
-Rows are factors; columns are current and contenders. Cells contain result, confidence, evidence count, gate impact, and explanation link.
-
-## 9.3 Factor detail
-
-- definition;
-- weight;
-- evaluation method;
-- candidate results;
-- supporting captures;
-- citations;
-- confidence;
-- limitations;
-- conflicting evidence.
-
-## 9.4 Visual hierarchy
-
-- attention order;
-- heading structure;
-- primary-action prominence;
-- grouping;
-- competing focal points.
-
-## 9.5 Clarity and readability
-
-- contrast;
-- line length;
-- font size;
-- label clarity;
-- call-to-action clarity;
-- overload;
-- truncation.
-
-## 9.6 Layout and alignment
-
-- alignment lines;
-- spacing consistency;
-- container shifts;
-- overflow;
-- wrapping;
-- breakpoint changes.
-
-## 9.7 Accessibility
-
-- automated violations;
-- keyboard flow;
-- focus visibility;
-- reduced motion;
-- semantic structure;
-- color dependence;
-- manual-review items.
-
-## 9.8 Functional evidence
-
-Every interaction step shows expected behavior, actual behavior, screenshot, console state, DOM assertion, and outcome.
-
-## 9.9 Performance evidence
-
-Optional and separate from visual judgment:
-
-- startup time;
-- route-ready time;
-- interaction latency;
-- layout instability;
-- asset weight;
-- memory use.
-
-## 9.10 Evidence provenance
-
-- evaluator;
-- version;
-- prompt or criteria hash;
-- input artifacts;
-- timestamp;
-- retry history;
-- confidence method.
-
-## 9.11 Conflicting evidence
-
-Show competing conclusions, support, confidence, and a focused human-review question.
-
-## 9.12 Missing evidence
-
-Actions: rerun missing evidence, exclude factor, or mark for human review.
-
----
-
-# 10. Rounds and progression
-
-## 10.1 Round overview
-
-Shows remaining, completed, eliminated, and invalid contenders plus the next comparison.
-
-Prefer a progression list over a sports bracket.
-
-## 10.2 Pairwise queue
-
-Shows scheduled pairs, completed pairs, ties, rematches, and missing evidence.
-
-## 10.3 Round result
-
-Shows advancement decision, evidence basis, confidence, dissent, eliminated contender, and next round.
-
-## 10.4 Tie resolution
-
-Options:
-
-- gather more evidence;
-- increase viewport coverage;
-- add interaction test;
-- human decision;
-- preserve current implementation;
-- declare no material improvement.
-
----
-
-# 11. Decision and promotion
-
-## 11.1 Decision overview
-
-States:
-
-- recommendation ready;
-- no eligible contender;
-- no material improvement;
-- low confidence;
+- contender recommended;
+- current retained/no material improvement;
 - tie;
-- human review required.
+- human review required;
+- invalid Run.
 
-## 11.2 Recommendation detail
+Show supporting and contrary evidence, limitations, source changes, Gates, staleness, and suggested verification.
 
-- why the contender is stronger;
-- where it is weaker;
-- what changed;
-- supporting evidence;
-- counter-evidence;
-- remaining uncertainty;
-- suggested verification.
+### User Decision
 
-## 11.3 No-winner outcome
+Actions map exactly to canonical actions. One-contender MVP does not expose select-other.
 
-A valid successful outcome:
+### Promotion
 
-> No contender demonstrated a sufficiently reliable improvement over the current implementation.
+Only after nonstale authorizing Decision and selected eligible Contender:
 
-Actions: keep current, iterate again, modify criteria, export evidence.
-
-## 11.4 Promotion review
-
-Show source changes, dependencies, gates, evidence, confidence, Git status, and destination.
-
-Promotion selects output; it does not silently merge.
-
-## 11.5 Promotion confirmation
-
-Options:
-
-- mark as recommended;
 - export patch;
 - create local branch;
-- copy worktree path;
-- generate implementation report.
+- preserve workspace.
 
-## 11.6 Promotion completed
+Promotion never means report, mark recommended, merge, push, checkout over active tree, or deployment.
 
-Show selected contender, export location, branch or patch, evidence report, artifact bundle, and next verification steps.
+### Export Operation
 
-## 11.7 Promotion blocked
+Available according to integrity/redaction policy, independent of contender adoption:
 
-Reasons:
-
-- source changed since capture;
-- working tree mismatch;
-- gate regression;
-- stale evidence;
-- missing artifacts;
-- unavailable output path.
-
----
-
-# 12. History and artifacts
-
-## 12.1 Run history
-
-Filters: project, status, date, source branch, outcome, interrupted runs, and rule set.
-
-## 12.2 Completed run detail
-
-Read-only reconstruction of configuration, source snapshots, timeline, contenders, captures, evidence, decision, and exports.
-
-## 12.3 Compare historical runs
-
-Compare rule changes, evaluation changes, outcomes, evidence movement, source changes, and runtime changes.
-
-## 12.4 Artifact explorer
-
-Organize by run, contender, capture epoch, route, viewport, and evidence type.
-
-## 12.5 Artifact detail
-
-Show preview, hash, creation event, related contender, linked evidence, retention state, and export actions.
-
-## 12.6 Export center
-
-- full run bundle;
-- evidence report;
+- report;
+- diagnostics;
+- Run/evidence bundle;
 - screenshots;
-- machine-readable JSON;
-- Markdown report;
-- patch;
-- logs;
-- configuration template.
+- configuration template;
+- selected logs.
 
-## 12.7 Storage cleanup
+No-winner/tie/invalid/failed/cancelled Runs may export reports/diagnostics safely.
 
-Show storage by project/run, old artifacts, incomplete runs, protected artifacts, and estimated reclaimed space.
+## 12. History, Artifacts, and cleanup
 
----
+MVP:
 
-# 13. Rule sets
+- Run history;
+- completed/interrupted Run reconstruction;
+- Artifact explorer/detail;
+- Promotion history;
+- Export Operation history;
+- storage usage and cleanup.
 
-## 13.1 Rule-set library
+Historical comparison across Runs is P1 and never reuses historical captures as current selectable evidence.
 
-Built-in, project, imported, recent, and incompatible rule sets.
+Cleanup schedules run only while Render Rivals is active or at startup/explicit command; no hidden background daemon is assumed.
 
-## 13.2 Rule-set detail
+## 13. Diagnostics and Settings
 
-Scope, gates, factors, weights, confidence rules, tie rules, runtime requirements, and version history.
+### Diagnostics
 
-## 13.3 Rule-set editor
+MVP covers component versions, Session, containment, managed processes/groups, ports/listeners, browser/Epoch, storage/integrity, recent failures, cleanup incidents, and diagnostic export.
 
-Visual form, raw configuration, validation, historical-run testing, duplication, and export.
+Process views show PID as observation plus stable Process Record/group identity.
 
-## 13.4 Gate editor
+### Settings
 
-Name, required/advisory status, assertion type, target, threshold, retry behavior, and failure message.
+MVP:
 
-## 13.5 Factor editor
+- general;
+- appearance;
+- runtime/capability;
+- capture defaults;
+- evaluator configuration;
+- storage/retention;
+- privacy/security;
+- about/license/data location.
 
-Definition, evidence inputs, evaluator, weight, confidence threshold, missing-data behavior, and explanation requirements.
+Post-MVP:
 
-## 13.6 Rule-set validation
+- integration marketplace;
+- Figma/team/cloud;
+- update channels beyond documented manual/package update flow;
+- notification service outside active application.
 
-Schema issues, contradictions, missing evaluators, unsupported capabilities, impossible thresholds, and circular dependencies.
+## 14. Required page states
 
----
+Every applicable route defines:
 
-# 14. Diagnostics
+- loading with named operation;
+- empty;
+- partial/incomplete;
+- failure with stable code;
+- recovery with only legal action;
+- stale sealed inputs;
+- safe-mode/read-only;
+- restricted capability;
+- disconnected UI/SSE recovery;
+- cleanup incident.
 
-## 14.1 Diagnostics overview
+Offline/local mode remains useful unless an explicitly selected external evaluator requires network.
 
-Supervisor, coordinator, browser, storage, ports, process limits, recent failures, and platform capability.
+## 15. Responsive behavior
 
-## 14.2 Process viewer
+Desktop-first local browser app:
 
-Shows PID, parent, contender, CPU, memory, state, and containment boundary.
+- standard >=1200px;
+- compact 960–1199px;
+- restricted compact below 960px for comparison-heavy routes.
 
-## 14.3 Port inspector
+Sidebar collapses before content. Secondary rails become drawers. Evidence matrices may scroll horizontally. Side-by-side may stack while preserving A/B labels and synchronized-position indicator.
 
-Allocated ports, owning process, expected application, conflicts, and stale listeners.
+## 16. MVP priority
 
-## 14.4 Browser diagnostics
+### P0
 
-Browser version, connection, contexts, pages, current epoch, disconnects, and crashes.
+- launch/onboarding/safe mode;
+- Home;
+- Project register/configure/health;
+- existing-implementation Run wizard;
+- Overview/Preparation/Capture;
+- Contender detail;
+- side-by-side comparison;
+- Gate/Evidence detail;
+- Recommendation/User Decision;
+- Promotion patch/branch/workspace;
+- report/diagnostic Export Operation;
+- history/Artifacts;
+- diagnostics/core settings.
 
-## 14.5 Storage diagnostics
+### P1
 
-Writable paths, free space, large artifacts, cleanup failures, hash failures, and corruption detection.
-
-## 14.6 Diagnostic bundle
-
-Configurable redacted export of runtime information, logs, configuration, platform details, and failure events. Source files are excluded by default.
-
----
-
-# 15. Settings
-
-## 15.1 General
-
-Startup, project defaults, run template, confirmations, dates, and numbers.
-
-## 15.2 Appearance
-
-System/light/dark, density, reduced motion, syntax theme, canvas background, and evidence-label size.
-
-## 15.3 Runtime
-
-Node, browser, supervisor, process limits, timeouts, port range, and scheduler policy.
-
-## 15.4 Containment
-
-Detected capability, minimum required capability, memory limits, process-tree enforcement, network policy, filesystem restrictions, and platform details.
-
-## 15.5 Capture defaults
-
-Viewports, pixel ratio, themes, locale, time zone, format, settling, font readiness, and retry policy.
-
-## 15.6 Evaluators
-
-Deterministic rules, model-backed evaluators, local endpoints, credentials, version pinning, and confidence defaults.
-
-## 15.7 Storage and retention
-
-Directory, maximum storage, retention policy, cleanup schedule, protected runs, and export destination.
-
-## 15.8 Privacy and security
-
-Network access, telemetry, crash reporting, redaction, environment variables, source inclusion, clipboard, and external services.
-
-## 15.9 Integrations
-
-Git, GitHub, GitLab, Figma, Playwright, local model servers, and external evaluation providers.
-
-## 15.10 Notifications
-
-Run complete, decision ready, failure, disk warning, and update availability.
-
-## 15.11 Updates
-
-Application, supervisor, browser bundle, release channel, changelog, and verification.
-
-## 15.12 About
-
-Version, license, repository, architecture, contributors, third-party notices, and local data location.
-
----
-
-# 16. Required state coverage
-
-Every applicable page must define:
-
-## Loading
-
-Name the actual operation rather than showing an unexplained spinner.
-
-## Empty
-
-No projects, runs, contenders, evidence, artifacts, or rule sets.
-
-## Partial completion
-
-Missing captures, unavailable evaluator, incomplete viewport, or advisory failure.
-
-## Failure
-
-Build failure, browser crash, disk full, port conflict, containment escape, or evaluator timeout.
-
-## Recovery
-
-Retry contender, restart epoch, resume completed work, continue without advisory factor, or restore prior state.
-
-## Stale data
-
-Source, rules, browser, or evaluator changed after evidence was generated.
-
-## Offline
-
-The local product remains useful unless an explicitly selected external evaluator or generator requires connectivity.
-
-## Restricted capability
-
-Platform cannot provide a requested containment or runtime feature.
-
----
-
-# 17. Responsive behavior
-
-The desktop application is desktop-first but must remain usable on small laptop displays.
-
-- The sidebar collapses to icons and then a navigation drawer.
-- Secondary rails become drawers before the comparison canvas is compressed beyond usefulness.
-- Comparison controls remain outside local horizontal scrollers.
-- Dense evidence matrices may use a contained horizontal scroller.
-- Side-by-side comparison may switch to vertical stacking below the minimum fair comparison width.
-- Critical state, eligibility, and capture-validity labels remain visible at every supported width.
-
----
-
-# 18. MVP priority
-
-## P0: first functional product
-
-- launch and runtime check;
-- home;
-- open/configure project;
-- project overview;
-- new-run wizard;
-- active-run overview;
-- environment preparation;
-- contender gallery/detail;
-- side-by-side and overlay comparison;
-- gate results;
-- evidence overview/factor detail;
-- decision and no-winner outcome;
-- promotion review;
-- run history;
-- artifact explorer;
-- diagnostics overview;
-- core settings.
-
-## P1: trustworthy public release
-
+- optional overlay;
+- richer interaction replay;
 - responsive sequence;
-- interaction replay;
-- conflicting evidence;
-- rule-set editor;
+- conflicting-evidence workflow;
+- storage cleanup UX;
 - historical comparison;
-- storage cleanup;
-- diagnostic bundle;
-- integrations;
-- update management.
+- reusable Rule Sets after domain/schema implementation.
 
-## P2: later expansion
+### P2
 
-- team collaboration;
-- shared comments;
-- remote workers;
-- cloud artifact synchronization;
-- hosted dashboards;
-- portfolio views;
-- scheduled evaluations;
-- pull-request integration.
+- in-run generation;
+- multiple contenders/rounds;
+- annotations/collaboration;
+- CI/PR integration;
+- cloud/remote workers;
+- Figma;
+- scheduled/background evaluations.
 
----
-
-# 19. Route model
+## 17. MVP route inventory
 
 ```text
+/launch
+/onboarding/welcome
+/onboarding/permissions
+/onboarding/runtime
+/onboarding/storage
+/onboarding/complete
 /
 /projects
 /projects/open
 /projects/:projectId
 /projects/:projectId/health
 /projects/:projectId/settings
+/projects/:projectId/remove
+/projects/:projectId/runs/new/intent
+/projects/:projectId/runs/new/scope
+/projects/:projectId/runs/new/baseline
+/projects/:projectId/runs/new/contenders
+/projects/:projectId/runs/new/environment
+/projects/:projectId/runs/new/gates
+/projects/:projectId/runs/new/evaluation
+/projects/:projectId/runs/new/limits
+/projects/:projectId/runs/new/review
 /runs
-/runs/new
-/runs/:runId
+/runs/:runId/overview
+/runs/:runId/preparation
+/runs/:runId/capture
 /runs/:runId/contenders
-/runs/:runId/contenders/:contenderId
+/runs/:runId/contenders/:candidateId
+/runs/:runId/contenders/:candidateId/source
+/runs/:runId/contenders/:candidateId/captures
+/runs/:runId/contenders/:candidateId/gates
 /runs/:runId/compare
+/runs/:runId/compare/side-by-side
 /runs/:runId/evidence
 /runs/:runId/evidence/:factorId
 /runs/:runId/decision
 /runs/:runId/timeline
-/rule-sets
-/rule-sets/:ruleSetId
 /artifacts
 /artifacts/:artifactId
+/promotions/:promotionId
+/exports/:exportOperationId
 /diagnostics
 /diagnostics/processes
 /diagnostics/ports
@@ -1176,24 +550,7 @@ The desktop application is desktop-first but must remain usable on small laptop 
 /settings/evaluators
 /settings/storage
 /settings/privacy
-/settings/integrations
-/settings/notifications
-/settings/updates
 /settings/about
 ```
 
----
-
-# 20. Next design deliverable
-
-Create a route-level wireframe specification for every P0 page containing:
-
-- layout zones;
-- component inventory;
-- data dependencies;
-- primary and secondary actions;
-- state matrix;
-- keyboard behavior;
-- responsive behavior;
-- accessibility requirements;
-- event and artifact links.
+Post-MVP routes such as generation, Rule Sets, rounds, annotations, integrations, notifications, updates, and overlay/difference/flicker are not registered in the MVP router.
