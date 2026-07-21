@@ -1,0 +1,31 @@
+{
+  "schema": "render-rivals/stage-0.5-eligibility",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "reviewedAt": "<UTC timestamp>",
+  "current": {
+    "sourceMatches": false,
+    "buildsAndLoads": false,
+    "requiredStatesReachable": false,
+    "criticalInteractionPasses": false,
+    "protectedPathsComply": false,
+    "severeAccessibilityRegressionAbsent": false,
+    "fatalRuntimeFailureAbsent": false,
+    "evidenceCompleteAndComparable": false,
+    "eligible": false
+  },
+  "contender": {
+    "sourceMatches": false,
+    "buildsAndLoads": false,
+    "requiredStatesReachable": false,
+    "criticalInteractionPasses": false,
+    "protectedPathsComply": false,
+    "severeAccessibilityRegressionAbsent": false,
+    "fatalRuntimeFailureAbsent": false,
+    "evidenceCompleteAndComparable": false,
+    "eligible": false
+  },
+  "limitations": [],
+  "reviewer": "<actor>"
+}
