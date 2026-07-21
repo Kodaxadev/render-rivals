@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "4.4.0",
+  "schemaVersion": "4.4.1",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -110,6 +110,7 @@
     "research/stage-0.5/README.md",
     "research/stage-0.5/analyze.mjs",
     "research/stage-0.5/kit-core.mjs",
+    "research/stage-0.5/kit.mjs",
     "research/stage-0.5/kit.test.mjs",
     "research/stage-0.5/validate.mjs",
     "research/stage-0.5/templates/decision.json",
