@@ -1,56 +1,89 @@
 # Render Rivals Planning Scope Status
 
 **Status:** Implementation-scope clarification  
-**Purpose:** Prevent full-product planning documents from being mistaken for the first-release implementation contract.
+**Purpose:** Prevent complete-product ideas, brand concepts, and archived drafts from becoming accidental MVP requirements.
 
-## Authority
-
-Implementation order is:
+## 1. Authority order
 
 1. accepted ADRs;
-2. canonical specifications;
-3. `docs/MVP-VERTICAL-SLICE.md` for first-release scope;
-4. `docs/FAILURE-RECOVERY-MATRIX.md` for product failure behavior;
-5. route and scene planning documents for surfaces included by the MVP;
-6. post-MVP sections of planning documents only after the vertical slice passes.
+2. canonical specs 01–14;
+3. shared schema/error registries;
+4. locked MVP vertical slice;
+5. failure/recovery, threat model, and test strategy;
+6. Product UI and Route Wireframe contracts for enabled MVP surfaces;
+7. marketing/brand planning;
+8. archive/history only.
 
-## Deferred features shown in the complete product plans
+Configuration, CLI, local API, safe mode, command idempotency, Promotion, and Export Operation follow `spec/13` even when older planning prose differs.
 
-The following may appear in the full UI or route plans but are not included in the MVP:
+## 2. MVP-only implementation rule
 
-- generation of contenders inside Render Rivals;
-- combined generated and imported contender runs;
-- more than one contender per run;
-- tournament rounds;
-- parallel candidate execution;
-- historical run comparison;
-- annotation authoring;
-- CI and pull-request workflows;
-- hosted or team collaboration;
-- automatic merging or source replacement.
+A feature is scaffolded only when:
 
-Any UI control for these features must be omitted from the MVP build or visibly marked `Post-MVP — unavailable` in prototypes. It must not be implemented as an enabled but incomplete action.
+- present in MVP contract;
+- supported by domain/state/schema;
+- has legal CLI/API command when mutable;
+- appears as enabled in UI plan/wireframe;
+- has required failure/security/tests.
 
-## New-run wizard rule
+Appearance in an old complete-product diagram is insufficient.
 
-For the MVP, the run-intent step exposes one enabled mode:
+## 3. Deferred product features
 
-- **Compare current implementation with one existing contender**.
+Post-MVP unless later milestone/ADR activates them:
 
-The complete product plan may retain future intent modes for information architecture, but they must carry explicit `Post-MVP` status.
+- in-Run contender generation;
+- combined generated/imported modes;
+- multiple Contenders and tournament rounds;
+- parallel Candidate workloads;
+- Pause/suspend;
+- arbitrary multi-route/full-app/component scope types;
+- manual external URL as equivalent Candidate;
+- historical captures reused for selection;
+- annotation/collaboration;
+- Rule Sets editor/entity;
+- CI/PR automation;
+- cloud/team/remote workers;
+- Figma/integration marketplace;
+- automatic merge/source replacement;
+- self-updater/background daemon.
 
-## Route inventory rule
+Deferred controls/routes are absent from the MVP router rather than enabled placeholders.
 
-`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md` is the implementation route authority for routes included in the MVP. The scene plan describes product scenes and navigation groups; it is not required to repeat every wizard subroute or execution-phase route.
+## 4. New Run wizard
 
-The following wireframe routes are therefore intentional implementation decompositions rather than contradictory product features:
+Enabled intent:
 
-- `/projects/:projectId/runs/new/*`;
-- `/runs/:runId/preparation`;
-- `/runs/:runId/capture`.
+- compare current implementation with one existing Contender.
 
-Future updates to the scene plan should include an appendix linking these subroutes to their parent scenes.
+Re-evaluate previous creates a new draft Run and new Capture Epoch. It is not an in-place re-evaluation mode.
 
-## Scaffold rule
+## 5. Route authority
 
-Do not scaffold a feature solely because it appears in a complete-product planning document. A feature must also be present in the locked MVP contract or be introduced by a later accepted milestone/ADR.
+The Product UI plan owns exact MVP route inventory and availability. The Route Wireframe specification owns route geometry, guards, and state behavior. They must be updated together and checked mechanically.
+
+Preparation/Capture and wizard subroutes are intentional MVP decompositions.
+
+## 6. Mutation authority
+
+- retry identical sealed operation → new Attempt when legal;
+- change sealed source/fixture/Gate/Factor/policy → superseding Run;
+- accept/retain/decline/defer/invalidate → User Decision;
+- patch/branch/workspace adoption → Promotion;
+- report/diagnostics/bundle/screenshots/config/logs → Export Operation;
+- no arbitrary post-seal exclusion/revision;
+- no Pause.
+
+## 7. Scaffold decisions
+
+Historical `OPEN-*` items are classified in `docs/SCAFFOLD-DECISION-REGISTER.md`. A milestone decision remains work for that milestone, not an ambiguous invitation for an implementer to choose privately.
+
+## 8. Public claims
+
+Until a real license and release/security requirements exist:
+
+- do not call repository open source;
+- do not invite external contributions;
+- do not claim signed/notarized/easy installation;
+- do not claim cross-platform containment parity;
+- do not claim universal design quality or complete WCAG compliance.
