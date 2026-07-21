@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "4.2.2",
+  "schemaVersion": "4.3.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -19,6 +19,7 @@
       "Durable Operation ledger vocabulary is defined in schemas/operation-types.ts and spec/19.",
       "Cross-record cardinality and nullability are defined in docs/RECORD-INVARIANT-MATRIX.md.",
       "The dependency-free documentation conformance checker and its mutation tests are under conformance/.",
+      "ADR-0013 and the Stage 0.5 contract gate production scaffold work on a recorded proceed decision.",
       "The repository is pre-scaffold and not yet licensed for public reuse.",
       "Intentional old-name, abbreviated digest, and migration references require context-aware conformance allowlists rather than blind token rejection."
     ]
@@ -69,10 +70,12 @@
     "adr/ADR-0009-experimental-controls.md",
     "adr/ADR-0010-quality-first-accounting.md",
     "adr/ADR-0011-selection-outcomes-and-user-decisions.md",
-    "adr/ADR-0012-run-promotion-phase-naming.md"
+    "adr/ADR-0012-run-promotion-phase-naming.md",
+    "adr/ADR-0013-stage-0-5-evidence-gate.md"
   ],
   "implementationContracts": [
     "docs/MVP-VERTICAL-SLICE.md",
+    "docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md",
     "docs/FAILURE-RECOVERY-MATRIX.md",
     "docs/RECORD-INVARIANT-MATRIX.md",
     "docs/TEST-AND-VALIDATION-STRATEGY.md",
@@ -124,13 +127,14 @@
     "LICENSE-TBD.md"
   ],
   "pendingScaffoldArtifacts": [
+    "Stage 0.5 experiment execution and explicit proceed/pivot/stop/inconclusive record",
     "Zod schema registry for primitives, entities, operations, capture classes, APIs, locks, trash and manifests",
     "RFC 8785 canonical JSON and cross-language primitive/hash fixtures",
     "generated JSON Schema and generated API command/client registry",
     "valid and invalid fixtures covering the Record Invariant Matrix",
     "schema migrations and compatibility tests including Run exporting-to-promoting fixture migration",
     "Rust and TypeScript IPC and Operation protocol goldens",
-    "implementation monorepo scaffold",
+    "implementation monorepo scaffold after a valid Stage 0.5 proceed decision",
     "randomized-host dashboard pairing proof",
     "durable Operation reconciliation proof",
     "complete Capture Artifact registry and current Playwright API proof",
