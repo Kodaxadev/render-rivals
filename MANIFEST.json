@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "4.1.0",
+  "schemaVersion": "4.2.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -17,6 +17,7 @@
       "Shared local API command and envelope vocabulary is defined in schemas/api-types.ts.",
       "Durable Operation ledger vocabulary is defined in schemas/operation-types.ts and spec/19.",
       "Cross-record cardinality and nullability are defined in docs/RECORD-INVARIANT-MATRIX.md.",
+      "The dependency-free documentation conformance checker and its mutation tests are under conformance/.",
       "The repository is pre-scaffold and not yet licensed for public reuse.",
       "Intentional old-name, abbreviated digest, and migration references require context-aware conformance allowlists rather than blind token rejection."
     ]
@@ -97,6 +98,8 @@
   ],
   "conformance": [
     "conformance/README.md",
+    "conformance/check.mjs",
+    "conformance/check.test.mjs",
     "conformance/fixtures/documentation-drift-regression.json"
   ],
   "sourceVerification": [
@@ -131,7 +134,6 @@
     "valid and invalid fixtures covering the Record Invariant Matrix",
     "schema migrations and compatibility tests including Run exporting-to-promoting fixture migration",
     "Rust and TypeScript IPC and Operation protocol goldens",
-    "documentation conformance checker using the committed real-drift regression fixtures",
     "implementation monorepo scaffold",
     "randomized-host dashboard pairing proof",
     "durable Operation reconciliation proof",
