@@ -1,22 +1,30 @@
-// Canonical persisted-domain vocabulary for Render Rivals.
-// Markdown specifications describe behavior and invariants; they must reference
-// these names rather than redefine incompatible local unions.
+// Canonical persisted-domain and cross-spec vocabulary for Render Rivals.
+// Runtime validators under the future schema package must enforce ULID length,
+// timestamp format, finite numeric values, and all record-level invariants.
+// Markdown specifications reference these types rather than redefining them.
 
 export type ProjectId = `prj_${string}`;
 export type SourceSnapshotId = `src_${string}`;
 export type RunId = `run_${string}`;
 export type RunConfigurationId = `rcf_${string}`;
 export type CandidateId = `can_${string}`;
+export type CandidateWorkspaceId = `wsp_${string}`;
 export type CaptureEpochId = `cep_${string}`;
+export type CapturePlanId = `cpl_${string}`;
 export type CaptureId = `cap_${string}`;
+export type GateDefinitionId = `gat_${string}`;
 export type GateResultId = `grs_${string}`;
-export type ComparisonId = `cmp_${string}`;
+export type EvaluationFactorId = `fac_${string}`;
 export type EvaluationId = `eva_${string}`;
 export type EvidenceRecordId = `evd_${string}`;
+export type ComparisonId = `cmp_${string}`;
 export type RecommendationId = `rec_${string}`;
 export type UserDecisionId = `dec_${string}`;
 export type PromotionId = `pro_${string}`;
 export type ArtifactId = `art_${string}`;
+export type ProcessRecordId = `pcs_${string}`;
+export type EventId = `evt_${string}`;
+export type DiagnosticBundleId = `dgn_${string}`;
 
 export type CandidateRole = "current" | "contender";
 
@@ -48,6 +56,67 @@ export type EvaluationPurpose =
   | "order_reversal"
   | "tie_break"
   | "manual";
+
+export type ProcessPurpose =
+  | "dependency"
+  | "build"
+  | "test"
+  | "server"
+  | "browser"
+  | "fixture"
+  | "evaluator"
+  | "agent"
+  | "git"
+  | "export"
+  | "doctor"
+  | "utility";
+
+export type SessionState =
+  | "starting"
+  | "authenticating_coordinator"
+  | "ready"
+  | "running"
+  | "shutdown_requested"
+  | "draining"
+  | "forced_termination"
+  | "completed"
+  | "crashed";
+
+export type RunState =
+  | "draft"
+  | "validating"
+  | "ready"
+  | "preparing"
+  | "capturing"
+  | "gating"
+  | "evaluating"
+  | "awaiting_decision"
+  | "exporting"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "interrupted";
+
+export type RecoveryDisposition =
+  | "resume_from_checkpoint"
+  | "retry_current_phase"
+  | "restart_capture_epoch"
+  | "await_user_correction"
+  | "create_superseding_run"
+  | "cannot_recover"
+  | "cleanup_only";
+
+export type ComparisonValidity = "valid" | "limited" | "invalid" | "stale";
+
+export type CaptureEpochState =
+  | "planned"
+  | "opening"
+  | "active"
+  | "sealing"
+  | "valid"
+  | "invalidating"
+  | "invalid"
+  | "failed";
 
 export interface InferenceUsage {
   provider: string;
@@ -102,32 +171,16 @@ export interface PromotionRecord {
   userDecisionId: UserDecisionId;
   candidateId: CandidateId;
   kind: "patch_export" | "branch_create" | "workspace_preserve" | "report_export";
-  status: "requested" | "validating_preconditions" | "exporting" | "verifying" | "completed" | "failed" | "cancelled" | "stale";
+  status:
+    | "requested"
+    | "validating_preconditions"
+    | "exporting"
+    | "verifying"
+    | "completed"
+    | "failed"
+    | "cancelled"
+    | "stale";
   outputArtifactIds: ArtifactId[];
   createdAt: string;
   completedAt: string | null;
 }
-
-export type RunState =
-  | "draft"
-  | "validating"
-  | "ready"
-  | "preparing"
-  | "capturing"
-  | "gating"
-  | "evaluating"
-  | "awaiting_decision"
-  | "exporting"
-  | "completed"
-  | "failed"
-  | "cancelled"
-  | "interrupted";
-
-export type RecoveryDisposition =
-  | "resume_from_checkpoint"
-  | "retry_current_phase"
-  | "restart_capture_epoch"
-  | "await_user_correction"
-  | "create_superseding_run"
-  | "cannot_recover"
-  | "cleanup_only";
