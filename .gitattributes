@@ -1,0 +1,19 @@
+# Line-ending policy.
+#
+# spec/11 requires canonical LF with a final newline, and spec/14 records
+# line-ending semantics as source identity. Leaving normalization to each
+# developer's core.autocrlf setting makes byte-level contracts and
+# newline-sensitive tooling platform-dependent, so checkout is pinned to LF
+# on every platform.
+
+* text=auto eol=lf
+
+# Binary assets must never be newline-normalized.
+*.webp binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.zip binary
+*.bin binary
