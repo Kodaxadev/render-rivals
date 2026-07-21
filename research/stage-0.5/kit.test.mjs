@@ -5,7 +5,7 @@ import {
   calculateMetrics,
   validateExperimentManifest,
   validateTaskResult,
-} from "./kit-core.mjs";
+} from "./kit.mjs";
 
 const HASH = `sha256:${"a".repeat(64)}`;
 
@@ -48,6 +48,7 @@ function result(taskId, overrides = {}) {
   return {
     schema: "render-rivals/stage-0.5-task-result",
     schemaVersion: "1.0.0",
+    experimentId: "exp05_test",
     taskId,
     status: "valid",
     invalidReason: null,
@@ -87,15 +88,17 @@ test("passing sample becomes eligible for owner decision but never auto-proceed"
   const report = calculateMetrics(manifest(), passingResults());
   assert.equal(report.quantitativeGate, "eligible_for_owner_decision");
   assert.equal(report.metrics.counts.validTasks, 8);
+  assert.equal(report.metrics.counts.recordedFrozenTasks, 8);
   assert.equal(report.metrics.counts.opportunityCases, 4);
   assert.equal(report.metrics.rates.selectorAgreement, 1);
   assert.equal(report.metrics.utility.netCorrectAdoptionsOverRetainCurrent, 4);
   assert.ok(report.thresholdChecks.every((item) => item.passed));
 });
 
-test("fewer than the minimum valid tasks is inconclusive", () => {
+test("missing frozen task records makes the experiment inconclusive", () => {
   const report = calculateMetrics(manifest(), passingResults().slice(0, 7));
   assert.equal(report.quantitativeGate, "inconclusive");
+  assert.equal(report.thresholdChecks.find((item) => item.id === "all_frozen_tasks_recorded").passed, false);
   assert.equal(report.thresholdChecks.find((item) => item.id === "minimum_valid_tasks").passed, false);
 });
 
@@ -108,7 +111,7 @@ test("ordinary false Contender recommendations block the gate", () => {
   assert.equal(report.metrics.counts.ordinaryFalseContenderRecommendations, 2);
 });
 
-test("one protected-regression recommendation blocks the gate", () => {
+test("one protected-regression recommendation blocks the gate and is not counted as agreement", () => {
   const results = passingResults();
   results[0] = result("task-1", {
     humanVerdict: "contender_materially_better",
@@ -118,6 +121,7 @@ test("one protected-regression recommendation blocks the gate", () => {
   const report = calculateMetrics(manifest(), results);
   assert.equal(report.quantitativeGate, "thresholds_not_met");
   assert.equal(report.metrics.counts.protectedRegressionRecommendations, 1);
+  assert.equal(report.metrics.rates.selectorAgreement, 7 / 8);
 });
 
 test("order conflict above the frozen maximum blocks the gate", () => {
@@ -136,6 +140,11 @@ test("blinding chronology is enforced", () => {
     unblindedAt: "2026-07-21T07:09:00.000Z",
   });
   assert.ok(validateTaskResult(bad, manifest()).some((issue) => issue.code === "UNBLINDED_BEFORE_RATING"));
+});
+
+test("task results are bound to the frozen experiment", () => {
+  const bad = result("task-1", { experimentId: "exp05_other" });
+  assert.ok(validateTaskResult(bad, manifest()).some((issue) => issue.code === "TASK_EXPERIMENT_MISMATCH"));
 });
 
 test("an ineligible Contender cannot be recommended", () => {
