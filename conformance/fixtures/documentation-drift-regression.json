@@ -1,0 +1,110 @@
+{
+  "schema": "render-rivals/documentation-conformance-regression-fixture",
+  "schemaVersion": "1.0.0",
+  "capturedAt": "2026-07-20T00:00:00.000Z",
+  "purpose": "Preserve real repository drift cases as negative fixtures before repair. The future documentation-conformance checker must fail these synthetic cases and pass the repaired repository.",
+  "cases": [
+    {
+      "id": "DOC-RUN-STATE-EXPORTING",
+      "class": "retired_run_state",
+      "sourcePath": "spec/10-run-and-candidate-state-machines.md",
+      "brokenExamples": [
+        "RunState contains exporting",
+        "awaiting_decision transitions to exporting",
+        "section heading describes Exporting active decision output"
+      ],
+      "allowedContext": "Promotion or Export Operation internal status only",
+      "expectedRepair": "Run adoption state is promoting everywhere"
+    },
+    {
+      "id": "DOC-INVENTORY-MISSING-NEW-FILES",
+      "class": "inventory_coverage",
+      "sourcePaths": [
+        "README.md",
+        "DOCUMENT-MANIFEST.md",
+        "MANIFEST.json"
+      ],
+      "missingPaths": [
+        "spec/24-secrets-authentication-state-and-network-egress-policy.md",
+        "spec/25-component-upgrades-schema-migrations-backups-and-rollback.md",
+        "sources/playwright-network-api-verification.md"
+      ],
+      "expectedRepair": "All active canonical and verification documents are inventoried"
+    },
+    {
+      "id": "DOC-ARCHIVE-PHANTOM-FILES",
+      "class": "manifest_missing_paths",
+      "sourcePaths": [
+        "DOCUMENT-MANIFEST.md",
+        "MANIFEST.json"
+      ],
+      "missingPaths": [
+        "archive/README.md",
+        "archive/original-design-warden-part-02.md",
+        "archive/original-design-warden-part-03.md",
+        "archive/original-design-warden-part-04.md",
+        "archive/original-roadmap.md"
+      ],
+      "historyFinding": "These paths never existed in Git history and must not be advertised as preserved",
+      "expectedRepair": "Delist absent archive files; do not reconstruct them"
+    },
+    {
+      "id": "DOC-ARCHIVE-FALSE-PRESERVATION-CLAIM",
+      "class": "false_historical_claim",
+      "sourcePath": "archive/original-design-warden-part-01.md",
+      "brokenExample": "Claims original lines 1-440 were preserved although the committed file contained only the short summary from its first revision",
+      "expectedRepair": "State honestly that the full original draft is not present in this repository"
+    },
+    {
+      "id": "DOC-API-INVENTORY-DRIFT",
+      "class": "api_route_and_envelope_drift",
+      "sourcePath": "spec/13-configuration-cli-and-local-api-contracts.md",
+      "brokenExamples": [
+        "CommandAccepted uses statusUrl instead of statusPath",
+        "pair, logout, and operation-status routes omitted"
+      ],
+      "authorities": [
+        "schemas/api-types.ts",
+        "spec/16-dashboard-session-authentication-and-pairing.md",
+        "spec/17-local-api-envelopes-operations-and-pagination.md"
+      ]
+    },
+    {
+      "id": "DOC-CLI-PROMOTE-OMITTED",
+      "class": "cli_inventory_drift",
+      "sourcePath": "spec/08-stack-repository-and-sequence.md",
+      "brokenExample": "CLI inventory omits promote",
+      "expectedRepair": "CLI list matches spec/13 closed command surface"
+    },
+    {
+      "id": "DOC-STALE-SPEC-RANGE",
+      "class": "fragile_numeric_authority_reference",
+      "sourcePaths": [
+        "docs/MVP-VERTICAL-SLICE.md",
+        "docs/PLANNING-SCOPE-STATUS.md"
+      ],
+      "brokenExample": "Depends on or cites canonical specs 01-14",
+      "expectedRepair": "Reference the canonical reading order or document manifest instead of a numeric range"
+    },
+    {
+      "id": "DOC-WINDOWS-TARGET-DRIFT",
+      "class": "platform_support_drift",
+      "brokenValues": ["Windows 10/11 x64", "Windows 11 x64"],
+      "expectedRepair": "One explicit reference-platform statement throughout active implementation documents"
+    },
+    {
+      "id": "DOC-BRAND-BROKEN-LINK",
+      "class": "broken_relative_link",
+      "sourcePath": "brand/README.md",
+      "brokenTarget": "04-neon-creative-technology.webp",
+      "actualPath": "brand/concepts/04-neon-creative-tech.webp"
+    },
+    {
+      "id": "DOC-UI-PREAUTH-ROUTE-AMBIGUITY",
+      "class": "route_inventory_scope",
+      "sourcePath": "docs/PRODUCT-UI-SCENE-PLAN.md",
+      "brokenExample": "Claims exact MVP route inventory without explaining that /session/pair is a separate pre-authentication route",
+      "expectedRepair": "Declare authenticated-only scope and reference the pairing route contract"
+    }
+  ]
+}
