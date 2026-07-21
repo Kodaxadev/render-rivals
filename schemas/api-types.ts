@@ -8,6 +8,10 @@ import type {
   RecoveryDisposition,
 } from "./domain-types.js";
 import type { ErrorCode } from "./error-codes.js";
+import type {
+  CanonicalUtcTimestamp,
+  Revision,
+} from "./primitives.js";
 
 export type ApiCommandName =
   | "project.register"
@@ -37,7 +41,7 @@ export interface ApiCommandRequest<TPayload> {
   schema: "render-rivals/api-command-request";
   schemaVersion: "1.0.0";
   operationId: OperationId;
-  expectedRevision: number | null;
+  expectedRevision: Revision | null;
   command: ApiCommandName;
   payload: TPayload;
 }
@@ -49,9 +53,9 @@ export interface ApiCommandAccepted {
   accepted: true;
   operationId: OperationId;
   command: ApiCommandName;
-  acceptedAt: string;
+  acceptedAt: CanonicalUtcTimestamp;
   targetEntityId: string | null;
-  currentRevision: number | null;
+  currentRevision: Revision | null;
   statusPath: `/api/v1/operations/${string}`;
 }
 
@@ -62,11 +66,11 @@ export interface ApiOperationStatus<TResult = unknown> {
   operationId: OperationId;
   command: ApiCommandName;
   state: ApiOperationState;
-  acceptedAt: string;
-  startedAt: string | null;
-  terminalAt: string | null;
+  acceptedAt: CanonicalUtcTimestamp;
+  startedAt: CanonicalUtcTimestamp | null;
+  terminalAt: CanonicalUtcTimestamp | null;
   targetEntityId: string | null;
-  currentRevision: number | null;
+  currentRevision: Revision | null;
   result: TResult | null;
   resultPath: string | null;
   error: ApiErrorBody | null;
@@ -77,8 +81,8 @@ export interface ApiQueryResponse<TData> {
   schemaVersion: "1.0.0";
   ok: true;
   projection: ApiProjectionKind;
-  revision: number | null;
-  generatedAt: string;
+  revision: Revision | null;
+  generatedAt: CanonicalUtcTimestamp;
   data: TData;
 }
 
@@ -93,7 +97,7 @@ export interface ApiErrorBody {
   message: string;
   retryable: boolean;
   operationId: OperationId | null;
-  currentRevision: number | null;
+  currentRevision: Revision | null;
   allowedCommands: ApiCommandName[];
   recoveryDisposition: RecoveryDisposition | null;
   details: Record<string, unknown> | null;
