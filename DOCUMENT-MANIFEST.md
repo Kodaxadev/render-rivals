@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 4.4.0  
+**Inventory format:** 4.4.1  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -91,13 +91,14 @@ The Stage 0.5 contract tests the value hypothesis using lightweight non-producti
 ## Stage 0.5 research kit
 
 - [`research/stage-0.5/README.md`](research/stage-0.5/README.md)
-- [`research/stage-0.5/kit-core.mjs`](research/stage-0.5/kit-core.mjs)
+- [`research/stage-0.5/kit.mjs`](research/stage-0.5/kit.mjs) — strict public validation and metric authority.
+- [`research/stage-0.5/kit-core.mjs`](research/stage-0.5/kit-core.mjs) — lower-level implementation helper.
 - [`research/stage-0.5/validate.mjs`](research/stage-0.5/validate.mjs)
 - [`research/stage-0.5/analyze.mjs`](research/stage-0.5/analyze.mjs)
 - [`research/stage-0.5/kit.test.mjs`](research/stage-0.5/kit.test.mjs)
 - templates under `research/stage-0.5/templates/`
 
-The kit validates frozen experiment/task summaries, enforces blinding chronology and eligibility constraints, calculates every frozen threshold from raw counts, and never emits `proceed` automatically. Templates are intentionally invalid until placeholders are replaced and records are frozen.
+The kit validates frozen experiment/task summaries, enforces experiment binding, completeness, blinding chronology and eligibility constraints, calculates every frozen threshold from raw counts, and never emits `proceed` automatically. Templates are intentionally invalid until placeholders are replaced and records are frozen.
 
 ## Documentation and research conformance
 
