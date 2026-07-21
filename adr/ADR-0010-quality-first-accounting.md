@@ -4,12 +4,14 @@
 
 ## Context
 
-Premature token optimization may create an efficient mediocre system.
+Premature token optimization may create an efficient but mediocre selector. Usage still needs to be measurable from the first experiment.
 
 ## Decision
 
-Allow multiple challengers, critics, reversals, tie breaks, and refinement. Record all available model and local-resource telemetry. Optimize after value is shown.
+Permit quality-oriented critique, order reversal, bounded tie-breaks, human review, and serious refinement strategies while recording every available model invocation, local process resource, elapsed time, and human-time observation.
+
+The one-Contender MVP does not need in-Run generation or multiple Contenders to honor this decision. Broader search may be added only after the first vertical slice proves value.
 
 ## Consequences
 
-Long/high-usage runs, stronger initial search, measurable later optimization.
+Initial Runs may be long and usage-heavy, but later optimization has reliable accounting and quality evidence. Unknown usage remains explicit rather than estimated.
