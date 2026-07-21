@@ -1,0 +1,23 @@
+{
+  "schema": "render-rivals/stage-0.5-selector-result",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "completedAt": "<UTC timestamp>",
+  "aB": {
+    "artifact": "evaluator-a-b.json",
+    "hash": "sha256:<64 lowercase hexadecimal characters>",
+    "valid": false
+  },
+  "bA": {
+    "artifact": "evaluator-b-a.json",
+    "hash": "sha256:<64 lowercase hexadecimal characters>",
+    "valid": false
+  },
+  "orderConflict": false,
+  "outcome": "retain_current",
+  "reasonCodes": [],
+  "protectedRegressionConcern": false,
+  "confidence": null,
+  "limitations": []
+}
