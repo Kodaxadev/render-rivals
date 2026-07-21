@@ -1,25 +1,26 @@
 # 12 — Cross-Spec Normalization and Shared Contracts
 
 **Status:** Canonical implementation contract  
-**Purpose:** Remove duplicate authorities for vocabulary, shared types, stable errors, API commands/envelopes, record invariants, storage paths, process launch, Session/Run ownership, dashboard authentication, Promotion, Export Operation, and command semantics.
+**Purpose:** Remove duplicate authorities for vocabulary, shared types, stable errors, API commands/envelopes, canonical primitives, record invariants, storage paths, process launch, Session/Run ownership, dashboard authentication, Promotion, Export Operation, and command semantics.
 
 ## 1. Authority
 
 When older text conflicts:
 
 1. accepted ADRs control architecture decisions;
-2. `schemas/domain-types.ts` controls shared persisted unions/interfaces;
-3. `schemas/error-codes.ts` controls stable error identifiers;
-4. `schemas/api-types.ts` controls shared local API command/envelope vocabulary;
-5. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where structure alone is insufficient;
-6. `spec/11` controls canonical filesystem and commit protocols;
-7. `spec/13` controls configuration, CLI, local API route inventory, safe mode, and general command semantics;
-8. `spec/14` controls Git/source/workspace/branch behavior;
-9. `spec/15` controls observability, diagnostics, telemetry, and crash reporting;
-10. `spec/16` controls dashboard origin isolation, pairing, cookies, Host/Origin/CSRF, and browser-opening policy;
-11. `spec/17` controls API envelopes, operation status, revision requirements, pagination, error detail, and Artifact content responses;
-12. this file controls equivalence mappings and relative-path interpretation;
-13. older local examples are explanatory only and must not be implemented literally.
+2. `schemas/primitives.ts` and `spec/18` control canonical JSON, hashes, timestamps, decimals, units, and measurement wire formats;
+3. `schemas/domain-types.ts` controls shared persisted unions/interfaces;
+4. `schemas/error-codes.ts` controls stable error identifiers;
+5. `schemas/api-types.ts` controls shared local API command/envelope vocabulary;
+6. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where structure alone is insufficient;
+7. `spec/11` controls canonical filesystem and commit protocols;
+8. `spec/13` controls configuration, CLI, local API route inventory, safe mode, and general command semantics;
+9. `spec/14` controls Git/source/workspace/branch behavior;
+10. `spec/15` controls observability, diagnostics, telemetry, and crash reporting;
+11. `spec/16` controls dashboard origin isolation, pairing, cookies, Host/Origin/CSRF, and browser-opening policy;
+12. `spec/17` controls API envelopes, operation status, revision requirements, pagination, error detail, and Artifact content responses;
+13. this file controls equivalence mappings and relative-path interpretation;
+14. older local examples are explanatory only and must not be implemented literally.
 
 ## 2. Vocabulary
 
@@ -51,7 +52,15 @@ Explanatory mappings:
 
 Aliases never appear as persisted enum values or stable API names.
 
-## 3. Shared types, errors, API, and invariants
+## 3. Shared primitives, types, errors, API, and invariants
+
+`schemas/primitives.ts` and `spec/18` define:
+
+- full lowercase `sha256:` digests;
+- RFC 8785 canonical JSON hash bytes;
+- millisecond UTC timestamps;
+- canonical decimal strings and `MonetaryAmount`;
+- safe integers, revisions, sequences, counts, durations, confidence, units, and canonical paths.
 
 `schemas/domain-types.ts` is sole canonical definition for:
 
@@ -120,7 +129,15 @@ Any older text describing report/diagnostic export as Promotion is superseded.
 
 ## 6. Inference accounting
 
-Canonical `InferenceUsage` uses `adapter`, closed purpose, start/end timestamps, nullable token/cost values, and `policySnapshotId`. Unknown remains null.
+Canonical `InferenceUsage` uses:
+
+- `adapter` and closed purpose;
+- canonical UTC start/end timestamps;
+- nonnegative safe-integer token categories or null;
+- `MonetaryAmount | null`, never floating JSON dollars;
+- policy snapshot identity.
+
+Unknown remains null. Computed/estimated cost uses exact decimal arithmetic and pricing snapshot hash under `spec/18`.
 
 ## 7. Process launch authority
 
@@ -132,9 +149,9 @@ Approved contained processes may create descendants only when inheritance is exp
 
 The MVP does not auto-spawn the user's ordinary dashboard browser. `spec/16` requires the terminal to display the randomized dashboard origin and pairing code for manual opening.
 
-## 8. Storage roots
+## 8. Storage roots and hashes
 
-`spec/11` owns live paths.
+`spec/11` owns live paths and write/recovery ordering. `spec/18` owns value encoding and hashing.
 
 Defaults:
 
@@ -145,6 +162,8 @@ Defaults:
 Marker: `.render-rivals/project.json`.
 
 Old `.visual-optimizer`, `visual-optimizer/sessions`, and cache-as-canonical layouts are superseded.
+
+Any SHA-256 value shown as raw `...` in an older prose example is an abbreviated placeholder. Executable canonical JSON uses a full `sha256:<64 lowercase hex>` value.
 
 ## 9. Run layout mappings
 
@@ -236,7 +255,9 @@ No canonical database initially. SQLite may later be rebuildable. Specs 07/11 ex
 
 An implementation is nonconforming if it:
 
-- defines duplicate shared unions/error/command registries;
+- defines duplicate shared primitive/type/error/command registries;
+- emits raw/uppercase/base64 SHA-256, noncanonical timestamps, unsafe counts, or floating persisted currency;
+- produces different canonical JSON/hash bytes across Rust and TypeScript;
 - accepts a structurally valid record that violates the Record Invariant Matrix;
 - persists deprecated aliases;
 - uses old storage/endpoint/env names;
