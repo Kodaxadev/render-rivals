@@ -7,12 +7,63 @@ import {
 
 export { HUMAN_VERDICTS, SELECTOR_OUTCOMES };
 
-export function validateExperimentManifest(manifest) {
-  return validateBaseExperiment(manifest);
-}
+// Frozen defaults from docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md.
+//
+// ADR-0013 lets an experiment be stricter than the contract but never weaker.
+// Freezing a manifest is not by itself a protection: a frozen manifest holding
+// trivially passable thresholds still clears the quantitative gate on a sample
+// that demonstrates nothing, and the person most able to relax a threshold is
+// the sole owner running the experiment.
+export const STAGE05_DEFAULT_THRESHOLDS = Object.freeze({
+  minimumValidTasks: 8,
+  targetValidTasks: 12,
+  minimumOpportunityCases: 4,
+  selectorAgreementThreshold: 0.75,
+  maximumOrdinaryFalseRecommendations: 1,
+  maximumProtectedRegressionRecommendations: 0,
+  maximumOrderConflictRate: 0.25,
+  minimumNetCorrectAdoptionsOverRetainCurrent: 2,
+});
+
+// Fields where a larger value is stricter; the rest are ceilings where a
+// smaller value is stricter.
+const FLOOR_FIELDS = new Set([
+  "minimumValidTasks",
+  "targetValidTasks",
+  "minimumOpportunityCases",
+  "selectorAgreementThreshold",
+  "minimumNetCorrectAdoptionsOverRetainCurrent",
+]);
+
+export const DECISION_VALUES = new Set(["proceed", "pivot", "stop", "inconclusive"]);
 
 function issue(code, path, message) {
   return { code, path, message };
+}
+
+function instant(value) {
+  if (typeof value !== "string") return null;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+export function validateExperimentManifest(manifest) {
+  const issues = [...validateBaseExperiment(manifest)];
+  for (const [field, fallback] of Object.entries(STAGE05_DEFAULT_THRESHOLDS)) {
+    const value = manifest?.[field];
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+    const weaker = FLOOR_FIELDS.has(field) ? value < fallback : value > fallback;
+    if (weaker) {
+      issues.push(
+        issue(
+          "THRESHOLD_WEAKER_THAN_DEFAULT",
+          `$.${field}`,
+          `${field} is ${value}, weaker than the contract default ${fallback}. An experiment may be stricter than docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md but never weaker.`,
+        ),
+      );
+    }
+  }
+  return issues;
 }
 
 export function validateTaskResult(result, manifest) {
@@ -65,6 +116,30 @@ export function calculateMetrics(manifest, taskResults) {
       });
     }
     seen.add(result?.taskId);
+  }
+
+  // ADR-0013: thresholds may not be relaxed after results are known. A manifest
+  // written once outcomes were visible defeats every frozen threshold, and the
+  // records already carry enough timestamps to detect it.
+  const frozenAt = instant(manifest?.createdAt);
+  const observations = [];
+  for (const result of taskResults) {
+    for (const field of ["selectorCompletedAt", "humanRatingCommittedAt", "unblindedAt"]) {
+      const at = instant(result?.[field]);
+      if (at !== null) observations.push({ taskId: result?.taskId ?? null, field, at });
+    }
+  }
+  const earliest = observations.reduce(
+    (lowest, item) => (lowest === null || item.at < lowest.at ? item : lowest),
+    null,
+  );
+  if (frozenAt !== null && earliest !== null && earliest.at < frozenAt) {
+    resultIssues.push({
+      taskId: earliest.taskId,
+      code: "EXPERIMENT_FROZEN_AFTER_OBSERVATION",
+      path: "$.createdAt",
+      message: `Experiment createdAt ${manifest.createdAt} is later than the earliest observation (${earliest.field}). Thresholds must be frozen before any evaluator result or human rating is observed.`,
+    });
   }
 
   const valid = taskResults.filter(
@@ -230,4 +305,60 @@ export function calculateMetrics(manifest, taskResults) {
         ? "inconclusive"
         : "thresholds_not_met",
   };
+}
+
+// ADR-0013 makes a valid `proceed` record the gate that opens production
+// Stage 1, so the decision record is validated like any other canonical
+// artifact. The analyzer deliberately never writes this file; the owner does.
+export function validateDecision(decision, manifest, report) {
+  const issues = [];
+
+  if (decision?.schema !== "render-rivals/stage-0.5-decision") {
+    issues.push(issue("DECISION_SCHEMA_INVALID", "$.schema", "Decision must use the render-rivals/stage-0.5-decision schema."));
+  }
+  if (typeof decision?.experimentId !== "string" || decision.experimentId.trim() === "") {
+    issues.push(issue("DECISION_EXPERIMENT_ID_REQUIRED", "$.experimentId", "Decision must identify its experiment."));
+  } else if (manifest?.experimentId && decision.experimentId !== manifest.experimentId) {
+    issues.push(issue("DECISION_EXPERIMENT_MISMATCH", "$.experimentId", "Decision belongs to another experiment."));
+  }
+  if (!DECISION_VALUES.has(decision?.decision)) {
+    issues.push(
+      issue(
+        "DECISION_VALUE_INVALID",
+        "$.decision",
+        `Decision must be one of ${[...DECISION_VALUES].join(", ")}.`,
+      ),
+    );
+  }
+
+  const decidedAt = instant(decision?.decidedAt);
+  if (decidedAt === null) {
+    issues.push(issue("DECISION_TIMESTAMP_INVALID", "$.decidedAt", "Decision requires a valid UTC timestamp."));
+  }
+  for (const field of ["decidedBy", "ownerValueJudgment", "rationale"]) {
+    const value = decision?.[field];
+    if (typeof value !== "string" || value.trim() === "") {
+      issues.push(issue("DECISION_FIELD_REQUIRED", `$.${field}`, `${field} must be a non-empty explicit statement.`));
+    } else if (/^<.*>$/.test(value.trim())) {
+      issues.push(issue("DECISION_PLACEHOLDER", `$.${field}`, `${field} still contains a template placeholder.`));
+    }
+  }
+
+  // The owner may always decide more conservatively than the metrics. Only
+  // `proceed` is constrained, because only `proceed` opens Stage 1.
+  if (decision?.decision === "proceed") {
+    if (!report) {
+      issues.push(issue("DECISION_REPORT_REQUIRED", "$.decision", "A proceed decision requires the computed metric report."));
+    } else if (report.quantitativeGate !== "eligible_for_owner_decision") {
+      issues.push(
+        issue(
+          "DECISION_PROCEED_WITHOUT_GATE",
+          "$.decision",
+          `Quantitative gate is ${report.quantitativeGate}; proceed requires eligible_for_owner_decision. Overriding this requires a new accepted ADR that overturns ADR-0013.`,
+        ),
+      );
+    }
+  }
+
+  return issues;
 }
