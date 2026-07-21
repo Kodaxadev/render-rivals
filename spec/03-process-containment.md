@@ -44,7 +44,7 @@ Capabilities are measured by doctor fixtures and stored per Session.
 
 Examples:
 
-- Windows reference MVP requires strong containment;
+- Windows 11 reference MVP requires strong containment;
 - human-only comparison may allow a lower explicitly accepted capability outside reference acceptance;
 - external-server capture is limited and cannot claim server ownership;
 - published benchmarks require a controlled environment or strong containment;
@@ -265,7 +265,7 @@ maximumStdoutMiBPerProcess = 64
 maximumStderrMiBPerProcess = 64
 ```
 
-Exact memory/disk/process defaults are pinned during the scaffold after measurements on the Windows reference fixture.
+Exact memory/disk/process defaults are pinned during the scaffold after measurements on the Windows 11 reference fixture.
 
 ## 12. Admission controller
 
@@ -352,7 +352,7 @@ Stored PID values are diagnostic only. Cleanup never kills an unrelated process 
 
 ### MVP reference
 
-- Windows 10/11 x64: strong target after doctor passes.
+- Windows 11 x64: strong target after doctor passes.
 
 ### Experimental
 
@@ -364,7 +364,7 @@ Expand support only after doctor and adversarial suites pass on maintained test 
 
 ## 17. Implementation order
 
-1. Windows Session Job and exact coordinator launch.
+1. Windows 11 Session Job and exact coordinator launch.
 2. Windows console isolation and root-process launch API.
 3. Output capture and candidate-local group cleanup.
 4. Browser descendant doctor.
