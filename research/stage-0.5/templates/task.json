@@ -1,0 +1,25 @@
+{
+  "schema": "render-rivals/stage-0.5-task",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "title": "<task title>",
+  "productArea": "<route or product area>",
+  "taskBrief": "<what the implementation must help the user accomplish>",
+  "states": ["populated", "empty", "error_or_unavailable"],
+  "viewports": ["1440x900@1", "390x844@1"],
+  "criticalInteraction": {
+    "name": "<interaction name>",
+    "steps": [],
+    "assertions": []
+  },
+  "protectedRegressions": [],
+  "candidatePreparation": {
+    "method": "<manual or agent-assisted>",
+    "tool": "<tool/model identity>",
+    "briefHash": "sha256:<64 lowercase hexadecimal characters>",
+    "elapsedMinutes": null,
+    "knownCost": null
+  },
+  "status": "draft"
+}
