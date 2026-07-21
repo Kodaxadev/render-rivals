@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "3.5.0",
+  "schemaVersion": "4.0.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -14,9 +14,10 @@
       "Shared persisted vocabulary is defined in schemas/domain-types.ts.",
       "Stable errors are defined in schemas/error-codes.ts.",
       "Shared local API command and envelope vocabulary is defined in schemas/api-types.ts.",
+      "Durable Operation ledger vocabulary is defined in schemas/operation-types.ts and spec/19.",
       "Cross-record cardinality and nullability are defined in docs/RECORD-INVARIANT-MATRIX.md.",
       "The repository is pre-scaffold and not yet licensed for public reuse.",
-      "Intentional old-name and migration references require context-aware conformance allowlists rather than blind token rejection."
+      "Intentional old-name, abbreviated digest, and migration references require context-aware conformance allowlists rather than blind token rejection."
     ]
   },
   "canonicalSpecifications": [
@@ -37,13 +38,19 @@
     "spec/15-observability-diagnostics-and-telemetry-contracts.md",
     "spec/16-dashboard-session-authentication-and-pairing.md",
     "spec/17-local-api-envelopes-operations-and-pagination.md",
-    "spec/18-canonical-primitives-json-hashing-and-measurements.md"
+    "spec/18-canonical-primitives-json-hashing-and-measurements.md",
+    "spec/19-operation-ledger-idempotency-and-reconciliation.md",
+    "spec/20-capture-artifact-formats-and-evidence-registry.md",
+    "spec/21-artifact-serving-preview-and-active-content-security.md",
+    "spec/22-retention-trash-garbage-collection-and-storage-admission.md",
+    "spec/23-locking-leases-concurrency-and-multi-session-ownership.md"
   ],
   "canonicalSharedSources": [
     "schemas/primitives.ts",
     "schemas/domain-types.ts",
     "schemas/error-codes.ts",
-    "schemas/api-types.ts"
+    "schemas/api-types.ts",
+    "schemas/operation-types.ts"
   ],
   "acceptedArchitectureDecisions": [
     "adr/ADR-0001-typescript-rust-boundary.md",
@@ -56,7 +63,8 @@
     "adr/ADR-0008-version-policy.md",
     "adr/ADR-0009-experimental-controls.md",
     "adr/ADR-0010-quality-first-accounting.md",
-    "adr/ADR-0011-selection-outcomes-and-user-decisions.md"
+    "adr/ADR-0011-selection-outcomes-and-user-decisions.md",
+    "adr/ADR-0012-run-promotion-phase-naming.md"
   ],
   "implementationContracts": [
     "docs/MVP-VERTICAL-SLICE.md",
@@ -81,10 +89,12 @@
     "schemas/domain-types.ts",
     "schemas/error-codes.ts",
     "schemas/api-types.ts",
+    "schemas/operation-types.ts",
     "docs/RECORD-INVARIANT-MATRIX.md"
   ],
   "sourceVerification": [
-    "sources/official-runtime-verification.md"
+    "sources/official-runtime-verification.md",
+    "sources/playwright-capture-api-verification.md"
   ],
   "brand": [
     "brand/README.md",
@@ -112,15 +122,19 @@
     "LICENSE-TBD.md"
   ],
   "pendingScaffoldArtifacts": [
-    "Zod schema registry",
+    "Zod schema registry for primitives, entities, operations, capture classes, APIs, locks, trash and manifests",
     "RFC 8785 canonical JSON and cross-language primitive/hash fixtures",
     "generated JSON Schema and generated API command/client registry",
     "valid and invalid fixtures covering the Record Invariant Matrix",
-    "schema migrations and compatibility tests",
-    "Rust and TypeScript protocol goldens",
+    "schema migrations and compatibility tests including Run exporting-to-promoting fixture migration",
+    "Rust and TypeScript IPC and Operation protocol goldens",
     "documentation conformance script",
     "implementation monorepo scaffold",
     "randomized-host dashboard pairing proof",
+    "durable Operation reconciliation proof",
+    "complete Capture Artifact registry and current Playwright API proof",
+    "Artifact active-content preview security proof",
+    "trash, restore, purge, storage admission and filesystem-lock proof",
     "Windows native containment and packaged-build proof"
   ],
   "publicReleaseBlockers": [
@@ -129,6 +143,7 @@
     "package name and native distribution",
     "browser distribution decision",
     "checksums, provenance, SBOM, and third-party notices",
-    "tested support matrix and migration path"
+    "tested support matrix and migration path",
+    "external-user security, recovery and deletion validation"
   ]
 }
