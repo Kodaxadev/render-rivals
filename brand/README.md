@@ -47,7 +47,7 @@ A dark-and-gold historical concept board. Its tournament/champion language is no
 
 ### 04 — Neon creative technology
 
-![Neon creative technology](concepts/04-neon-creative-technology.webp)
+![Neon creative technology](concepts/04-neon-creative-tech.webp)
 
 A high-energy developer-tool direction with purple, electric blue, and lime accents. Useful for accent exploration but potentially less durable and less instrument-like.
 
