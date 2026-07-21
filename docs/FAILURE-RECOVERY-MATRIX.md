@@ -2,6 +2,7 @@
 
 **Status:** Implementation and product-behavior contract  
 **Scope:** Stable failure classification, automatic response, evidence impact, permitted recovery, retry limits, cleanup, and user messaging  
+**Stable codes:** `schemas/error-codes.ts`  
 **State authority:** `spec/10-run-and-candidate-state-machines.md`  
 **Storage authority:** `spec/11-artifact-event-and-schema-contracts.md`
 
@@ -10,7 +11,7 @@
 1. Never claim success from an unobserved side effect.
 2. Never trust PID alone as process identity.
 3. Never reuse evidence from an invalid Capture Epoch.
-4. Never invalidate an entire Epoch for a candidate-local failure unless comparison continuity was compromised.
+4. Never invalidate an entire Epoch for a Candidate-local failure unless comparison continuity was compromised.
 5. Never evaluate corrupt, missing, stale, cross-Run, or ineligible evidence.
 6. Never change sealed source/configuration inputs in place.
 7. Never expose partial canonical files.
@@ -18,23 +19,22 @@
 9. Never automatically retry an operation that could duplicate or overwrite user output.
 10. Preserve failed attempts and raw bytes for diagnosis.
 11. Prefer a conservative unusable/interrupted result over optimistic reuse.
+12. Every stable code in this document exists in `schemas/error-codes.ts`; provider/project raw diagnostics use separate nonstable fields.
 
 ## 2. Failure classes
 
 | Class | Meaning | Default response |
 |---|---|---|
 | `user_correctable` | Draft input or destination requires correction | Return to editable state before sealing, otherwise create superseding Run |
-| `retryable_transient` | Identical immutable input may safely retry | Bounded new attempt |
-| `candidate_local` | One Candidate Attempt failed without wider environment corruption | Retry/fail that attempt; preserve other valid evidence |
+| `retryable_transient` | Identical immutable input may safely retry | Bounded new Attempt |
+| `candidate_local` | One Candidate Attempt failed without wider environment corruption | Retry/fail that Attempt; preserve other valid evidence |
 | `epoch_invalidating` | Browser/environment comparability cannot be trusted | Invalidate full Epoch and recapture participants |
-| `candidate_ineligible` | Required gate proves contender cannot advance | Retain evidence and current implementation path |
-| `run_terminal` | Qualified current or integrity needed to continue is unavailable | Fail or produce auditable `invalid_run` |
+| `candidate_ineligible` | Required Gate proves Contender cannot advance | Retain evidence and current implementation path |
+| `run_terminal` | Qualified current or required integrity unavailable | Fail or produce auditable `invalid_run` |
 | `security_critical` | Ownership, containment, path, authentication, or integrity boundary violated | Stop scheduling, isolate, cleanup, fail closed |
-| `cleanup_incident` | Product outcome exists but owned resources may remain | Persistent health warning and cleanup-only operation |
+| `cleanup_incident` | Product outcome exists but owned resources may remain | Persistent warning and cleanup-only operation |
 
 ## 3. Recovery dispositions
-
-Uses `RecoveryDisposition`:
 
 - `resume_from_checkpoint`;
 - `retry_current_phase`;
@@ -46,19 +46,9 @@ Uses `RecoveryDisposition`:
 
 ## 4. User-message contract
 
-Every surfaced failure includes:
+Every failure shows stable code/title, observation/entity, phase/Attempt, evidence/Epoch effect, retained Artifacts/checkpoint, cleanup, retries used, one permitted action, and expandable technical detail.
 
-- stable code and plain-language title;
-- exact observation and affected entity;
-- phase and attempt;
-- evidence validity and Epoch effect;
-- retained artifacts/checkpoint;
-- cleanup status;
-- automatic retries already used;
-- one recommended permitted action;
-- expandable technical details and linked logs/events.
-
-A generic “Something went wrong” page is nonconforming.
+Generic “Something went wrong” is nonconforming.
 
 ## 5. Startup and Session
 
@@ -68,217 +58,242 @@ A generic “Something went wrong” page is nonconforming.
 | `BOOT_NATIVE_INTEGRITY` | Native checksum/metadata mismatch | Quarantine; do not execute | Reinstall trusted release |
 | `BOOT_NODE_UNSUPPORTED` | Bootstrap Node unsupported | Stop | Use pinned Node line |
 | `BOOT_EXACT_NODE_MISMATCH` | Rust verifies different Node path/version | Terminate startup | Repair bootstrap/runtime |
-| `SESSION_ENDPOINT_FAILED` | IPC endpoint cannot be secured/created | Cleanup partial Session | Retry fresh Session once after cause fixed |
-| `SESSION_AUTH_FAILED` | Nonce/peer/PID/Node/protocol mismatch | Reject peer; cleanup | Security-critical; restart after diagnosis |
-| `SESSION_PROTOCOL_INCOMPATIBLE` | Major mismatch/required capability absent | Stop before project commands | Upgrade/downgrade compatible components |
-| `SESSION_COORDINATOR_CRASH` | Authenticated coordinator exits unexpectedly | Cleanup Session payload; active Run interrupted | New Session recovery |
+| `BOOT_PLATFORM_UNSUPPORTED` | No matching target package | Stop | Use supported platform/build |
+| `BOOT_COMPONENT_INCOMPATIBLE` | Package/native/schema compatibility fails | Stop/read-only as declared | Install compatible set |
+| `SESSION_ENDPOINT_FAILED` | IPC endpoint cannot be secured/created | Cleanup partial Session | Retry fresh Session after cause fixed |
+| `SESSION_AUTH_FAILED` | Nonce/peer/PID/Node/protocol mismatch | Reject peer; cleanup | Security diagnosis/restart |
+| `SESSION_PROTOCOL_INCOMPATIBLE` | Major mismatch/required capability absent | Stop before Project commands | Upgrade/downgrade compatible components |
+| `SESSION_COORDINATOR_CRASH` | Coordinator exits unexpectedly | Cleanup Session payload; Run interrupted | New Session recovery |
 | `SESSION_BOOTSTRAP_LOST` | Liveness EOF | Emergency cleanup | Recover Run later |
-| `SESSION_SAFE_MODE_UNAVAILABLE` | Native/IPC startup failed | Do not fake safe mode | Print installation diagnostics and exit |
+| `SESSION_SAFE_MODE_UNAVAILABLE` | Native/IPC startup failed | Do not fake safe mode | Print installation diagnostics |
+| `SESSION_SECOND_COORDINATOR` | Another client connects | Reject it | Keep authenticated Session |
 
 ## 6. Project and configuration
 
 | Code | Failure | Automatic response | Recovery |
 |---|---|---|---|
-| `PROJECT_PATH_MISSING` | Registered source absent | Mark project unavailable | Explicit relink after identity check |
-| `PROJECT_IDENTITY_MISMATCH` | Marker/fingerprint conflict | Block commands | Adopt/move explicitly or create new Project |
-| `PROJECT_NOT_TRUSTED` | Trust absent/revoked | Block project execution | Review commands and accept trust |
+| `PROJECT_PATH_MISSING` | Registered source absent | Mark Project unavailable | Explicit relink |
+| `PROJECT_IDENTITY_MISMATCH` | Marker/fingerprint conflict | Block commands | Adopt/move explicitly or new Project |
+| `PROJECT_NOT_TRUSTED` | Trust absent/revoked | Block execution | Review commands and accept |
+| `PROJECT_NESTED_REPOSITORY_AMBIGUOUS` | Multiple roots plausible | Do not guess | User selects root |
 | `CONFIG_SCHEMA_INVALID` | JSONC/schema/semantic failure | Keep draft | Correct input |
-| `CONFIG_SECURITY_CONFLICT` | Layer weakens mandatory security/capability | Fail validation | Resolve conflicting layer |
-| `CONFIG_SECRET_MISSING` | Required secret reference unresolved | Block before launch | Bind secret for Session |
-| `CONFIG_STORAGE_ADMISSION` | Data root unavailable or reserve fails | Stop scheduling | Repair/select storage |
-| `CONFIG_CAPABILITY_BLOCKED` | Platform below frozen minimum | Block Run | Use supported platform or create new policy/Run |
-| `CONFIG_SEALED_CHANGED` | Source/fixture/gates/factors/policy changed after seal | Mark current Run stale | `create_superseding_run` |
+| `CONFIG_SECURITY_CONFLICT` | Layer weakens mandatory security | Fail validation | Resolve layer conflict |
+| `CONFIG_SECRET_MISSING` | Required secret unresolved | Block before launch | Bind secret for Session |
+| `CONFIG_STORAGE_ADMISSION` | Data root/reserve fails | Stop scheduling | Repair/select storage |
+| `CONFIG_CAPABILITY_BLOCKED` | Platform below frozen minimum | Block Run | Supported platform or new policy/Run |
+| `CONFIG_SEALED_CHANGED` | Source/fixture/Gates/Factors/policy changed after seal | Mark stale | Create superseding Run |
+| `CONFIG_COMMAND_UNSAFE` | Shell/path/environment request unsafe | Reject config | Use explicit safe command |
 
-## 7. Source and workspace
+## 7. Source and Workspace
 
 | Code | Failure | Epoch effect | Recovery |
 |---|---|---|---|
-| `SOURCE_UNSTABLE_DURING_SNAPSHOT` | Files change while snapshot sealing | None | Retry after source settles |
-| `SOURCE_CHANGED_AFTER_SEAL` | Manifest differs after validation | Invalidate active Epoch if started | Superseding Run with new Source Snapshot |
-| `SOURCE_PROTECTED_PATH` | Contender changes protected path | Candidate local/ineligible | Retain current or new contender/Run |
-| `SOURCE_DEPENDENCY_POLICY` | Package/lockfile policy violated | Candidate local/ineligible | New contender/Run |
+| `SOURCE_CHANGED_DURING_SNAPSHOT` | Files change while Snapshot seals | None | Retry after source settles |
+| `SOURCE_CHANGED_AFTER_SEAL` | Manifest differs after validation | Invalidate active Epoch if started | Superseding Run/new Snapshot |
+| `SOURCE_PROTECTED_PATH` | Contender changes protected path | Candidate-local/ineligible | Retain current or new Contender |
+| `SOURCE_DEPENDENCY_POLICY` | Package/lockfile policy violated | Candidate-local/ineligible | New Contender/Run |
 | `SOURCE_SYMLINK_ESCAPE` | Link/junction escapes approved root | Security critical | Reject source/workspace |
-| `WORKSPACE_CREATE_FAILED` | Materialization filesystem failure | None | Retry after storage correction |
-| `WORKSPACE_MANIFEST_MISMATCH` | Materialized bytes differ from snapshot | Candidate local; quarantine workspace | Rematerialize once, then superseding Run |
-| `WORKSPACE_OUTSIDE_ROOT` | Workspace canonicalizes outside cache root | Security critical | Reject; do not delete external path |
-| `DEPENDENCY_FAILED` | Install exits/times out | Candidate local | No automatic retry unless classifier proves transient |
-| `BUILD_FAILED` | Build/output assertion fails | Current: terminal; contender: ineligible | Current requires baseline recovery; contender retains current |
-| `WORKSPACE_UNEXPECTED_MUTATION` | Command modifies disallowed input | Candidate local/security depending path | Quarantine; new source/Run |
+| `SOURCE_CASE_COLLISION` | Paths collide on target filesystem | No safe workspace | Unsupported/new target |
+| `SOURCE_SYMLINK_UNSUPPORTED` | Required symlink semantics unavailable | Candidate invalid/limited | Supported environment |
+| `SOURCE_SUBMODULE_MISSING` | Required submodule/object absent | Candidate unqualified | Materialize explicitly |
+| `SOURCE_SUBMODULE_DIRTY` | Nested source not snapshotted | Candidate unqualified | Nested policy or clean state |
+| `SOURCE_LFS_OBJECT_MISSING` | Required LFS bytes absent | Candidate unqualified | Explicit materialization |
+| `WORKSPACE_CREATE_FAILED` | Materialization I/O failure | None | Retry after storage correction |
+| `WORKSPACE_MANIFEST_MISMATCH` | Materialized bytes differ | Candidate-local; quarantine | Rematerialize once, then new Run |
+| `WORKSPACE_OUTSIDE_ROOT` | Workspace escapes cache root | Security critical | Reject; do not delete external path |
+| `WORKSPACE_UNEXPECTED_MUTATION` | Command changes disallowed source | Candidate-local/security | Quarantine/new source |
+| `WORKTREE_CREATE_FAILED` | Git worktree operation fails | Candidate-local | Correct repository/storage |
+| `WORKTREE_MANIFEST_MISMATCH` | Worktree bytes differ from Snapshot | Candidate-local | Remove/recreate; then fail |
+| `WORKTREE_CLEANUP_FAILED` | Owned worktree remains | Cleanup incident | Retry verified cleanup |
+| `DEPENDENCY_FAILED` | Install exits/times out | Candidate-local | Retry only if proven transient |
+| `BUILD_FAILED` | Build/output assertion fails | Current terminal; Contender ineligible | Baseline recovery or retain current |
 
 ## 8. Process, containment, ports, readiness
 
 | Code | Failure | Epoch effect | Recovery |
 |---|---|---|---|
-| `PROCESS_LAUNCH_REJECTED` | Native validation/spawn fails | Candidate local if candidate-scoped | Correct command/path/policy |
-| `PROCESS_CONTAINMENT_FAILED` | Managed root/descendant not in required boundary | Invalidate active Epoch; security critical | Cleanup and fail reference Run |
-| `PROCESS_IDENTITY_LOST` | Recovery cannot prove recorded process | Invalidate Epoch if continuity required | Treat process absent/unowned; never kill by PID alone |
-| `PROCESS_RESOURCE_LIMIT` | Hard limit crossed | Candidate local unless wider storage/session issue | New Run with changed limits/source |
-| `OUTPUT_DURABILITY_FAILED` | Rust cannot preserve required output | Stop affected process; possibly Session-wide | Repair storage and recover |
-| `PORT_COLLISION` | Selected port owned by unrelated process | None | Try up to 3 allowed ports |
-| `LISTENER_OWNER_MISMATCH` | Endpoint belongs outside candidate group | Candidate local/security | Stop candidate; never kill unrelated process |
-| `LISTENER_OWNER_UNAVAILABLE` | Platform cannot verify | None if frozen policy permits limitation | Mark limited or block according to policy |
-| `SERVER_EXITED_EARLY` | Process exits before readiness/capture | Candidate local | Bounded retry only if transient |
-| `READINESS_TIMEOUT` | Required probes fail deadline | Candidate local | Correct app/config; new attempt/Run |
-| `ORIGIN_OR_REDIRECT_INVALID` | Navigation leaves allowed local origin | Candidate local or security | Correct app/origin policy |
-| `FIXTURE_SETUP_FAILED` | Required state cannot be established | Candidate local | Retry only if fixture operation is declared idempotent |
+| `PROCESS_LAUNCH_REJECTED` | Native validation/spawn fails | Candidate-local when scoped | Correct command/path/policy |
+| `PROCESS_CONTAINMENT_FAILED` | Root/descendant not in required boundary | Invalidate Epoch; security critical | Cleanup/fail reference Run |
+| `PROCESS_IDENTITY_LOST` | Recovery cannot prove process | Invalidate continuity-dependent Epoch | Treat absent/unrelated; never kill by PID |
+| `PROCESS_RESOURCE_LIMIT` | Hard limit crossed | Candidate-local unless Session/storage-wide | New policy/source/Run |
+| `PROCESS_BREAKAWAY_UNSUPPORTED` | Tool requires prohibited Windows Job breakaway | Candidate unsupported | Different tool/repository policy |
+| `OUTPUT_DURABILITY_FAILED` | Rust cannot preserve output | Stop affected process | Repair storage/recover |
+| `OUTPUT_LIMIT_EXCEEDED` | Stream crosses configured cap | Truncate/terminate exactly as policy | New limits/source/Run |
+| `PORT_COLLISION` | Port owned by unrelated process | None | Try allowed ports |
+| `LISTENER_OWNER_MISMATCH` | Endpoint outside Candidate group | Candidate-local/security | Stop Candidate; never kill unrelated |
+| `LISTENER_OWNER_UNAVAILABLE` | Platform cannot verify | None if policy permits | Mark limited or block |
+| `SERVER_EXITED_EARLY` | Process exits before readiness/capture | Candidate-local | Retry only if transient |
+| `READINESS_TIMEOUT` | Probes fail deadline | Candidate-local | Correct app/config |
+| `ORIGIN_OR_REDIRECT_INVALID` | Navigation leaves allowed origin | Candidate-local/security | Correct app/policy |
+| `FIXTURE_SETUP_FAILED` | Required state unavailable | Candidate-local | Retry only if idempotent |
 
-## 9. Browser and capture
+## 9. Browser and Capture
 
 | Code | Failure | Scope | Recovery |
 |---|---|---|---|
-| `BROWSER_LAUNCH_FAILED` | Chromium cannot launch/connect | Epoch opening | One bounded launch retry |
-| `BROWSER_DISCONNECTED` | Playwright disconnect | Entire Epoch invalid | New Epoch; recapture current and participants |
+| `BROWSER_LAUNCH_FAILED` | Chromium cannot start/connect | Epoch opening | One bounded retry |
+| `BROWSER_DISCONNECTED` | Playwright disconnect | Entire Epoch invalid | New Epoch, recapture participants |
 | `BROWSER_PROCESS_CHANGED` | Browser identity changes | Entire Epoch invalid | New Epoch |
-| `CONTEXT_ISOLATION_LEAK` | Storage/cookie/service-worker leakage | Entire Epoch invalid | Fix isolation; new Epoch |
-| `FIXTURE_OR_ENV_CHANGED` | Fixture/environment hash drifts | Entire Epoch invalid | Restore/freeze; new Epoch |
-| `PAGE_CRASHED` | One page crashes while Chromium remains connected | Candidate local | Preserve diagnostics; one fresh-context retry |
-| `PAGE_CRASH_REPEATED` | Candidate page crashes again | Current: invalid baseline; contender: ineligible | Current → invalid/failed; contender → retain current |
-| `NAVIGATION_FAILED` | Candidate route fails without wider browser loss | Candidate local | Bounded retry only for classified transient race |
-| `REQUIRED_STATE_MISSING` | State/selector/assertion absent | Candidate local/ineligible | New contender/Run after correction |
-| `INTERACTION_FAILED` | Action/assertion/final fingerprint fails | Candidate local/ineligible | Preserve trace; retain current path |
-| `BLANK_OR_LOGIN_CAPTURE` | Evidence does not represent target state | Candidate local/ineligible | One retry when safe |
-| `FONT_OR_SETTLE_TIMEOUT` | Required capture condition fails | Candidate local | Fix fixture/policy in superseding Run |
-| `STABILITY_PROBE_FAILED` | Current variation exceeds policy | Run comparison invalid | New fixture/policy/Run |
-| `CAPTURE_WRITE_UNCOMMITTED` | Artifact write fails before registration | Candidate local while continuity active | One identical write retry |
-| `CAPTURE_ARTIFACT_CORRUPT` | Registered required bytes mismatch | Entire Epoch invalid when capture evidence trust affected | New Epoch |
-| `CAPTURE_MATRIX_INCOMPLETE` | Candidate lacks required cells | Candidate local | Retry missing cells only while same Epoch/browser continuity remains; otherwise candidate fails |
+| `CONTEXT_ISOLATION_LEAK` | Storage/service worker crosses contexts | Entire Epoch invalid | Fix isolation/new Epoch |
+| `FIXTURE_OR_ENV_CHANGED` | Fixture/environment hash drifts | Entire Epoch invalid | Restore/freeze/new Epoch |
+| `PAGE_CRASHED` | One page crashes; browser connected | Candidate-local | Preserve; one fresh-context retry |
+| `PAGE_CRASH_REPEATED` | Candidate crashes again | Current invalid; Contender ineligible | Invalid/failed or retain current |
+| `NAVIGATION_FAILED` | Candidate route fails locally | Candidate-local | Retry only transient race |
+| `REQUIRED_STATE_MISSING` | State/selector/assertion absent | Candidate-local/ineligible | Correct in new Contender/Run |
+| `INTERACTION_FAILED` | Action/assertion/fingerprint fails | Candidate-local/ineligible | Preserve trace/retain current |
+| `BLANK_OR_LOGIN_CAPTURE` | Wrong target state | Candidate-local/ineligible | One retry if safe |
+| `FONT_OR_SETTLE_TIMEOUT` | Required condition fails | Candidate-local | New fixture/policy/Run |
+| `STABILITY_PROBE_FAILED` | Current variation exceeds policy | Comparison invalid | New fixture/policy/Run |
+| `CAPTURE_WRITE_UNCOMMITTED` | Write fails before registration | Candidate-local while continuity active | One identical write retry |
+| `CAPTURE_ARTIFACT_CORRUPT` | Registered required bytes mismatch | Entire Epoch invalid if trust affected | New Epoch |
+| `CAPTURE_MATRIX_INCOMPLETE` | Required cells absent | Candidate-local | Retry cells in live Epoch or fail Candidate |
 
-A failed contender does not force recapture of valid current evidence unless the active Epoch itself became invalid.
+Failed Contender does not force recapture of valid current evidence unless Epoch itself invalidates.
 
 ## 10. Gates
 
 | Code | Failure | Response | Recovery |
 |---|---|---|---|
-| `GATE_REQUIRED_FAILED` | Required condition false | Contender ineligible; current invalid if current-scoped | Deterministic retention or invalid Run |
-| `GATE_REQUIRED_ERROR` | Required gate cannot produce trusted result | One safe retry, then ineligible/invalid | Repair gate/evidence |
-| `GATE_ADVISORY_FAILED` | Advisory condition false | Continue with warning | Human/evaluator sees limitation |
-| `GATE_DEPENDENCY_NOT_READY` | Scheduler tries gate before required evidence | Implementation invariant failure | Fix gate phase/dependency graph |
-| `GATE_CITATION_INVALID` | Result cites missing/wrong artifact | Reject result | Repair artifact or recapture |
-| `GATE_SUPERSESSION_CONFLICT` | Retry chain inconsistent | Integrity failure | Read-only recovery/diagnosis |
+| `GATE_REQUIRED_FAILED` | Required condition false | Contender ineligible/current invalid | Retain current or invalid Run |
+| `GATE_REQUIRED_ERROR` | Required Gate cannot determine | One safe retry, then ineligible/invalid | Repair Gate/evidence |
+| `GATE_ADVISORY_FAILED` | Advisory false | Continue with warning | Surface limitation |
+| `GATE_DEPENDENCY_NOT_READY` | Gate scheduled before evidence exists | Implementation invariant failure | Fix phase/dependency graph |
+| `GATE_CITATION_INVALID` | Missing/wrong Artifact | Reject Result | Repair/recapture |
+| `GATE_SUPERSESSION_CONFLICT` | Retry chain inconsistent | Integrity failure | Read-only diagnosis |
 
 ## 11. Evaluation and Recommendation
 
 | Code | Failure | Response | Recovery |
 |---|---|---|---|
-| `EVALUATION_PACKET_INCOMPLETE` | Required evidence cannot form packet | Do not invoke evaluator | Repair/recapture or deterministic outcome |
-| `EVALUATOR_LAUNCH_FAILED` | Adapter process fails | Store diagnostics | One bounded new attempt after correction |
-| `EVALUATOR_TIMEOUT` | Deadline exceeded | Terminate; preserve partial raw bytes | One retry with identical packet |
-| `EVALUATOR_OUTPUT_INVALID` | Non-JSON/schema/factor/confidence failure | Store raw output; accept no Evidence | Corrective retry only if adapter explicitly supports it |
-| `EVALUATOR_CITATION_INVALID` | Citation outside allowlist or hash mismatch | Reject output | Security/integrity diagnosis or new valid packet |
-| `EVALUATOR_ORDER_CONFLICT` | A/B and B/A materially disagree | No automatic contender recommendation | `tie`, `human_review_required`, or retain per policy |
-| `EVALUATOR_PROTECTED_REGRESSION` | Valid evidence finds veto | Contender cannot be recommended | `current_retained` |
-| `RECOMMENDATION_POLICY_FAILED` | Deterministic reducer throws/mismatches hash | Preserve valid evidence; no Recommendation | Retry after code recovery; do not reinvoke evaluator unnecessarily |
-| `RECOMMENDATION_STALE` | Bound inputs changed | Disable Decision/Promotion | New Evaluation/Run as required |
+| `EVALUATION_PACKET_INCOMPLETE` | Required evidence cannot form packet | Do not invoke | Repair/recapture/deterministic result |
+| `EVALUATOR_LAUNCH_FAILED` | Adapter process fails | Store diagnostics | One bounded Attempt |
+| `EVALUATOR_TIMEOUT` | Deadline exceeded | Terminate/preserve partial bytes | One identical-packet retry |
+| `EVALUATOR_OUTPUT_INVALID` | Missing/malformed/schema/factor/confidence failure | Store raw; accept no Evidence | Explicit corrective retry only |
+| `EVALUATOR_CITATION_INVALID` | Citation outside allowlist/hash invalid | Reject | New trusted packet/diagnosis |
+| `EVALUATOR_ORDER_CONFLICT` | A/B and B/A disagree materially | No automatic recommendation | Tie/human review/retain per policy |
+| `EVALUATOR_PROTECTED_REGRESSION` | Valid veto evidence | Contender not recommendable | Current retained |
+| `RECOMMENDATION_POLICY_FAILED` | Deterministic reducer fails/hash mismatch | Preserve Evidence; no Recommendation | Retry code path, not evaluator unnecessarily |
+| `RECOMMENDATION_STALE` | Bound inputs change | Disable Decision/Promotion | New Run/Evaluation |
 
-Unknown token/cost usage remains null and does not fail evaluation.
+Unknown usage remains null.
 
-## 12. Decision and Promotion
+## 12. Decision, Promotion, Export Operation
 
 | Code | Failure | Response | Recovery |
 |---|---|---|---|
-| `DECISION_STALE` | Recommendation/evidence/source/policy hash changed | Reject mutation/export | Review new Recommendation |
-| `DECISION_CONFLICT` | Competing commands/revision mismatch | First durable valid command wins | Refresh current state |
-| `DECISION_WRITE_FAILED` | Approval artifact not durable | No Decision accepted | Repair storage; retry same operation ID |
-| `PROMOTION_PRECONDITION` | Decision/source/destination mismatch | Mark stale/failed before mutation | Return to decision or choose new destination |
-| `PROMOTION_DESTINATION_EXISTS` | Patch/branch path exists | Never overwrite | User selects new destination or exact idempotent match verifies |
-| `PROMOTION_PARTIAL` | Export/branch side effect may have occurred | Inspect operation manifest and exact output | Adopt only exact match, otherwise fail/quarantine |
-| `PROMOTION_REDACTION_FAILED` | Export safety cannot be verified | Block export | Repair policy and retry |
-| `PROMOTION_REMOTE_OR_MERGE` | Push/PR/merge requested | Reject as unsupported MVP command | User performs manually outside product |
+| `DECISION_STALE` | Bound hashes changed | Reject Promotion | Review new Recommendation |
+| `DECISION_CONFLICT` | Revision/competing command | First durable valid wins | Refresh |
+| `DECISION_WRITE_FAILED` | Record not durable | No Decision accepted | Repair/retry same operation |
+| `DECISION_ACTION_NOT_ALLOWED` | Outcome/mode forbids action | Reject | Choose allowed action |
+| `PROMOTION_PRECONDITION` | Decision/source/destination mismatch | Stale/failed before mutation | Return to Decision |
+| `PROMOTION_DESTINATION_EXISTS` | Branch/patch/workspace conflict | Never overwrite | New destination or exact match |
+| `PROMOTION_PARTIAL` | Side effect may have occurred | Inspect exact operation | Adopt exact match only |
+| `PROMOTION_REDACTION_FAILED` | Candidate handoff safety report fails | Block | Repair policy |
+| `PROMOTION_REMOTE_OR_MERGE` | Push/PR/merge requested | Reject MVP command | Manual outside product |
+| `PATCH_APPLY_FAILED` | Verification application fails | Promotion failed | Correct source/destination |
+| `PATCH_RESULT_MISMATCH` | Result differs from expected manifest | Promotion failed | Quarantine/diagnose |
+| `BRANCH_INVALID_NAME` | Ref invalid | Reject before mutation | Choose valid name |
+| `BRANCH_ALREADY_EXISTS` | Ref conflict | No overwrite | New name or exact idempotent match |
+| `BRANCH_RESULT_MISMATCH` | Commit/tree differs | Promotion failed | Diagnose/quarantine |
+| `EXPORT_PRECONDITION_FAILED` | Source/redaction/integrity invalid | Export Operation failed | Correct/choose safe kind |
+| `EXPORT_DESTINATION_EXISTS` | Output conflict | No overwrite | New destination/exact match |
+| `EXPORT_REDACTION_FAILED` | Safe bundle cannot be proven | Block | Repair policy |
+| `EXPORT_WRITE_FAILED` | Output not durable | Quarantine partial | Repair/retry |
+| `EXPORT_RESULT_MISMATCH` | Checksum/content mismatch | Fail | Remove/quarantine |
+| `EXPORT_KIND_UNSUPPORTED` | Kind unavailable in scope/mode | Reject | Choose supported kind |
 
 ## 13. Storage and integrity
 
 | Code | Failure | Response | Recovery |
 |---|---|---|---|
-| `STORAGE_ROOT_UNAVAILABLE` | Data root missing/read-only | Stop side effects safely | Restore/select root; integrity scan |
-| `STORAGE_OUT_OF_SPACE` | Reserve/write fails | Stop admission/output producer as needed | Free space; retry uncommitted work |
-| `ATOMIC_RENAME_FAILED` | Canonical replace unavailable | Keep old canonical file | Use supported filesystem/root |
-| `EVENT_PARTIAL_FINAL_LINE` | Torn final NDJSON record | Quarantine/truncate under lock | Resume previous complete sequence |
-| `EVENT_SEQUENCE_GAP` | Missing/mutated/reordered event | Read-only/corrupt | Restore backup or diagnostics only |
-| `SNAPSHOT_BEHIND_STREAM` | Completion event durable, snapshot old | Replay and rewrite snapshot | Resume from verified state |
-| `SNAPSHOT_AHEAD_OF_STREAM` | Snapshot claims nonexistent event | Quarantine snapshot | Replay prior valid state |
-| `ARTIFACT_ORPHANED` | Payload exists without registration | Not evidence | Reconcile only with exact operation proof; otherwise quarantine |
-| `ARTIFACT_MISSING` | Registration points to absent bytes | Invalidate citations | Recapture/reevaluate |
-| `ARTIFACT_HASH_MISMATCH` | Bytes changed | Quarantine; block Recommendation | New trusted artifact |
-| `SCHEMA_MAJOR_UNSUPPORTED` | Reader cannot safely interpret | Read-only | Compatible upgrade/migration |
-| `MIGRATION_FAILED` | Migrated copy invalid/interrupted | Original remains canonical | Fix migrator |
+| `STORAGE_ROOT_UNAVAILABLE` | Data root missing/read-only | Stop side effects | Restore/select root |
+| `STORAGE_OUT_OF_SPACE` | Reserve/write fails | Stop admission/output as needed | Free space/retry uncommitted |
+| `PATH_OUTSIDE_OWNED_ROOT` | Canonical path escape | Security failure | Reject/quarantine |
+| `ATOMIC_RENAME_FAILED` | Required replacement unavailable | Keep old canonical | Supported filesystem/root |
+| `ENTITY_SCHEMA_INVALID` | Canonical entity invalid | Reject/quarantine | Migration/repair |
+| `ENTITY_REVISION_CONFLICT` | Expected revision stale | Reject mutation | Refresh/retry legal command |
+| `EVENT_PARTIAL_FINAL_LINE` | Torn final NDJSON | Quarantine/truncate under lock | Resume prior sequence |
+| `EVENT_SEQUENCE_GAP` | Missing/reordered event | Read-only/corrupt | Restore/diagnose |
+| `EVENT_HASH_MISMATCH` | Event bytes/history changed | Read-only/corrupt | Restore/diagnose |
+| `SNAPSHOT_BEHIND_STREAM` | Completion event durable, snapshot old | Replay/rewrite | Resume verified state |
+| `SNAPSHOT_AHEAD_OF_STREAM` | Snapshot claims nonexistent event | Quarantine snapshot | Replay prior state |
+| `ARTIFACT_ORPHANED` | Payload lacks registration | Not evidence | Reconcile with proof or quarantine |
+| `ARTIFACT_MISSING` | Record lacks bytes | Invalidate citations | Restore/recapture |
+| `ARTIFACT_HASH_MISMATCH` | Bytes changed | Quarantine/block Recommendation | New trusted Artifact |
+| `SCHEMA_MAJOR_UNSUPPORTED` | Reader cannot interpret | Read-only | Upgrade/migrate |
+| `MIGRATION_FAILED` | Migrated copy invalid/interrupted | Original remains | Fix migration |
+| `RUN_LOCK_HELD` | Verified active writer exists | Reject mutation | Attach read-only/wait |
+| `RUN_LOCK_IDENTITY_UNKNOWN` | Lock owner cannot be verified | Block mutation | Recovery diagnosis |
 
-## 14. Interruption checkpoints
+## 14. Import and cleanup
+
+| Code | Failure | Response | Recovery |
+|---|---|---|---|
+| `IMPORT_CHECKSUM_FAILED` | Bundle checksum invalid | Reject/quarantine | Obtain valid bundle |
+| `IMPORT_SCHEMA_UNSUPPORTED` | Version unsupported | Read-only/reject | Compatible version |
+| `IMPORT_PATH_TRAVERSAL` | Archive path/link escape | Security reject | None |
+| `IMPORT_SIZE_LIMIT` | Decompression/file/count exceeds cap | Abort/quarantine | Smaller/approved bundle |
+| `IMPORT_PROVENANCE_INVALID` | Ownership/identity inconsistent | Reject adoption | Valid provenance |
+| `CLEANUP_GRACE_TIMEOUT` | Graceful stop exceeded | Force verified boundary | Continue cleanup |
+| `CLEANUP_FORCE_FAILED` | Owned process remains | Cleanup incident | Retry/manual guidance |
+| `CLEANUP_LISTENER_REMAINS` | Owned endpoint persists | Cleanup incident | Verify owner/terminate |
+| `CLEANUP_WORKSPACE_FAILED` | Owned path remains | Cleanup incident | Retry later |
+| `CLEANUP_OWNERSHIP_UNKNOWN` | Resource cannot be attributed | Do not kill/delete | Diagnostic/manual review |
+
+## 15. Interruption checkpoints
 
 | Interruption | Safe target |
 |---|---|
-| Before seal | `draft` |
-| After seal but source/config drifted | `create_superseding_run` |
-| During preparation | restart/resume `preparing` after verification |
-| During partial Epoch | invalidate and start new Epoch |
-| After current valid but contender candidate-local failure | preserve current, resolve candidate attempt, then `gating` |
-| After valid Epoch seal | `gating` |
-| During gates | resume missing Gate Results |
-| After gates | `evaluating` or deterministic Recommendation |
-| During evaluator | verified reattach or new Evaluation attempt |
-| After raw output | validate stored bytes |
-| After Recommendation | `awaiting_decision` |
-| After Decision | export or complete |
-| During Promotion | verify exact destination/operation |
-| Terminal outcome before cleanup report | `cleanup_only` |
-
-## 15. Cleanup matrix
-
-| Resource | Normal cleanup | Failure behavior |
-|---|---|---|
-| dependency/build/test root | observe exit then group verification | cleanup incident if descendants remain |
-| candidate server | graceful request then group termination | block next candidate if ownership uncertain |
-| browser | close contexts/browser then verify descendants | invalidate active Epoch if continuity lost |
-| evaluator | terminate after result/timeout | quarantine partial raw bytes |
-| temp artifact | delete after operation | quarantine when ownership/path uncertain |
-| workspace | retain/delete by policy after process cleanup | explicit `cleanup_failed` and retry |
-| port lease | release after owner exit | inspect remaining listener |
-| Run lock | release after events/snapshot flush | stale-lock recovery with identity verification |
+| Before seal | Draft |
+| After seal with drift | Superseding Run |
+| During preparation | Verify/resume preparing |
+| During partial Epoch | New Epoch |
+| Current valid + Contender local failure | Preserve current, resolve Attempt, then gating |
+| After valid Epoch | Gating |
+| During Gates | Resume missing Results |
+| After Gates | Evaluating or deterministic Recommendation |
+| During evaluator | Verified reattach or new Attempt |
+| After raw output | Validate stored bytes |
+| After Recommendation | Awaiting Decision |
+| After Decision | Promotion/completion |
+| During Promotion/Export | Verify exact destination/operation |
+| Terminal before cleanup | Cleanup only |
 
 ## 16. Automatic retry defaults
 
-- browser launch: 1;
-- complete Epoch restart: 2;
-- page/context candidate-local retry: 1;
-- screenshot write before registration: 1;
-- evaluator transport/timeout: 1 identical-packet retry;
-- event/artifact write: only when no canonical commit occurred;
-- port selection: up to 3 allowed ports;
-- readiness: repeated polls in one deadline;
-- build/install: 0 unless classified transient;
-- invalid evaluator output: 0 blind retries;
-- destination/security/integrity conflict: 0 automatic retries.
+- browser launch 1;
+- complete Epoch restart 2;
+- Candidate page/context 1;
+- screenshot pre-registration 1;
+- evaluator timeout/transport 1 identical-packet retry;
+- event/Artifact write only before canonical commit;
+- port up to 3;
+- readiness polls within one Attempt;
+- build/install 0 unless proven transient;
+- invalid evaluator output 0 blind retries;
+- destination/security/integrity 0 automatic retries.
 
-Every retry preserves prior attempt records.
+Every retry preserves prior Attempts.
 
 ## 17. No-reuse rules
 
-Never reuse:
-
-- any Artifact from invalid Epoch;
-- mismatched workspace;
-- invalid-citation evaluator output;
-- hash-mismatched Artifact;
-- unverifiable process identity;
-- changed sealed Run Configuration;
-- changed Source Snapshot;
-- ambiguous partial export;
-- stale Decision.
+Never reuse invalid-Epoch Artifact, mismatched Workspace, invalid evaluator output, hash-mismatched Artifact, unverifiable process identity, changed sealed config/source, ambiguous partial output, or stale Decision.
 
 ## 18. Acceptance tests
 
-- browser disconnect invalidates complete Epoch;
-- one contender page crash retries locally and preserves current evidence;
-- repeated contender crash yields ineligible/retention path without full recapture;
-- repeated current crash yields invalid baseline;
-- source drift after seal creates superseding Run;
-- coordinator crash after valid Epoch resumes at gates;
-- coordinator crash mid-Epoch recaptures all participants;
-- stubborn descendants cleaned by verified boundary;
-- PID reuse never proves identity;
-- disk-full leaves no partial canonical Artifact;
-- exact event/snapshot crash points recover deterministically;
-- invalid evaluator citation cannot produce Recommendation;
-- duplicate Decision/Promotion commands are idempotent;
-- existing destination never overwritten;
-- cleanup failure remains visible after terminal outcome;
-- completed Runs reconstruct without database.
+- browser disconnect full Epoch;
+- Contender page crash local retry/current evidence preserved;
+- repeated Contender crash retention path;
+- repeated current crash invalid baseline;
+- source drift creates superseding Run;
+- coordinator crash after valid Epoch resumes Gates;
+- mid-Epoch crash recaptures participants;
+- stubborn descendants and PID reuse;
+- disk-full no partial canonical Artifact;
+- event/snapshot crash points deterministic;
+- invalid evaluator citation no Recommendation;
+- Decision/Promotion/Export idempotency;
+- destinations never overwritten;
+- report Export without Candidate acceptance;
+- cleanup failure visible after terminal outcome;
+- reconstruction without database.
