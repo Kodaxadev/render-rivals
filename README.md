@@ -7,7 +7,7 @@ Render Rivals is a local-first visual optimization harness for AI-assisted front
 ## Repository status
 
 **Architecture:** Canonical MVP contracts established  
-**Implementation:** Product/runtime remains pre-scaffold; dependency-free documentation conformance is executable  
+**Implementation:** Product/runtime remains pre-scaffold; documentation conformance and the research-only Stage 0.5 metric kit are executable  
 **Continuation gate:** Production Stage 1 requires a valid Stage 0.5 `proceed` decision  
 **Reference platform:** Windows 11 x64 strong-containment target  
 **License:** Not yet licensed for general reuse or contribution; see [`LICENSE-TBD.md`](LICENSE-TBD.md)  
@@ -88,6 +88,7 @@ Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-
 
 - [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) — locked first usable production path.
 - [`docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md`](docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md) — frozen non-production value experiment and continuation thresholds.
+- [`research/stage-0.5/README.md`](research/stage-0.5/README.md) — executable research records, validation, metric analysis, and first-run checklist.
 - [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) — stable failures, retries, recovery, cleanup.
 - [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md) — cardinality, nullability, supersession, retry, and cross-field validation.
 - [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md) — fixtures, fault injection, CI, release gates.
@@ -101,16 +102,19 @@ Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) — public claim gates.
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md) — package, release, and license blockers.
 - [`conformance/README.md`](conformance/README.md) — checker scope and commands.
-- [`conformance/check-core.mjs`](conformance/check-core.mjs) — class-specific conformance logic.
+- [`conformance/check-core.mjs`](conformance/check-core.mjs) — class-specific documentation conformance logic.
+- [`conformance/check-stage05-research.mjs`](conformance/check-stage05-research.mjs) — exact Stage 0.5 research inventory check.
 - [`conformance/check.mjs`](conformance/check.mjs) — stable clean-tree CLI.
-- [`conformance/check.test.mjs`](conformance/check.test.mjs) — mutation-based regression suite.
+- [`conformance/check.test.mjs`](conformance/check.test.mjs) — mutation-based documentation regression suite.
+- [`conformance/check-stage05-research.test.mjs`](conformance/check-stage05-research.test.mjs) — missing and phantom research-file tests.
 - [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json) — real pre-repair drift cases.
 
 Run:
 
 ```text
 node conformance/check.mjs
-node --test conformance/check.test.mjs
+node --test conformance/check.test.mjs conformance/check-stage05-research.test.mjs
+node --test research/stage-0.5/kit.test.mjs
 ```
 
 Brand exploration is under [`brand/`](brand/) and is not an architecture input.
@@ -172,7 +176,7 @@ After that decision, foundational scaffold acceptance still requires:
 - secret lifecycle, browser authentication-state, and egress-capability tests;
 - staged migration, backup, crash recovery, rollback, and downgrade tests;
 - store crash injection, trash/restore/purge, storage admission, filesystem and lock doctor;
-- documentation conformance checker and mutation suite remain green;
+- documentation and Stage 0.5 research-kit suites remain green on Windows and Linux;
 - telemetry/crash “off means zero network” tests;
 - license and public packaging claims remain blocked.
 
@@ -188,7 +192,7 @@ Architecture changes update affected specifications, shared sources and invarian
 
 Every repository write must be verified by re-reading the pushed content. A successful API response alone is not proof that the intended bytes became canonical.
 
-Automated conformance should detect missing links, duplicate registries, unregistered errors/classes/commands, deprecated active names or Run `exporting`, raw canonical digests, floating currency, route/API/Operation/storage/lock drift, incomplete Capture classes, unsafe Artifact preview, hidden cleanup/telemetry, absent active documents, phantom archive entries, or unsupported public claims.
+Automated conformance should detect missing links, duplicate registries, unregistered errors/classes/commands, deprecated active names or Run `exporting`, raw canonical digests, floating currency, route/API/Operation/storage/lock drift, incomplete Capture classes, unsafe Artifact preview, hidden cleanup/telemetry, absent active documents, phantom archive entries, uninventoried Stage 0.5 research files, or unsupported public claims.
 
 ## Source freshness
 
