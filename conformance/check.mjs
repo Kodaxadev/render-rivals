@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
+import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
-import { runConformance } from "./check-core.mjs";
+import { runConformance } from "./check-all.mjs";
 
 export { runConformance };
 
@@ -74,4 +76,8 @@ async function main() {
   }
 }
 
-await main();
+const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+const modulePath = fileURLToPath(import.meta.url);
+if (invokedPath === modulePath) {
+  await main();
+}
