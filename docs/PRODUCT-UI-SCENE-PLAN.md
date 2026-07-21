@@ -4,20 +4,23 @@
 **Surface:** Local browser application served by the coordinator  
 **MVP contract:** `docs/MVP-VERTICAL-SLICE.md`  
 **Commands/API:** `spec/13-configuration-cli-and-local-api-contracts.md`  
-**Route geometry:** `docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`
+**Pre-authentication route:** `docs/DASHBOARD-PAIRING-ROUTE.md` and spec16  
+**Authenticated route geometry:** `docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`
 
-## 1. Purpose and availability labels
+## 1. Purpose and route scope
 
-This document defines product scenes and availability. It does not authorize commands outside the domain/state/API contracts.
+This document defines authenticated product scenes and feature availability. It does not authorize commands outside domain, state, API, security, or recovery contracts.
 
-Every scene or control is labeled conceptually as:
+The exact route inventory in section 17 is **authenticated-only**. `/session/pair` is the sole pre-authentication browser route and is intentionally governed separately by `docs/DASHBOARD-PAIRING-ROUTE.md` and spec16.
+
+Every scene or control is conceptually:
 
 - **MVP enabled:** implemented and acceptance-tested;
 - **Read-only:** visible data with no mutation;
-- **Conditional:** shown only when current durable state and capability permit it;
-- **Post-MVP:** planning only; hidden or visibly disabled in MVP builds.
+- **Conditional:** shown only when durable state and capability permit it;
+- **Post-MVP:** hidden or visibly disabled in MVP builds.
 
-The wireframe specification owns exact route decomposition. This document owns product meaning and feature availability.
+The wireframe specification owns exact authenticated route decomposition. This document owns product meaning and availability.
 
 ## 2. Product principles
 
@@ -30,7 +33,7 @@ The UI is:
 - accessible without red/green-only meaning;
 - clear about local data and external evaluator transmission;
 - explicit about destructive and source-affecting operations;
-- honest about containment and cleanup capability;
+- honest about containment, network-egress, cleanup, and migration capability;
 - usable in light/dark themes and compact laptop windows.
 
 Canonical language:
@@ -65,7 +68,7 @@ Avoid champion/challenger/winner/battle as stable labels and avoid trophies, cro
 
 ### Context bar
 
-Shows current Project, Source Snapshot, active Run, runtime health, containment capability, storage state, command palette, and help.
+Shows current Project, Source Snapshot, active Run, runtime health, containment and egress capability, storage state, command palette, and help.
 
 ### Run navigation
 
@@ -91,9 +94,13 @@ MVP:
 
 Post-MVP:
 
-- extensible command palette actions beyond existing legal commands.
+- extensible command-palette actions beyond existing legal commands.
 
-## 4. Launch, onboarding, and safe mode
+## 4. Pairing, launch, onboarding, and safe mode
+
+### Pairing
+
+The user manually opens the randomized `.localhost` Session origin and enters the one-time terminal code. No product shell or Project data is available before pairing succeeds.
 
 ### Launch
 
@@ -103,11 +110,13 @@ Shows actual operations:
 - start supervisor;
 - authenticate coordinator;
 - open data root;
+- verify component/schema compatibility;
 - verify browser runtime;
-- assess interrupted Runs;
-- start local dashboard.
+- assess interrupted Runs and Operations;
+- start randomized-host local dashboard;
+- print pairing origin and code.
 
-Failure shows exact code, operation, logs, retry when legal, and installation diagnostics.
+Failure shows exact code, operation, logs, retry when legal, and installation diagnostics. The UI never claims startup or migration success until canonical content is re-read and verified.
 
 ### Safe mode
 
@@ -118,9 +127,10 @@ Permits:
 - read-only Project/Run/Artifact inspection;
 - integrity and recovery assessment;
 - verified cleanup;
-- sanitized diagnostic Export Operation.
+- sanitized diagnostic Export Operation;
+- migration/compatibility diagnostics.
 
-Prohibits Project commands, browser/evaluator execution, source/workspace mutation, new Runs, and unsafe Promotion.
+Prohibits Project commands, browser/evaluator execution, source/workspace mutation, new Runs, unsafe Promotion, and unsupported schema mutation.
 
 Native package, endpoint, or authentication failure cannot offer safe mode.
 
@@ -141,7 +151,7 @@ Results use Ready, Limited, or Blocked—not one opaque score.
 MVP shows:
 
 - recent Projects;
-- interrupted Runs;
+- interrupted Runs or Operations;
 - Runs awaiting Decision;
 - recent Promotions;
 - recent Export Operations;
@@ -174,25 +184,25 @@ Detection never overwrites configuration.
 MVP sections:
 
 - Commands;
-- Environment/secret references;
+- Environment and Session-only secret references;
 - Routes and fixture states;
-- Viewports/interaction;
+- Viewports and interaction;
 - Source policy/protected paths;
 - Artifact/retention policy;
 - Runtime limits;
-- Privacy/evaluator transmission;
+- Privacy/evaluator transmission and network-egress capability;
 - Danger zone.
 
-Exact filenames and precedence come from `spec/13`.
+Exact filenames and precedence come from spec13.
 
 ### Remove Project
 
 Choices:
 
 - remove registration only;
-- remove registration and owned Render Rivals data after explicit confirmation.
+- move owned Render Rivals data to trash after explicit confirmation.
 
-Never imply source deletion.
+Never imply source deletion or secure wipe.
 
 ## 7. New Run wizard
 
@@ -214,7 +224,7 @@ Fields: name, objective, task/design brief, success criteria.
 
 **Post-MVP:** entire application, component/section-only capture as independent scope types, arbitrary responsive sequences, multi-route Runs.
 
-Authentication is allowed only through deterministic fixture references; interactive login recording is post-MVP.
+Authentication is allowed only through deterministic Session-bound fixture references; interactive login recording is post-MVP.
 
 ### Current implementation
 
@@ -228,7 +238,7 @@ Select immutable Source Snapshot or explicit working-tree snapshot. Show commit/
 
 ### Environment
 
-MVP defaults desktop/mobile, one theme, locale, time zone, reduced motion, deterministic data/clock/random policy. Show capture/artifact estimate.
+MVP defaults desktop/mobile, one theme, locale, time zone, reduced motion, deterministic data/clock/random policy, Service Worker policy, and declared egress capability. Show capture/artifact estimate.
 
 Tablet, multiple themes/locales, and matrix explosion controls are post-MVP.
 
@@ -240,7 +250,7 @@ MVP shows phase and dependencies:
 - runtime route/state/interaction/console/network;
 - post-capture completeness/accessibility/responsive/integrity.
 
-A gate cannot be enabled when its required evidence/capability is unavailable.
+A Gate cannot be enabled when its required evidence/capability is unavailable.
 
 ### Evaluation
 
@@ -250,7 +260,7 @@ Changing Gates/Factors after validation creates a superseding Run; it never muta
 
 ### Limits and review
 
-Show resource/time/output/retry limits, capability enforcement, capture/storage estimate, risks, external evaluator data flow, and validation status.
+Show resource/time/output/retry limits, capability enforcement, capture/storage estimate, risks, secret references, external evaluator data flow, and validation status.
 
 Actions: Back, Save Template, Validate/Start.
 
@@ -258,13 +268,13 @@ Actions: Back, Save Template, Validate/Start.
 
 ### Overview
 
-Shows durable state/checkpoint, current operation, Candidate Attempt, Capture Epoch, browser/process/resources, warnings, and next legal action.
+Shows durable state/checkpoint, current Operation, Candidate Attempt, Capture Epoch, browser/process/resources, warnings, and next legal action.
 
 MVP actions:
 
 - Cancel;
 - Open Logs;
-- Retry current legal operation;
+- Retry current legal Operation;
 - Perform permitted recovery action;
 - Hide/freeze live preview rendering.
 
@@ -272,13 +282,13 @@ MVP actions:
 
 ### Preparation
 
-Shows workspace, dependencies, build/test gates, launch, listener ownership, readiness, and exact retry availability.
+Shows Workspace, dependencies, build/test Gates, launch, listener ownership, readiness, and exact retry availability.
 
 ### Capture
 
 Shows Candidate, state, viewport, interaction step, Epoch/browser identity, Artifact commit progress, and immediate invalidation banner.
 
-A visible preview is never represented as valid evidence until committed/verified.
+A visible preview is never represented as valid evidence until committed and verified.
 
 ### Timeline and logs
 
@@ -292,16 +302,16 @@ Raw logs are sensitive local data; exporting them creates a redacted Export Oper
 
 MVP has current plus one Contender but uses scalable list/card components.
 
-Shows stable ID, source, Attempt, eligibility, gates, capture completeness, source-change summary, and failure.
+Shows stable ID, source, Attempt, eligibility, Gates, capture completeness, source-change summary, and failure.
 
 No winner styling before Recommendation.
 
 ### Actions
 
-- Retry: creates a new Candidate Attempt only when sealed inputs remain identical and state policy permits it.
+- Retry: creates a new Candidate Attempt only when sealed inputs remain identical and policy permits it.
 - Revise source/configuration: creates a superseding Run.
-- Exclude: not available as an arbitrary post-seal mutation; exclusion is a presealed policy or a terminal eligibility result.
-- Open workspace: read-only/external inspection, with stale warning.
+- Exclude: unavailable as arbitrary post-seal mutation; exclusion is presealed policy or terminal eligibility result.
+- Open Workspace: read-only/external inspection, with stale warning.
 
 ### Capture/Gate/Source views
 
@@ -313,7 +323,7 @@ Show registered Artifacts, hashes, validity, phase, retry history, evidence link
 
 - side-by-side desktop/mobile/state/interaction-step comparison;
 - synchronized scroll/zoom where technically reliable;
-- explicit current/contender labels;
+- explicit current/Contender labels;
 - validity and limitation indicators;
 - cited Evidence rail.
 
@@ -339,7 +349,7 @@ Show factor verdict, confidence/null, citations, limitations, conflicts, protect
 
 Actions:
 
-- rerun identical failed/missing operation when legal;
+- rerun identical failed/missing Operation when legal;
 - create superseding Run to change factor, Gate, viewport, interaction, or policy;
 - request human review;
 - export report/evidence through Export Operation.
@@ -368,7 +378,7 @@ Only after nonstale authorizing Decision and selected eligible Contender:
 
 - export patch;
 - create local branch;
-- preserve workspace.
+- preserve Workspace.
 
 Promotion never means report, mark recommended, merge, push, checkout over active tree, or deployment.
 
@@ -385,7 +395,7 @@ Available according to integrity/redaction policy, independent of contender adop
 
 No-winner/tie/invalid/failed/cancelled Runs may export reports/diagnostics safely.
 
-## 12. History, Artifacts, and cleanup
+## 12. History, Artifacts, retention, and migration
 
 MVP:
 
@@ -394,9 +404,10 @@ MVP:
 - Artifact explorer/detail;
 - Promotion history;
 - Export Operation history;
-- storage usage and cleanup.
+- storage usage, trash, restore, and purge;
+- component/schema compatibility and migration status.
 
-Historical comparison across Runs is P1 and never reuses historical captures as current selectable evidence.
+Historical comparison across Runs is P1 and never reuses historical Captures as current selectable evidence.
 
 Cleanup schedules run only while Render Rivals is active or at startup/explicit command; no hidden background daemon is assumed.
 
@@ -404,17 +415,18 @@ Cleanup schedules run only while Render Rivals is active or at startup/explicit 
 
 ### Diagnostics
 
-MVP covers component versions, Session, containment, managed processes/groups, ports/listeners, browser/Epoch, storage/integrity, recent failures, cleanup incidents, and diagnostic export.
+MVP covers component versions, Session, containment, managed processes/groups, ports/listeners, browser/Epoch, network-egress capability, storage/integrity, recent failures, cleanup incidents, migration state, and diagnostic export.
 
 Process views show PID as observation plus stable Process Record/group identity.
 
 ### Settings
 
-MVP:
+MVP routes and sections:
 
 - general;
 - appearance;
-- runtime/capability;
+- runtime;
+- containment;
 - capture defaults;
 - evaluator configuration;
 - storage/retention;
@@ -432,7 +444,7 @@ Post-MVP:
 
 Every applicable route defines:
 
-- loading with named operation;
+- loading with named Operation;
 - empty;
 - partial/incomplete;
 - failure with stable code;
@@ -441,7 +453,8 @@ Every applicable route defines:
 - safe-mode/read-only;
 - restricted capability;
 - disconnected UI/SSE recovery;
-- cleanup incident.
+- cleanup incident;
+- migration/read-only compatibility state where applicable.
 
 Offline/local mode remains useful unless an explicitly selected external evaluator requires network.
 
@@ -459,7 +472,7 @@ Sidebar collapses before content. Secondary rails become drawers. Evidence matri
 
 ### P0
 
-- launch/onboarding/safe mode;
+- pairing, launch, onboarding, safe mode;
 - Home;
 - Project register/configure/health;
 - existing-implementation Run wizard;
@@ -479,21 +492,23 @@ Sidebar collapses before content. Secondary rails become drawers. Evidence matri
 - richer interaction replay;
 - responsive sequence;
 - conflicting-evidence workflow;
-- storage cleanup UX;
+- storage cleanup UX refinements;
 - historical comparison;
 - reusable Rule Sets after domain/schema implementation.
 
 ### P2
 
-- in-run generation;
-- multiple contenders/rounds;
+- in-Run generation;
+- multiple Contenders/rounds;
 - annotations/collaboration;
 - CI/PR integration;
 - cloud/remote workers;
 - Figma;
 - scheduled/background evaluations.
 
-## 17. MVP route inventory
+## 17. Authenticated MVP route inventory
+
+The following routes require a paired Session. `/session/pair` is intentionally excluded and defined in the pairing-route contract.
 
 ```text
 /launch
