@@ -17,11 +17,11 @@
 
 | Outcome | `recommendedCandidateId` | `comparisonIds` | `evaluationIds` | Required reason/evidence semantics |
 |---|---|---|---|---|
-| `contender_recommended` | Required; eligible Contender | At least 1 | At least 1 for model/human evaluation | Material improvement, no protected veto, valid comparison |
-| `current_retained` after valid comparison | Required; current Candidate | At least 1 | May be 0 only for deterministic Gate retention; otherwise at least 1 | No proven improvement or veto/ineligibility |
-| `current_retained` after Contender pre-capture/Gate failure | Required; current Candidate | May be empty | May be empty | Qualified current and cited blocking Gate/Attempt |
+| `contender_recommended` | Required; eligible Contender | At least 1 | At least 1 | Material improvement, no protected veto, valid comparison |
+| `current_retained` after evaluated comparison | Required; current Candidate | At least 1 | At least 1 | Valid comparison did not prove improvement, or accepted evaluation exposed a protected veto |
+| `current_retained` after deterministic Contender failure/ineligibility | Required; current Candidate | May be empty | May be empty | Qualified current and cited blocking Attempt/Gate; aesthetic evaluation was not required |
 | `tie` | `null` | At least 1 | At least 1 | Eligible Candidates materially indistinguishable |
-| `human_review_required` | `null` | At least 1 unless evaluation packet could not validly form | May include rejected/valid Attempts but only accepted Evidence IDs enter Recommendation | Explicit unresolved reason |
+| `human_review_required` | `null` | At least 1 unless a valid comparison packet could not form | May include rejected and accepted Evaluation Attempts, but only accepted Evidence IDs enter Recommendation | Explicit unresolved reason |
 | `invalid_run` | `null` | May be empty | May be empty | Baseline/comparison/source/fixture/integrity invalid; no Candidate adoption |
 
 Additional rules:
