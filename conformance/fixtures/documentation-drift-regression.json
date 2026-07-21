@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/documentation-conformance-regression-fixture",
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "capturedAt": "2026-07-20T00:00:00.000Z",
   "purpose": "Preserve real repository drift cases as negative fixtures before repair. The future documentation-conformance checker must fail these synthetic cases and pass the repaired repository.",
   "cases": [
@@ -89,8 +89,20 @@
     {
       "id": "DOC-WINDOWS-TARGET-DRIFT",
       "class": "platform_support_drift",
-      "brokenValues": ["Windows 10/11 x64", "Windows 11 x64"],
-      "expectedRepair": "One explicit reference-platform statement throughout active implementation documents"
+      "sourcePaths": [
+        "README.md",
+        "spec/01-scope-and-invariants.md",
+        "spec/03-process-containment.md",
+        "spec/08-stack-repository-and-sequence.md",
+        "docs/MVP-VERTICAL-SLICE.md"
+      ],
+      "scope": "All active implementation Markdown outside archive and conformance regression fixtures",
+      "observedValues": [
+        "Windows 10/11 x64",
+        "Windows 11 x64"
+      ],
+      "rule": "All active implementation documents must state one identical reference-platform value; the repaired value is Windows 11 x64.",
+      "expectedRepair": "One explicit Windows 11 x64 reference target throughout active implementation documents"
     },
     {
       "id": "DOC-BRAND-BROKEN-LINK",
