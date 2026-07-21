@@ -36,7 +36,7 @@ Initial tested support:
 Node 24 LTS
 ESM only
 Playwright-managed Chromium
-Windows x64 reference platform
+Windows 11 x64 reference platform
 ```
 
 Exact active versions are pinned in the first scaffold commit:
@@ -102,6 +102,9 @@ render-rivals/
     evidence/
     failures/
 
+  conformance/
+    fixtures/
+
   research/
     analysis/
 
@@ -137,6 +140,7 @@ Commands from `spec/13`:
 - `run`;
 - `inspect`;
 - `resume`;
+- `promote`;
 - `export`;
 - `cleanup`.
 
@@ -144,7 +148,7 @@ CLI and dashboard call the same application/domain services.
 
 ### `apps/dashboard`
 
-Local browser UI for projects, Runs, evidence, decisions, diagnostics, artifacts, and non-destructive exports. It never mutates canonical files directly.
+Local browser UI for projects, Runs, evidence, decisions, diagnostics, artifacts, Promotions, and non-destructive exports. It never mutates canonical files directly.
 
 ## 6. Package responsibilities
 
@@ -160,7 +164,7 @@ Loads the exact files and precedence from `spec/13`, validates through Zod, prod
 
 ### `packages/store`
 
-Implements `spec/11`: canonical entities, event and artifact streams, hashes, locking, recovery, integrity, retention, import, and export.
+Implements `spec/11` and later storage amendments: canonical entities, event and artifact streams, Operations, hashes, locking, recovery, integrity, retention, migration, import, and export.
 
 ### `packages/accounting`
 
@@ -180,7 +184,7 @@ Materialization, dependency preparation, server profiles, port leases, readiness
 
 ### `packages/capture`
 
-Playwright, contained browser lifecycle, Capture Plans/Epochs, clock/random fixtures, states, viewports, interaction scripts, screenshots, DOM/accessibility/geometry/style evidence, and capture validation.
+Playwright, contained browser lifecycle, Capture Plans/Epochs, clock/random fixtures, states, viewports, interaction scripts, screenshots, DOM/ARIA/accessibility/geometry/style/console/network evidence, and capture validation.
 
 ### `packages/gates`
 
@@ -196,7 +200,7 @@ Replay/mock plus generic external-command JSON adapter. In-run generation/provid
 
 ### `packages/server`
 
-Fastify local API, SSE, session authentication, CSRF/origin protection, static dashboard, artifact serving, and safe-mode enforcement from `spec/13`.
+Fastify local API, SSE, randomized-host pairing/session authentication, CSRF/origin protection, static dashboard, safe Artifact serving, and safe-mode enforcement from specs 13, 16, 17, and 21.
 
 ## 7. Browser and frontend stack
 
@@ -212,9 +216,9 @@ Fastify local API, SSE, session authentication, CSRF/origin protection, static d
 ## 8. Server and client state
 
 - Fastify supported major pinned at scaffold;
-- REST queries/commands and SSE from `spec/13`;
-- no WebSocket initially;
-- typed fetch client;
+- REST queries/commands and SSE from specs 13 and 17;
+- no product WebSocket transport initially;
+- typed fetch client generated from canonical API schemas;
 - URL state for shareable local navigation;
 - local component state;
 - add a query cache library only after measured need;
@@ -222,14 +226,15 @@ Fastify local API, SSE, session authentication, CSRF/origin protection, static d
 
 ## 9. Persistence
 
-Files and append-only event/artifact streams are canonical. SQLite may later be a rebuildable index. No database appears in the critical path for reconstruction.
+Files and append-only event/artifact streams are canonical. Durable Operation records reconcile side effects. SQLite may later be a rebuildable index. No database appears in the critical path for reconstruction.
 
 ## 10. Testing and formatting
 
 - TypeScript unit/integration: Vitest-compatible stable toolchain;
 - browser/UI: Playwright Test;
 - Rust: Cargo test;
-- cross-language: golden protocol, schema, event, and adversarial fixtures;
+- cross-language: golden protocol, schema, event, primitive, Operation, and adversarial fixtures;
+- documentation: conformance checker against real-drift regression fixtures;
 - lint/format: ESLint/typescript-eslint, React hooks, Prettier, Rustfmt, Clippy.
 
 No generic workflow engine such as Temporal, Inngest, BullMQ, Redis, LangChain, Mastra, or XState.
@@ -263,7 +268,7 @@ Users do not install Rust to consume a packaged release.
 
 ### MVP reference
 
-- Windows 10/11 x64;
+- Windows 11 x64;
 - Node 24 LTS;
 - Chromium;
 - pnpm and npm target repositories;
@@ -285,6 +290,8 @@ Benchmark mode uses a pinned controlled Linux environment, fonts, locale/time zo
 ### Stage 0 — Documentation and decision gate
 
 - canonical specs/ADRs accepted;
+- documentation-conformance fixture committed;
+- executable conformance checker runs before further architecture drift;
 - cross-spec normalization complete;
 - scaffold decision register resolved/deferred;
 - source verification recorded;
@@ -313,13 +320,14 @@ Benchmark mode uses a pinned controlled Linux environment, fonts, locale/time zo
 
 - containment/detachment/browser/endpoint fixtures;
 - data root and configuration discovery;
-- loopback auth, REST commands, SSE, safe mode;
+- randomized-host pairing, REST commands, SSE, safe mode;
 - CLI `init`, `doctor`, and `inspect`.
 
 ### Stage 4 — Canonical store and recovery
 
 - Run/entity files;
 - event/artifact streams;
+- durable Operation ledger;
 - atomic commit ordering;
 - locks, integrity, reconstruction, cleanup;
 - failure fixtures.
@@ -338,7 +346,7 @@ Benchmark mode uses a pinned controlled Linux environment, fonts, locale/time zo
 - current stability samples;
 - one Epoch and complete matrix;
 - candidate-local versus epoch-wide failure behavior;
-- artifact validation.
+- Artifact validation.
 
 ### Stage 7 — Gates and human comparison
 
@@ -359,7 +367,7 @@ Benchmark mode uses a pinned controlled Linux environment, fonts, locale/time zo
 
 ### Stage 9 — Promotion/export and acceptance suite
 
-- report and patch export;
+- report and patch output;
 - local branch creation;
 - stale-decision checks;
 - idempotent retry;
@@ -395,7 +403,8 @@ The stack is accepted when:
 - canonical schemas and storage reconstruct without a database;
 - candidate-local failures and epoch invalidation are distinguished;
 - all enabled UI commands have legal domain transitions;
+- documentation conformance catches the committed regression fixture classes;
 - platform guarantees are explicit;
-- the Windows reference vertical slice is solo-maintainable.
+- the Windows 11 reference vertical slice is solo-maintainable.
 
 Historical `OPEN-STACK-*` items are resolved, deferred, or assigned to milestones in `docs/SCAFFOLD-DECISION-REGISTER.md`.
