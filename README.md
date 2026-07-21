@@ -29,7 +29,8 @@ MVP:
 - Promotion as patch/local branch/preserved Workspace;
 - ordinary Export Operation as report/diagnostics/bundles;
 - files/events as canonical history;
-- no automatic merge, push, deployment, generation, Pause, or cloud service.
+- local observability with remote telemetry/crash upload disabled by default;
+- no automatic merge, push, deployment, generation, Pause, cloud service, updater, or background daemon.
 
 Project and local evaluator commands run with the user's operating-system authority. Process containment controls lifecycle/resources where measured; it is not a filesystem/network sandbox.
 
@@ -49,6 +50,7 @@ Project and local evaluator commands run with the user's operating-system author
 12. [`spec/12-cross-spec-normalization.md`](spec/12-cross-spec-normalization.md)
 13. [`spec/13-configuration-cli-and-local-api-contracts.md`](spec/13-configuration-cli-and-local-api-contracts.md)
 14. [`spec/14-git-source-snapshot-and-workspace-contracts.md`](spec/14-git-source-snapshot-and-workspace-contracts.md)
+15. [`spec/15-observability-diagnostics-and-telemetry-contracts.md`](spec/15-observability-diagnostics-and-telemetry-contracts.md)
 
 Shared serialized vocabulary and stable errors:
 
@@ -83,11 +85,12 @@ When statements conflict:
 4. `spec/11` controls live filesystem/commit semantics;
 5. `spec/13` controls configuration, CLI, local API, safe mode, and commands;
 6. `spec/14` controls Git/source/workspace/branch semantics;
-7. MVP contract narrows first release without weakening runtime invariants;
-8. failure/security/test contracts control required negative behavior and proof;
-9. UI/wireframe documents expose only legal enabled commands;
-10. marketing/brand/archive never override implementation contracts;
-11. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
+7. `spec/15` controls logs, metrics, diagnostics, telemetry, and crash reporting;
+8. MVP contract narrows first release without weakening runtime invariants;
+9. failure/security/test contracts control required negative behavior and proof;
+10. UI/wireframe documents expose only legal enabled commands;
+11. marketing/brand/archive never override implementation contracts;
+12. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
 
 ADR-0011 is fully incorporated and now records rationale/history rather than acting as a temporary override.
 
@@ -95,7 +98,7 @@ ADR-0011 is fully incorporated and now records rationale/history rather than act
 
 This mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-boundary.md) as clarified by specs 02–04.
 
-- TypeScript owns policy, domain state, Git/workspace strategy, Playwright orchestration, fixtures/Gates/Evidence/evaluation/accounting, configuration/adapters, local API/CLI semantics, and UI.
+- TypeScript owns policy, domain state, Git/workspace strategy, Playwright orchestration, fixtures/Gates/Evidence/evaluation/accounting, configuration/adapters, local API/CLI semantics, observability policy, and UI.
 - Rust owns Session supervision, launch authorization and managed root-process creation, containment, process I/O, resource enforcement, listener ownership, native IPC, terminal signals, and verified termination.
 - Approved contained roots may spawn descendants only when containment inheritance is expected and doctor-verified; this is how Playwright-managed Chromium operates on the Windows reference path.
 - The boundary is a sidecar protocol, not N-API.
@@ -106,13 +109,14 @@ This mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-boundary.md) as clarified
 - Rust launches coordinator with bootstrap's exact `process.execPath`.
 - Session endpoint/nonce use environment, never argv/URL/logs.
 - Rust owns user Ctrl+C and terminal restoration.
-- Coordinator/project/evaluator roots do not inherit the user's interactive console.
+- Coordinator/Project/evaluator roots do not inherit the user's interactive console.
 - Windows is first strong reference; Linux/macOS claims are capability-measured and explicit.
 - MVP scheduler is sequential.
 - Current implementation is recaptured in each selection Run.
 - Browser continuity failures invalidate full Capture Epoch; Candidate-local failures do not unless comparability is compromised.
 - Files and append-only streams are canonical; database may be rebuildable index only.
 - Recommendation, User Decision, Promotion, and Export Operation are distinct.
+- Remote telemetry, automatic crash upload, third-party dashboard analytics, and hidden background services are disabled/absent by default.
 - No automatic merge/push/deployment or self-updater.
 
 ## Scaffold gate
@@ -129,6 +133,7 @@ Before foundational scaffold acceptance:
 - verify exact Playwright Clock behavior;
 - implement documentation drift check;
 - establish data-root filesystem tests;
+- implement telemetry/crash “off means zero network” tests;
 - keep license/public packaging claims blocked.
 
 Milestone-dependent library/version decisions are listed in the Scaffold Decision Register and must be recorded when selected.
@@ -147,7 +152,8 @@ Milestone-dependent library/version decisions are listed in the Scaffold Decisio
 - Pause/suspend;
 - automatic Promotion/merge;
 - cross-platform parity;
-- automatic updater/background service.
+- automatic updater/background service;
+- default remote telemetry/crash upload.
 
 ## Maintenance
 
@@ -156,20 +162,21 @@ Architecture changes update:
 1. affected canonical spec;
 2. shared schemas/error registry when vocabulary changes;
 3. ADR for deliberate architecture decision;
-4. failure/security/test contracts;
+4. failure/security/test/observability contracts;
 5. UI/API contracts when commands/routes change;
 6. package/public-claim contracts when release behavior changes;
 7. [`MANIFEST.json`](MANIFEST.json) and [`DOCUMENT-MANIFEST.md`](DOCUMENT-MANIFEST.md).
 
-Automated documentation conformance should fail on missing links, duplicate shared unions, unregistered error codes, deprecated active names, old storage/env/package names, route drift, illegal MVP controls, or schema-registry mismatch.
+Automated documentation conformance should fail on missing links, duplicate shared unions, unregistered error codes, deprecated active names, old storage/env/package names, route drift, illegal MVP controls, schema-registry mismatch, or unapproved telemetry/public claims.
 
 ## Source freshness
 
 Version-sensitive claims are reverified at scaffold and dependency upgrades, especially:
 
 - Playwright Clock/browser lifecycle;
-- Windows Job/console/process APIs;
+- Windows Job/console/process/named-pipe/TCP owner APIs;
 - systemd delegated scopes/cgroup kill;
+- filesystem atomicity/durability;
 - Git worktree/LFS/submodule behavior;
 - evaluator command/provider formats;
 - package/native signing/distribution;
