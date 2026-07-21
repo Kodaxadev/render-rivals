@@ -99,7 +99,8 @@ Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) — public claim gates.
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md) — package, release, and license blockers.
 - [`conformance/README.md`](conformance/README.md) — checker scope and commands.
-- [`conformance/check.mjs`](conformance/check.mjs) — clean-tree documentation conformance.
+- [`conformance/check-core.mjs`](conformance/check-core.mjs) — class-specific conformance logic.
+- [`conformance/check.mjs`](conformance/check.mjs) — stable clean-tree CLI.
 - [`conformance/check.test.mjs`](conformance/check.test.mjs) — mutation-based regression suite.
 - [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json) — real pre-repair drift cases.
 
