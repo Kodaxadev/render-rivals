@@ -1,0 +1,32 @@
+{
+  "schema": "render-rivals/stage-0.5-experiment",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "createdAt": "<UTC timestamp>",
+  "owner": "<local actor>",
+  "taskIds": [],
+  "minimumValidTasks": 8,
+  "targetValidTasks": 12,
+  "minimumOpportunityCases": 4,
+  "selectorAgreementThreshold": 0.75,
+  "maximumOrdinaryFalseRecommendations": 1,
+  "maximumProtectedRegressionRecommendations": 0,
+  "maximumOrderConflictRate": 0.25,
+  "minimumNetCorrectAdoptionsOverRetainCurrent": 2,
+  "evaluator": {
+    "provider": "<provider>",
+    "adapter": "<adapter>",
+    "model": "<model/version>",
+    "promptHash": "sha256:<64 lowercase hexadecimal characters>"
+  },
+  "captureEnvironment": {
+    "node": "<exact version>",
+    "playwright": "<exact version>",
+    "chromium": "<exact revision>",
+    "locale": "en-US",
+    "timezone": "America/Los_Angeles",
+    "desktop": "1440x900@1",
+    "mobile": "390x844@1"
+  },
+  "status": "draft"
+}

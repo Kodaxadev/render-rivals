@@ -1,0 +1,35 @@
+{
+  "schema": "render-rivals/stage-0.5-evaluator-packet",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "presentationOrder": "A_B",
+  "taskBrief": "<task brief>",
+  "protectedRegressions": [],
+  "candidateA": {
+    "neutralLabel": "A",
+    "evidenceManifestHash": "sha256:<64 lowercase hexadecimal characters>",
+    "artifactIds": []
+  },
+  "candidateB": {
+    "neutralLabel": "B",
+    "evidenceManifestHash": "sha256:<64 lowercase hexadecimal characters>",
+    "artifactIds": []
+  },
+  "factors": [
+    "task_product_fit",
+    "primary_action_clarity",
+    "information_hierarchy",
+    "visual_coherence_and_intentionality",
+    "responsive_quality",
+    "empty_error_state_quality",
+    "interaction_and_recovery_clarity"
+  ],
+  "identityRedactionAttestation": {
+    "sourceIdentityRemoved": false,
+    "preparationMethodRemoved": false,
+    "toolIdentityRemoved": false,
+    "selectorHistoryRemoved": false
+  },
+  "packetHash": "sha256:<64 lowercase hexadecimal characters>"
+}

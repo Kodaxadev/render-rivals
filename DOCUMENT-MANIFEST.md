@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 4.3.1  
+**Inventory format:** 4.4.1  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -9,7 +9,7 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 ## Repository status
 
 - Architecture/MVP contracts: established.
-- Executable implementation: pre-scaffold, except for the dependency-free documentation-conformance checker.
+- Executable implementation: production remains pre-scaffold; documentation conformance and the research-only Stage 0.5 metric kit are executable.
 - Continuation: production Stage 1 is blocked until Stage 0.5 records `proceed`.
 - License: placeholder only; no general reuse or contribution permission yet.
 - Public packages: unavailable.
@@ -88,17 +88,39 @@ ADR-0011 is incorporated history. ADR-0012 makes `promoting` the Run adoption ph
 
 The Stage 0.5 contract tests the value hypothesis using lightweight non-production mechanics. Only `proceed` opens the production scaffold. The invariant matrix defines semantic record combinations; the gap register distinguishes implementation proof from architecture; the test strategy turns production requirements into release gates.
 
-## Documentation conformance
+## Stage 0.5 research kit
+
+- [`research/stage-0.5/README.md`](research/stage-0.5/README.md)
+- [`research/stage-0.5/kit.mjs`](research/stage-0.5/kit.mjs) — strict public validation and metric authority.
+- [`research/stage-0.5/kit-core.mjs`](research/stage-0.5/kit-core.mjs) — lower-level implementation helper.
+- [`research/stage-0.5/validate.mjs`](research/stage-0.5/validate.mjs)
+- [`research/stage-0.5/analyze.mjs`](research/stage-0.5/analyze.mjs)
+- [`research/stage-0.5/kit.test.mjs`](research/stage-0.5/kit.test.mjs)
+- templates under `research/stage-0.5/templates/`
+
+The kit validates frozen experiment/task summaries, enforces experiment binding, completeness, blinding chronology and eligibility constraints, calculates every frozen threshold from raw counts, and never emits `proceed` automatically. Templates are intentionally invalid until placeholders are replaced and records are frozen.
+
+## Documentation and research conformance
 
 - [`conformance/README.md`](conformance/README.md)
 - [`conformance/check-all.mjs`](conformance/check-all.mjs)
 - [`conformance/check-core.mjs`](conformance/check-core.mjs)
 - [`conformance/check-operation-states.mjs`](conformance/check-operation-states.mjs)
+- [`conformance/check-stage05-research.mjs`](conformance/check-stage05-research.mjs)
+- [`conformance/check-stage05-research.test.mjs`](conformance/check-stage05-research.test.mjs)
 - [`conformance/check.mjs`](conformance/check.mjs)
 - [`conformance/check.test.mjs`](conformance/check.test.mjs)
 - [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json)
 
-Run `node conformance/check.mjs` for the clean-tree check and `node --test conformance/check.test.mjs` for the mutation suite. The eleven negative cases are real pre-repair defects; the tests recreate them in owned temporary copies and require class-specific detection.
+Run:
+
+```text
+node conformance/check.mjs
+node --test conformance/check.test.mjs conformance/check-stage05-research.test.mjs
+node --test research/stage-0.5/kit.test.mjs
+```
+
+The eleven documentation negative cases are real pre-repair defects. The Stage 0.5 inventory tests additionally prove that missing and phantom research files are rejected.
 
 ## Product and public planning
 
@@ -146,7 +168,7 @@ Only files that actually exist in Git history are listed. The partial Design War
 
 ## Pending scaffold and experiment artifacts
 
-- Stage 0.5 experiment execution and explicit `proceed`, `pivot`, `stop`, or `inconclusive` record;
+- Stage 0.5 task selection, capture/evaluation execution, and explicit `proceed`, `pivot`, `stop`, or `inconclusive` record;
 - executable Zod and generated JSON Schema for primitives, entities, Operations, Capture classes, API payloads, locks and trash manifests;
 - RFC 8785 plus Rust/TypeScript digest, timestamp, decimal and unit goldens;
 - valid and invalid fixtures covering the Record Invariant Matrix;
@@ -167,4 +189,4 @@ Only files that actually exist in Git history are listed. The partial Design War
 
 ## Conformance note
 
-Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, fixtures and archive. Automated checks use explicit path and context rules rather than fail on every raw occurrence.
+Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, fixtures and archive. Automated checks use explicit path and context rules rather than fail on every raw occurrence. Local Stage 0.5 run directories are excluded from inventory because they may contain private research records and are not implementation inputs by default.

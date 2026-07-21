@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "4.3.1",
+  "schemaVersion": "4.4.1",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -19,6 +19,7 @@
       "Durable Operation ledger vocabulary is defined in schemas/operation-types.ts and spec/19.",
       "Cross-record cardinality and nullability are defined in docs/RECORD-INVARIANT-MATRIX.md.",
       "The dependency-free documentation conformance checker and its mutation tests are under conformance/.",
+      "The research-only Stage 0.5 validation, metric analysis, templates, and tests are under research/stage-0.5/.",
       "ADR-0013 and the Stage 0.5 contract gate production scaffold work on a recorded proceed decision.",
       "The repository is pre-scaffold and not yet licensed for public reuse.",
       "Intentional old-name, abbreviated digest, and migration references require context-aware conformance allowlists rather than blind token rejection."
@@ -99,9 +100,31 @@
     "conformance/check-all.mjs",
     "conformance/check-core.mjs",
     "conformance/check-operation-states.mjs",
+    "conformance/check-stage05-research.mjs",
+    "conformance/check-stage05-research.test.mjs",
     "conformance/check.mjs",
     "conformance/check.test.mjs",
     "conformance/fixtures/documentation-drift-regression.json"
+  ],
+  "stage05Research": [
+    "research/stage-0.5/README.md",
+    "research/stage-0.5/analyze.mjs",
+    "research/stage-0.5/kit-core.mjs",
+    "research/stage-0.5/kit.mjs",
+    "research/stage-0.5/kit.test.mjs",
+    "research/stage-0.5/validate.mjs",
+    "research/stage-0.5/templates/decision.json",
+    "research/stage-0.5/templates/eligibility.json",
+    "research/stage-0.5/templates/evaluator-packet.json",
+    "research/stage-0.5/templates/evaluator-result.json",
+    "research/stage-0.5/templates/experiment.json",
+    "research/stage-0.5/templates/human-rating.blinded.json",
+    "research/stage-0.5/templates/protocol.md",
+    "research/stage-0.5/templates/selector-result.json",
+    "research/stage-0.5/templates/task-result.json",
+    "research/stage-0.5/templates/task-selection.json",
+    "research/stage-0.5/templates/task.json",
+    "research/stage-0.5/templates/unblinding.json"
   ],
   "sourceVerification": [
     "sources/official-runtime-verification.md",

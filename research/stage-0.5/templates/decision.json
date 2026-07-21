@@ -1,0 +1,15 @@
+{
+  "schema": "render-rivals/stage-0.5-decision",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "decision": "inconclusive",
+  "decidedAt": "<UTC timestamp>",
+  "decidedBy": "<actor>",
+  "metricArtifact": "analysis/metrics.json",
+  "thresholdsMet": [],
+  "thresholdsMissed": [],
+  "protocolLimitations": [],
+  "ownerValueJudgment": "<explicit value judgment>",
+  "rationale": "<explicit rationale citing raw counts>",
+  "nextAction": "<bounded next action>"
+}

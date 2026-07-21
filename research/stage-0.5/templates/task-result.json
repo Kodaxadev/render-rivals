@@ -1,0 +1,19 @@
+{
+  "schema": "render-rivals/stage-0.5-task-result",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "status": "invalid",
+  "invalidReason": "<reason or null when valid>",
+  "currentEligible": false,
+  "contenderEligible": false,
+  "modelEvaluated": false,
+  "orderConflict": false,
+  "protectedRegressionPresent": false,
+  "protocolTrustworthy": false,
+  "humanVerdict": "invalid_comparison",
+  "selectorOutcome": "invalid_task",
+  "selectorCompletedAt": "<UTC timestamp>",
+  "humanRatingCommittedAt": "<UTC timestamp>",
+  "unblindedAt": "<UTC timestamp>"
+}

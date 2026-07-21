@@ -1,4 +1,4 @@
-name: Documentation Conformance
+name: Documentation and Research Conformance
 
 on:
   pull_request:
@@ -16,6 +16,7 @@ on:
       - "brand/**"
       - "security/**"
       - "conformance/**"
+      - "research/**"
       - ".github/workflows/documentation-conformance.yml"
   push:
     branches:
@@ -34,6 +35,7 @@ on:
       - "brand/**"
       - "security/**"
       - "conformance/**"
+      - "research/**"
       - ".github/workflows/documentation-conformance.yml"
   workflow_dispatch:
 
@@ -43,7 +45,7 @@ permissions:
 jobs:
   conformance:
     # Windows is the declared reference host in docs/TEST-AND-VALIDATION-STRATEGY.md,
-    # so conformance tooling is proven on it rather than on Linux alone.
+    # so repository tooling is proven on it rather than on Linux alone.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -61,5 +63,7 @@ jobs:
           node-version: 24
       - name: Check clean-tree documentation conformance
         run: node conformance/check.mjs --json
-      - name: Run mutation regression suite
-        run: node --test conformance/check.test.mjs
+      - name: Run documentation mutation and inventory suites
+        run: node --test conformance/check.test.mjs conformance/check-stage05-research.test.mjs
+      - name: Run Stage 0.5 research-kit tests
+        run: node --test research/stage-0.5/kit.test.mjs

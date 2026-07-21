@@ -1,0 +1,5 @@
+# Experiment run records may contain private screenshots, source identities,
+# evaluator payloads, and local paths. Commit a sanitized completed record only
+# through an explicit reviewed exception.
+*
+!.gitignore
