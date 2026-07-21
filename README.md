@@ -16,7 +16,7 @@ This repository is an architecture and product implementation baseline, not a sh
 
 ## Product boundary
 
-MVP:
+MVP includes:
 
 - one local Git Project;
 - one current implementation and one existing Contender;
@@ -26,13 +26,18 @@ MVP:
 - phased deterministic Gates;
 - pairwise evaluator with order reversal or human-only mode;
 - deterministic Recommendation and explicit User Decision;
-- Promotion as patch/local branch/preserved Workspace;
-- ordinary Export Operation as report/diagnostics/bundles;
-- files/events as canonical history;
+- Run `promoting` phase for patch/local branch/preserved Workspace;
+- independent Export Operations for reports, diagnostics, and bundles;
+- files, Events, Artifacts, and durable Operations as canonical history;
+- complete Capture evidence rather than screenshot-only output;
+- safe attachment/escaped Artifact inspection with active content blocked;
+- two-phase trash/restore/purge and storage admission without a daemon;
+- OS-held locks plus metadata/identity and one active executing Run per Project;
 - one manually opened, terminal-paired local dashboard browser Session;
 - canonical cross-language JSON/hash/timestamp/measurement formats;
-- local observability with remote telemetry/crash upload disabled by default;
-- no automatic merge, push, deployment, generation, Pause, cloud service, browser auto-launch, updater, or background daemon.
+- local observability with remote telemetry/crash upload disabled by default.
+
+MVP excludes automatic merge, push, deployment, generation, Pause, cloud service, browser auto-launch, updater, background daemon, multi-client pairing, and platform-parity claims.
 
 Project and local evaluator commands run with the user's operating-system authority. Process containment controls lifecycle/resources where measured; it is not a filesystem/network sandbox.
 
@@ -56,33 +61,39 @@ Project and local evaluator commands run with the user's operating-system author
 16. [`spec/16-dashboard-session-authentication-and-pairing.md`](spec/16-dashboard-session-authentication-and-pairing.md)
 17. [`spec/17-local-api-envelopes-operations-and-pagination.md`](spec/17-local-api-envelopes-operations-and-pagination.md)
 18. [`spec/18-canonical-primitives-json-hashing-and-measurements.md`](spec/18-canonical-primitives-json-hashing-and-measurements.md)
+19. [`spec/19-operation-ledger-idempotency-and-reconciliation.md`](spec/19-operation-ledger-idempotency-and-reconciliation.md)
+20. [`spec/20-capture-artifact-formats-and-evidence-registry.md`](spec/20-capture-artifact-formats-and-evidence-registry.md)
+21. [`spec/21-artifact-serving-preview-and-active-content-security.md`](spec/21-artifact-serving-preview-and-active-content-security.md)
+22. [`spec/22-retention-trash-garbage-collection-and-storage-admission.md`](spec/22-retention-trash-garbage-collection-and-storage-admission.md)
+23. [`spec/23-locking-leases-concurrency-and-multi-session-ownership.md`](spec/23-locking-leases-concurrency-and-multi-session-ownership.md)
 
-Shared serialized vocabulary, primitives, stable errors, API envelopes, and cross-record validation:
+Shared sources and cross-record validation:
 
 - [`schemas/primitives.ts`](schemas/primitives.ts)
 - [`schemas/domain-types.ts`](schemas/domain-types.ts)
 - [`schemas/error-codes.ts`](schemas/error-codes.ts)
 - [`schemas/api-types.ts`](schemas/api-types.ts)
+- [`schemas/operation-types.ts`](schemas/operation-types.ts)
 - [`schemas/README.md`](schemas/README.md)
 - [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 
-Architecture decisions are under [`adr/`](adr/). Runtime-source verification is under [`sources/`](sources/). Historical drafts are under [`archive/`](archive/) and are not implementation inputs.
+Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-0012-run-promotion-phase-naming.md). Runtime and capture API verification notes are under [`sources/`](sources/). Historical drafts are under [`archive/`](archive/) and are not implementation inputs.
 
 ## Product, development, and release contracts
 
 - [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) — locked first usable path.
 - [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) — stable failures, retries, recovery, cleanup.
-- [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md) — record cardinality, nullability, supersession, retry, and cross-field validation.
+- [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md) — cardinality, nullability, supersession, retry, and cross-field validation.
 - [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md) — fixtures, fault injection, CI, release gates.
 - [`security/THREAT-MODEL.md`](security/THREAT-MODEL.md) — trust boundaries, controls, residual risk.
 - [`docs/SCAFFOLD-DECISION-REGISTER.md`](docs/SCAFFOLD-DECISION-REGISTER.md) — resolved, deferred, and milestone decisions.
-- [`docs/DEVELOPMENT-GAP-REGISTER.md`](docs/DEVELOPMENT-GAP-REGISTER.md) — remaining proof, implementation, and release gaps with blocking effects.
-- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) — enabled authenticated UI scenes and MVP product inventory.
-- [`docs/DASHBOARD-PAIRING-ROUTE.md`](docs/DASHBOARD-PAIRING-ROUTE.md) — the only pre-authentication browser route.
+- [`docs/DEVELOPMENT-GAP-REGISTER.md`](docs/DEVELOPMENT-GAP-REGISTER.md) — remaining proof, implementation, and release gaps.
+- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) — enabled authenticated UI scenes and MVP inventory.
+- [`docs/DASHBOARD-PAIRING-ROUTE.md`](docs/DASHBOARD-PAIRING-ROUTE.md) — only pre-authentication browser route.
 - [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) — authenticated route geometry, guards, and state behavior.
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) — MVP versus post-MVP authority.
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) — public claim gates.
-- [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md) — packages, native binaries, releases, updates, license blockers.
+- [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md) — package, release, and license blockers.
 
 Brand exploration is under [`brand/`](brand/) and is not an architecture input.
 
@@ -91,117 +102,67 @@ Brand exploration is under [`brand/`](brand/) and is not an architecture input.
 When statements conflict:
 
 1. accepted ADRs control deliberate architecture decisions;
-2. `schemas/primitives.ts` and `spec/18` control canonical JSON, digest, timestamp, decimal, unit, and measurement formats;
-3. `schemas/domain-types.ts`, `schemas/error-codes.ts`, and `schemas/api-types.ts` control shared vocabulary they define;
-4. canonical specs control implementation behavior;
-5. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where interfaces and prose are otherwise underspecified;
-6. `spec/11` controls live filesystem/commit semantics;
-7. `spec/13` controls configuration, CLI, general local API routes, safe mode, and commands;
-8. `spec/14` controls Git/source/workspace/branch semantics;
-9. `spec/15` controls logs, metrics, diagnostics, telemetry, and crash reporting;
-10. `spec/16` controls dashboard origin isolation, pairing, browser credential, Host/Origin/CSRF, and browser-opening policy;
-11. `spec/17` controls API envelopes, operation status, revision rules, pagination, and Artifact response behavior;
-12. MVP contract narrows first release without weakening runtime invariants;
-13. failure/security/test contracts control required negative behavior and proof;
-14. UI/wireframe documents expose only legal enabled commands;
-15. marketing/brand/archive never override implementation contracts;
-16. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
+2. `schemas/primitives.ts` and spec18 control canonical wire primitives and canonicalization;
+3. shared domain/error/API/Operation sources control vocabulary they define;
+4. canonical specifications control implementation behavior according to spec12's delegated authority;
+5. the Record Invariant Matrix controls cross-record combinations;
+6. the MVP contract narrows the first release without weakening invariants;
+7. failure, security, test, observability, retention, and lock contracts control required negative behavior and proof;
+8. UI documents expose only legal enabled commands;
+9. marketing, brand, and archive never override implementation;
+10. code deviations require matching specification and ADR changes where architectural.
 
-ADR-0011 is fully incorporated and now records rationale/history rather than acting as a temporary override.
+ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `exporting` to `promoting`; Promotion's internal `exporting` status remains valid.
 
-## Locked ownership boundary
+## Locked ownership and safety decisions
 
-This mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-boundary.md) as clarified by specs 02–04.
-
-- TypeScript owns policy, domain state, Git/workspace strategy, Playwright orchestration, fixtures/Gates/Evidence/evaluation/accounting, configuration/adapters, local API/CLI semantics, observability policy, and UI.
-- Rust owns Session supervision, launch authorization and managed root-process creation, containment, process I/O, resource enforcement, listener ownership, native IPC, terminal signals, and verified termination.
-- Approved contained roots may spawn descendants only when containment inheritance is expected and doctor-verified; this is how Playwright-managed Chromium operates on the Windows reference path.
-- The boundary is a sidecar protocol, not N-API.
-
-## Other locked decisions
-
-- Minimal JavaScript npm bootstrap remains outside containment.
-- Rust launches coordinator with bootstrap's exact `process.execPath`.
-- Session endpoint/nonce use environment, never argv/URL/logs.
-- Rust owns user Ctrl+C and terminal restoration.
-- Coordinator/Project/evaluator roots do not inherit the user's interactive console.
-- The user's ordinary dashboard browser is manually opened and never pulled into Render Rivals containment in MVP.
-- Dashboard access requires randomized-host one-time terminal pairing and a host-only HttpOnly Session cookie.
-- Windows is first strong reference; Linux/macOS claims are capability-measured and explicit.
-- MVP scheduler is sequential.
+- Minimal JavaScript bootstrap remains outside containment; Rust launches the exact bootstrap Node.
+- Rust owns terminal, managed root launch, containment, process I/O, resource enforcement, listener ownership, and verified termination.
+- Approved descendants such as Playwright Chromium are allowed only with verified containment inheritance.
+- The ordinary dashboard browser is manually opened and never placed in Render Rivals containment.
+- Dashboard access uses randomized-host one-time pairing and a host-only HttpOnly Session cookie.
+- Windows is the first strong reference; Linux and macOS claims are measured and explicit.
+- MVP scheduling is sequential and the Project execution lease permits one active executing Run per Project across Sessions.
 - Current implementation is recaptured in each selection Run.
-- Browser continuity failures invalidate full Capture Epoch; Candidate-local failures do not unless comparability is compromised.
-- Files and append-only streams are canonical; database may be rebuildable index only.
-- Every canonical SHA-256 value is full lowercase `sha256:<64 hex>` and canonical JSON hashes use RFC 8785 bytes.
-- Persisted cost uses exact decimal `MonetaryAmount`, not floating-point dollars.
-- Recommendation, User Decision, Promotion, and Export Operation are distinct.
-- Remote telemetry, automatic crash upload, third-party dashboard analytics, and hidden background services are disabled/absent by default.
-- No automatic merge/push/deployment or self-updater.
+- Browser continuity failures invalidate the full Epoch; Candidate-local failures do not unless comparability is compromised.
+- Canonical screenshot is PNG; ARIA YAML, axe findings, DOM, geometry, styles, console, network, interaction, and metadata are separate registered evidence.
+- Active or ambiguous Artifact content is download-only; no same-origin raw HTML, SVG, PDF, Markdown, or trace rendering.
+- Files, Events, and the durable Operation ledger are canonical; a database may be a rebuildable index only.
+- SHA-256 values are full lowercase prefixed; canonical value hashes use RFC 8785; persisted cost uses exact decimal `MonetaryAmount`.
+- General Export does not change Run state; authorized Promotion uses `promoting`.
+- Deletion moves canonical data to owned trash with a default seven-day grace period; no cleanup occurs while the app is closed and no secure-wipe claim is made.
+- An OS lock handle plus metadata and verified identity is required; heartbeat, PID, hostname, or file existence alone never proves ownership.
+- Remote telemetry, automatic crash upload, third-party analytics, and hidden background services are absent or disabled by default.
 
 ## Scaffold gate
 
-Architecture/document decisions are sufficiently classified to begin scaffolding, but Stage 1 is not complete.
+Architecture decisions are classified, but foundational scaffold acceptance still requires:
 
-Before foundational scaffold acceptance:
+- exact Node, pnpm, Playwright, Chromium, Rust, and dependency pins;
+- Zod/JSON Schema, migrations, fixtures, invariant/API/Operation registries, and generated clients;
+- RFC 8785 plus cross-language digest, timestamp, decimal, and unit goldens;
+- durable Operation ledger and proof-based reconciliation;
+- randomized-host pairing, revision/idempotency/status/pagination tests;
+- Windows console, Job, browser-descendant, lock, and listener proof;
+- complete Capture Artifact schemas and current ARIA/screenshot API proof;
+- Artifact active-content and preview security tests;
+- store crash injection, trash/restore/purge, storage admission, filesystem and lock doctor;
+- documentation conformance;
+- telemetry/crash “off means zero network” tests;
+- license and public packaging claims remain blocked.
 
-- pin Node/pnpm/Playwright/Chromium/Rust/dependencies;
-- implement Zod/JSON Schema, fixtures, migrations, compatibility tests, every Record Invariant Matrix row, and generated API command/envelope registry;
-- implement RFC 8785 canonical JSON, full digest/timestamp/decimal/unit validators, and Rust/TypeScript golden hashes;
-- generate Rust/TypeScript protocol goldens;
-- implement canonical ID/error validators;
-- implement and test randomized-host dashboard pairing, operation status, revision/idempotency, and bounded pagination;
-- run Windows console/Job/browser-descendant spike;
-- verify exact Playwright Clock behavior;
-- implement documentation drift check;
-- establish data-root filesystem tests;
-- implement telemetry/crash “off means zero network” tests;
-- keep license/public packaging claims blocked.
-
-Milestone-dependent library/version decisions are listed in the Scaffold Decision Register and must be recorded when selected.
+Milestone dependency and version choices remain in the Scaffold Decision Register.
 
 ## First scaffold non-goals
 
-- hosted service/cloud sync;
-- MCP orchestration core;
-- public interchange/plugin standard;
-- preference training;
-- parallel Candidates;
-- SQLite source of truth;
-- Electron/Tauri;
-- in-Run Contender generation;
-- multiple Contenders/rounds;
-- Pause/suspend;
-- automatic Promotion/merge;
-- cross-platform parity;
-- automatic dashboard browser opening or multi-client pairing;
-- automatic updater/background service;
-- default remote telemetry/crash upload.
+Hosted/cloud operation, MCP core, public plugin/interchange standard, preference training, parallel or multiple Candidates, SQLite source of truth, Electron/Tauri, in-Run generation, rounds, Pause, automatic Promotion/merge, cross-platform parity, automatic browser opening, multi-client pairing, updater/background daemon, and remote telemetry/crash upload.
 
 ## Maintenance
 
-Architecture changes update:
+Architecture changes update affected specifications, shared sources and invariants, an ADR when architectural, failure/security/test/observability/UI/API/package contracts, and both manifests.
 
-1. affected canonical spec;
-2. shared primitive/domain/error/API registry and Record Invariant Matrix when vocabulary, encoding, or cross-field meaning changes;
-3. ADR for deliberate architecture decision;
-4. failure/security/test/observability contracts;
-5. UI/API contracts when commands/routes change;
-6. package/public-claim contracts when release behavior changes;
-7. [`MANIFEST.json`](MANIFEST.json) and [`DOCUMENT-MANIFEST.md`](DOCUMENT-MANIFEST.md).
-
-Automated documentation conformance should fail on missing links, duplicate shared primitives/unions/commands, unregistered error codes, deprecated active names, old storage/env/package names, raw canonical digests, floating persisted currency, route drift, illegal MVP controls, schema/invariant/API registry mismatch, or unapproved telemetry/public claims.
+Automated conformance should detect missing links, duplicate registries, unregistered errors/classes/commands, deprecated active names or Run `exporting`, raw canonical digests, floating currency, route/API/Operation/storage/lock drift, incomplete Capture classes, unsafe Artifact preview, hidden cleanup/telemetry, or unsupported public claims.
 
 ## Source freshness
 
-Version-sensitive claims are reverified at scaffold and dependency upgrades, especially:
-
-- RFC 8785 library behavior across TypeScript/Rust;
-- Playwright Clock/browser lifecycle;
-- randomized `.localhost` browser resolution and cookie behavior;
-- Windows Job/console/process/named-pipe/TCP owner APIs;
-- systemd delegated scopes/cgroup kill;
-- filesystem atomicity/durability;
-- Git worktree/LFS/submodule behavior;
-- evaluator command/provider formats;
-- package/native signing/distribution;
-- Node/TypeScript/Rust support ranges.
+Reverify RFC 8785 libraries, Playwright Clock/ARIA/screenshot/browser lifecycle, randomized `.localhost` cookies, Windows Job/console/pipe/TCP/lock APIs, filesystem atomicity, Git worktree/LFS/submodules, evaluator/provider formats, package signing/distribution, and Node/TypeScript/Rust support ranges at scaffold and dependency upgrades.
