@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "3.1.0",
+  "schemaVersion": "3.2.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -12,6 +12,7 @@
       "Archive files are historical and never implementation inputs.",
       "Shared persisted vocabulary is defined in schemas/domain-types.ts.",
       "Stable errors are defined in schemas/error-codes.ts.",
+      "Cross-record cardinality and nullability are defined in docs/RECORD-INVARIANT-MATRIX.md.",
       "The repository is pre-scaffold and not yet licensed for public reuse.",
       "Intentional old-name and migration references require context-aware conformance allowlists rather than blind token rejection."
     ]
@@ -53,6 +54,7 @@
   "implementationContracts": [
     "docs/MVP-VERTICAL-SLICE.md",
     "docs/FAILURE-RECOVERY-MATRIX.md",
+    "docs/RECORD-INVARIANT-MATRIX.md",
     "docs/TEST-AND-VALIDATION-STRATEGY.md",
     "security/THREAT-MODEL.md",
     "docs/SCAFFOLD-DECISION-REGISTER.md",
@@ -68,7 +70,8 @@
   "schemaSurface": [
     "schemas/README.md",
     "schemas/domain-types.ts",
-    "schemas/error-codes.ts"
+    "schemas/error-codes.ts",
+    "docs/RECORD-INVARIANT-MATRIX.md"
   ],
   "sourceVerification": [
     "sources/official-runtime-verification.md"
@@ -101,7 +104,7 @@
   "pendingScaffoldArtifacts": [
     "Zod schema registry",
     "generated JSON Schema",
-    "valid and invalid fixtures",
+    "valid and invalid fixtures covering the Record Invariant Matrix",
     "schema migrations and compatibility tests",
     "Rust and TypeScript protocol goldens",
     "documentation conformance script",
