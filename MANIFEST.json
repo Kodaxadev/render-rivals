@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "3.4.0",
+  "schemaVersion": "3.5.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -10,6 +10,7 @@
       "This is a maintained inventory, not a self-referential checksum list.",
       "Tagged release bundles may later include a CI-generated checksummed manifest.",
       "Archive files are historical and never implementation inputs.",
+      "Canonical primitive wire formats are defined in schemas/primitives.ts and spec/18.",
       "Shared persisted vocabulary is defined in schemas/domain-types.ts.",
       "Stable errors are defined in schemas/error-codes.ts.",
       "Shared local API command and envelope vocabulary is defined in schemas/api-types.ts.",
@@ -35,9 +36,11 @@
     "spec/14-git-source-snapshot-and-workspace-contracts.md",
     "spec/15-observability-diagnostics-and-telemetry-contracts.md",
     "spec/16-dashboard-session-authentication-and-pairing.md",
-    "spec/17-local-api-envelopes-operations-and-pagination.md"
+    "spec/17-local-api-envelopes-operations-and-pagination.md",
+    "spec/18-canonical-primitives-json-hashing-and-measurements.md"
   ],
   "canonicalSharedSources": [
+    "schemas/primitives.ts",
     "schemas/domain-types.ts",
     "schemas/error-codes.ts",
     "schemas/api-types.ts"
@@ -74,6 +77,7 @@
   ],
   "schemaSurface": [
     "schemas/README.md",
+    "schemas/primitives.ts",
     "schemas/domain-types.ts",
     "schemas/error-codes.ts",
     "schemas/api-types.ts",
@@ -109,6 +113,7 @@
   ],
   "pendingScaffoldArtifacts": [
     "Zod schema registry",
+    "RFC 8785 canonical JSON and cross-language primitive/hash fixtures",
     "generated JSON Schema and generated API command/client registry",
     "valid and invalid fixtures covering the Record Invariant Matrix",
     "schema migrations and compatibility tests",
