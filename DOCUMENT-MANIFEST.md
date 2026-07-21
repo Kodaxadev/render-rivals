@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 3.1  
+**Inventory format:** 3.2  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -33,13 +33,14 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 
 Specs 12–15 normalize shared authority, lock configuration/CLI/API and Git behavior, and prevent local observability from becoming implicit remote telemetry.
 
-## Shared schema sources
+## Shared schema and invariant sources
 
 - [`schemas/domain-types.ts`](schemas/domain-types.ts)
 - [`schemas/error-codes.ts`](schemas/error-codes.ts)
 - [`schemas/README.md`](schemas/README.md)
+- [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 
-These control shared IDs, enums, records, states, purposes, policy references, and stable errors. Full Zod/JSON Schema, fixtures, migrations, and compatibility tests remain scaffold work.
+These control shared IDs, enums, records, states, purposes, policy references, stable errors, and cross-record cardinality/nullability. Full Zod/JSON Schema, fixtures, migrations, and compatibility tests remain scaffold work.
 
 ## Accepted ADRs
 
@@ -61,13 +62,14 @@ ADR-0011 is incorporated and now serves as history/rationale rather than active 
 
 - [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md)
 - [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md)
+- [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 - [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md)
 - [`security/THREAT-MODEL.md`](security/THREAT-MODEL.md)
 - [`docs/SCAFFOLD-DECISION-REGISTER.md`](docs/SCAFFOLD-DECISION-REGISTER.md)
 - [`docs/DEVELOPMENT-GAP-REGISTER.md`](docs/DEVELOPMENT-GAP-REGISTER.md)
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md)
 
-The gap register distinguishes remaining implementation evidence from architectural ambiguity.
+The invariant matrix defines semantic record combinations; the gap register distinguishes remaining implementation evidence from architectural ambiguity.
 
 ## Product and public planning
 
@@ -118,7 +120,7 @@ Archive never drives scaffolding.
 ## Pending scaffold artifacts
 
 - Zod/JSON Schema registry;
-- valid/invalid fixtures;
+- valid/invalid fixtures covering the Record Invariant Matrix;
 - migrations/compatibility tests;
 - Rust/TypeScript protocol goldens;
 - documentation conformance script;
