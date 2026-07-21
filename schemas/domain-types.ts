@@ -4,6 +4,13 @@
 // Markdown specifications reference these types rather than redefining them.
 
 import type { ErrorCode } from "./error-codes.js";
+import type {
+  CanonicalUtcTimestamp,
+  Confidence,
+  MonetaryAmount,
+  NonNegativeSafeInteger,
+  Sha256Digest,
+} from "./primitives.js";
 
 export type ProjectId = `prj_${string}`;
 export type ProjectTrustRecordId = `trt_${string}`;
@@ -164,13 +171,13 @@ export interface InferenceUsage {
   adapter: string;
   model: string | null;
   purpose: EvaluationPurpose;
-  startedAt: string;
-  completedAt: string;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  cachedInputTokens: number | null;
-  reasoningTokens: number | null;
-  costUsd: number | null;
+  startedAt: CanonicalUtcTimestamp;
+  completedAt: CanonicalUtcTimestamp;
+  inputTokens: NonNegativeSafeInteger | null;
+  outputTokens: NonNegativeSafeInteger | null;
+  cachedInputTokens: NonNegativeSafeInteger | null;
+  reasoningTokens: NonNegativeSafeInteger | null;
+  cost: MonetaryAmount | null;
   policySnapshotId: PolicySnapshotId;
 }
 
@@ -186,10 +193,10 @@ export interface RecommendationRecord {
   evidenceRecordIds: EvidenceRecordId[];
   gateResultIds: GateResultId[];
   reasonCodes: RecommendationReasonCode[];
-  confidence: number | null;
+  confidence: Confidence | null;
   policySnapshotId: PolicySnapshotId;
-  reproducibilityHash: string;
-  createdAt: string;
+  reproducibilityHash: Sha256Digest;
+  createdAt: CanonicalUtcTimestamp;
 }
 
 export interface UserDecisionRecord {
@@ -201,11 +208,11 @@ export interface UserDecisionRecord {
   selectedCandidateId: CandidateId | null;
   rationale: string | null;
   acknowledgedWarningCodes: ErrorCode[];
-  recommendationHash: string;
-  evidenceSetHash: string;
-  sourceSetHash: string;
+  recommendationHash: Sha256Digest;
+  evidenceSetHash: Sha256Digest;
+  sourceSetHash: Sha256Digest;
   policySnapshotId: PolicySnapshotId;
-  createdAt: string;
+  createdAt: CanonicalUtcTimestamp;
 }
 
 // Promotion is an adoption handoff for a selected Contender. It requires a
@@ -220,9 +227,9 @@ export interface PromotionRecord {
   status: PromotionStatus;
   failureCode: ErrorCode | null;
   outputArtifactIds: ArtifactId[];
-  createdAt: string;
-  terminalAt: string | null;
-  completedAt: string | null;
+  createdAt: CanonicalUtcTimestamp;
+  terminalAt: CanonicalUtcTimestamp | null;
+  completedAt: CanonicalUtcTimestamp | null;
 }
 
 // ExportOperation covers non-adoption output such as reports, diagnostics, or
@@ -246,7 +253,7 @@ export interface ExportOperationRecord {
   outputArtifactIds: ArtifactId[];
   redactionPolicyId: PolicySnapshotId;
   omissionReportArtifactId: ArtifactId | null;
-  createdAt: string;
-  terminalAt: string | null;
-  completedAt: string | null;
+  createdAt: CanonicalUtcTimestamp;
+  terminalAt: CanonicalUtcTimestamp | null;
+  completedAt: CanonicalUtcTimestamp | null;
 }
