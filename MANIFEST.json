@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "3.2.0",
+  "schemaVersion": "3.4.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -12,6 +12,7 @@
       "Archive files are historical and never implementation inputs.",
       "Shared persisted vocabulary is defined in schemas/domain-types.ts.",
       "Stable errors are defined in schemas/error-codes.ts.",
+      "Shared local API command and envelope vocabulary is defined in schemas/api-types.ts.",
       "Cross-record cardinality and nullability are defined in docs/RECORD-INVARIANT-MATRIX.md.",
       "The repository is pre-scaffold and not yet licensed for public reuse.",
       "Intentional old-name and migration references require context-aware conformance allowlists rather than blind token rejection."
@@ -32,11 +33,14 @@
     "spec/12-cross-spec-normalization.md",
     "spec/13-configuration-cli-and-local-api-contracts.md",
     "spec/14-git-source-snapshot-and-workspace-contracts.md",
-    "spec/15-observability-diagnostics-and-telemetry-contracts.md"
+    "spec/15-observability-diagnostics-and-telemetry-contracts.md",
+    "spec/16-dashboard-session-authentication-and-pairing.md",
+    "spec/17-local-api-envelopes-operations-and-pagination.md"
   ],
   "canonicalSharedSources": [
     "schemas/domain-types.ts",
-    "schemas/error-codes.ts"
+    "schemas/error-codes.ts",
+    "schemas/api-types.ts"
   ],
   "acceptedArchitectureDecisions": [
     "adr/ADR-0001-typescript-rust-boundary.md",
@@ -62,6 +66,7 @@
     "docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md"
   ],
   "productAndPublicPlanning": [
+    "docs/DASHBOARD-PAIRING-ROUTE.md",
     "docs/PRODUCT-UI-SCENE-PLAN.md",
     "docs/ROUTE-LEVEL-WIREFRAME-SPEC.md",
     "docs/PLANNING-SCOPE-STATUS.md",
@@ -71,6 +76,7 @@
     "schemas/README.md",
     "schemas/domain-types.ts",
     "schemas/error-codes.ts",
+    "schemas/api-types.ts",
     "docs/RECORD-INVARIANT-MATRIX.md"
   ],
   "sourceVerification": [
@@ -103,12 +109,13 @@
   ],
   "pendingScaffoldArtifacts": [
     "Zod schema registry",
-    "generated JSON Schema",
+    "generated JSON Schema and generated API command/client registry",
     "valid and invalid fixtures covering the Record Invariant Matrix",
     "schema migrations and compatibility tests",
     "Rust and TypeScript protocol goldens",
     "documentation conformance script",
     "implementation monorepo scaffold",
+    "randomized-host dashboard pairing proof",
     "Windows native containment and packaged-build proof"
   ],
   "publicReleaseBlockers": [
