@@ -1,92 +1,80 @@
 # 05 — Repository Preparation, Execution Pipeline, Capture Epochs, and Determinism
 
+**Status:** Canonical implementation contract  
+**Domain types:** `schemas/domain-types.ts`  
+**Storage authority:** `spec/11-artifact-event-and-schema-contracts.md`  
+**Failure behavior:** `docs/FAILURE-RECOVERY-MATRIX.md`
+
 ## 1. Pipeline
 
 ```text
 doctor
 → repository qualification
-→ baseline recovery if required
-→ champion snapshot
-→ challenger preparation
-→ workspace materialization
-→ dependency preparation
-→ hard gates
+→ current-source qualification or separate baseline-recovery workflow
+→ immutable source snapshots
+→ isolated workspace materialization
+→ dependency/build preparation
+→ pre-capture gates
 → capture epoch
-→ evidence validation
-→ pairwise evaluation
+→ runtime and capture gates
+→ post-capture evidence gates
+→ pairwise evaluation or deterministic retention
 → recommendation
-→ cleanup
+→ explicit user decision
+→ optional non-destructive promotion/export
+→ cleanup and integrity seal
 ```
 
-## 2. Doctor
+Gate phases are explicit. A gate cannot be required before the evidence it consumes exists.
 
-Checks:
+## 2. Doctor and repository qualification
 
-- Git;
-- repository status;
-- package manager;
-- exact Node;
-- containment;
-- Playwright browser;
-- required untracked state;
-- ports;
-- free disk;
-- baseline commands;
-- fixture config;
-- secret declarations.
+Doctor checks:
 
-Produces machine-readable report.
+- Git and repository identity;
+- package manager and exact Node;
+- source status and required untracked material;
+- containment and process cleanup;
+- Playwright browser and browser membership;
+- commands, ports, storage, fixture, states, interaction, and secret declarations.
 
-## 3. Repository qualification
+A repository is qualified when source, commands, dependencies, route, fixture, and required capabilities are available under the frozen policy.
 
-Qualified when source root, Git state, dependencies, build, server, route, and fixture are available.
+## 3. Baseline recovery
 
-## 4. Baseline recovery
+A broken current implementation does not enter the contender comparison path.
 
-Broken baseline pauses optimization. Recovery may repair dependency command, restore generated artifacts, fix non-design compile error, or create required fixture.
+Recovery may repair command configuration, restore generated artifacts, fix a non-design compile error, or establish the required fixture. It produces a separate patch/workspace or superseding Run. The repaired source must be accepted and snapshotted before it becomes the current implementation.
 
-Recovery patch is separate. No challengers before acceptance.
+Recovery is represented by `RecoveryDisposition`; it is not a special mutable Run state.
 
-## 5. Champion identity
+## 4. Source snapshots and workspaces
 
-```ts
-interface ChampionIdentity {
-  repositoryId: string;
-  commit: string;
-  dirtyPatchHash: string | null;
-  workspaceManifestHash: string;
-  configurationHash: string;
-}
-```
+The current implementation and contender each reference an immutable `SourceSnapshotId` from `spec/09`.
 
-Dirty repositories require explicit snapshot policy.
+Dirty source requires an explicit working-tree snapshot and patch hash. Branch names are provenance only.
 
-## 6. Worktree layout
+Disposable workspaces live under a configured cache root, conceptually:
 
 ```text
-<cache>/visual-optimizer/worktrees/<project-hash>/<run-id>/
-  champion/
-  challenger-a/
-  challenger-b/
+<cache-root>/worktrees/<project-id>/<run-id>/
+  current/
+  contender-<candidate-id>/
 ```
 
-Never inside target repository.
+They never live inside the target repository and are not canonical Run history.
 
-## 7. Workspace materialization
-
-Git worktrees omit ignored/untracked state.
+## 5. Workspace materialization
 
 ```ts
-type MaterializationMode =
+export type MaterializationMode =
   | "copy"
   | "snapshot"
   | "symlink_readonly"
   | "generate"
   | "env";
-```
 
-```ts
-interface WorkspaceMaterial {
+export interface WorkspaceMaterial {
   source?: string;
   target?: string;
   mode: MaterializationMode;
@@ -96,63 +84,57 @@ interface WorkspaceMaterial {
 }
 ```
 
-## 8. Material modes
+Rules:
 
-- `copy`: ordinary copy.
-- `snapshot`: isolated writable copy/reflink.
-- `symlink_readonly`: declared immutable share.
-- `generate`: configured prep command.
-- `env`: inject value only.
+- Git worktrees do not imply ignored/untracked material exists;
+- required material is declared;
+- secret material is excluded from evidence, patches, evaluator packets, and standard exports;
+- symlinks/junctions are containment checked;
+- materialization output is verified against a manifest before commands run.
 
-## 9. Secret material
+## 6. Unsupported repository classes
 
-Secrets excluded from evidence, patches, judge packets, and exports; redacted from logs; removed during cleanup; restrictive permissions where possible.
-
-## 10. Unsupported repo classes
-
-May reject:
+The MVP may reject:
 
 - unknown ignored state;
-- singleton mutable database not cloneable;
-- manual desktop app;
-- machine-global side effect;
-- undocumented external service;
-- Windows breakaway requirement;
-- privileged system change.
+- singleton mutable database that cannot be cloned/reset;
+- manual desktop-only application;
+- machine-global side effects;
+- undocumented external services;
+- required Windows Job breakaway;
+- privileged system changes;
+- nondeterministic authentication or fixtures that cannot be established safely.
 
-## 11. Dependency preparation
+## 7. Dependency preparation
 
-Hash lockfile, manager/version, Node major, platform, architecture.
-
-Share content-addressed store, not writable `node_modules` tree.
+Record lockfile hash, manager/version, Node major, platform, architecture, command, output, time, and disk usage.
 
 Initial policy:
 
-1. populate store;
-2. frozen worktree-local install;
-3. prefer offline after population;
-4. record time and disk;
-5. reuse worktree for later passes.
+1. share content-addressed package store where safe;
+2. use worktree-local install links/tree;
+3. prefer frozen install;
+4. prefer offline after known cache population;
+5. never share a writable `node_modules` tree between candidates;
+6. verify protected paths after install/build.
 
-## 12. Candidate generation
+## 8. Contender sources
 
-May initially be manual. First selector experiment can receive prebuilt branches.
+MVP accepts one independently prepared contender from branch, commit, worktree, directory snapshot, patch, or valid prior candidate snapshot.
 
-This tests curated candidates, not autonomous-generator safety.
+In-run generation and multiple contenders are post-MVP. Any generated source used in MVP is prepared outside the sealed Run and imported as an immutable Source Snapshot.
 
-## 13. Sequential rule
+## 9. Sequential execution
 
-One active candidate build, server, browser, and capture context at a time.
+- one active candidate server at a time;
+- one active browser process per Capture Epoch;
+- fresh browser context per candidate/sample;
+- no candidate starts while another candidate server remains active;
+- current implementation and contender may reuse verified prepared workspaces across epoch retries when source/workspace hashes remain unchanged.
 
-## 14. Port allocation
+## 10. Commands and ports
 
-Server profile declares strict assigned, server assigned, or external.
-
-Strict assigned uses range, strict port behavior, ownership verification, and retry.
-
-## 15. Server command
-
-Executable and args, no implicit shell:
+Commands use executable plus argument array. No implicit shell.
 
 ```jsonc
 {
@@ -161,286 +143,315 @@ Executable and args, no implicit shell:
 }
 ```
 
-## 16. Readiness
+Port modes:
 
-May combine listener, ownership, output, HTTP, Playwright, and custom command. Health endpoint optional.
+- strict assigned;
+- server assigned and reported;
+- external limited mode.
 
-## 17. Hard gates
+A port lease never proves listener ownership. Native ownership verification follows `spec/04`.
 
-Before visual capture:
+## 11. Readiness
 
-- build;
-- tests;
-- protected files;
-- serious accessibility;
-- server readiness;
-- route availability;
-- state setup;
-- console policy.
+Readiness may combine:
 
-Mandatory failure makes candidate ineligible.
+- process alive;
+- TCP listener;
+- listener ownership;
+- HTTP response;
+- output pattern;
+- Playwright navigation/readiness selector;
+- custom fixture command.
 
-## 18. Capture epoch
+Readiness polling occurs inside one candidate attempt and one configured deadline.
 
-```ts
-interface CaptureEpoch {
-  epochId: string;
-  browserName: "chromium";
-  browserVersion: string;
-  browserProcessIdentity: string;
-  playwrightVersion: string;
-  fixtureHash: string;
-  startedAt: string;
-  status:
-    | "active"
-    | "completed"
-    | "invalid_browser_disconnect"
-    | "invalid_fixture_change"
-    | "invalid_environment_change";
-}
-```
+## 12. Gate phases
 
-## 19. Same-epoch invariant
+### 12.1 Pre-capture gates
 
-Every selector artifact has same epoch ID.
+May run before browser evidence:
 
-## 20. Browser lifecycle
+- source/workspace manifest integrity;
+- protected paths and dependency policy;
+- dependency preparation;
+- build and required nonbrowser tests;
+- server launch and listener ownership;
+- route readiness prerequisites;
+- fixture availability.
 
-1. Launch one Chromium.
-2. Fresh context for champion stability A.
-3. Close.
-4. Fresh context for champion stability B.
-5. Close.
-6. Champion comparison capture.
-7. Close.
-8. Each challenger in fresh context.
-9. Close all.
-10. Close Chromium.
-11. Complete epoch.
+A mandatory pre-capture failure stops that Candidate Attempt before aesthetic capture.
 
-## 21. Champion recapture
+### 12.2 Runtime/capture gates
 
-No prior-run screenshot, DOM, accessibility result, or trace is accepted for selection.
+Run while establishing states and interaction:
 
-## 22. Browser disconnect
+- route/origin correctness;
+- required state setup;
+- required selectors/content;
+- browser/page exceptions;
+- interaction actions and assertions;
+- console/network policy;
+- font and settle policy;
+- blank/login/wrong-route checks.
 
-1. Invalidate epoch.
-2. Preserve diagnostics.
-3. Stop active server.
-4. Launch new browser.
-5. Create new epoch.
-6. Recapture champion.
-7. Recapture all challengers.
+### 12.3 Post-capture evidence gates
 
-No failed-epoch evidence participates.
+Run after artifact commit:
 
-## 23. Page crash
+- capture completeness;
+- artifact hash and identity verification;
+- accessibility policy;
+- responsive integrity;
+- DOM/geometry/style evidence checks;
+- interaction trace completeness;
+- same-epoch/same-fixture validity.
 
-If browser connected, retry candidate once in fresh context. Preserve crash. Repeated crash fails capture.
+Mandatory failure makes the contender ineligible. The current implementation must remain qualified for `current_retained`; otherwise policy produces `invalid_run` or terminal failure.
 
-## 24. Retry defaults
+## 13. Capture plan
 
-- epoch restarts: 2;
-- candidate context retry: 1;
-- port/readiness retries: bounded.
+A frozen Capture Plan references:
 
-## 25. Fixture identity
+- Run Configuration;
+- route;
+- populated/default, empty, and unavailable/error states;
+- desktop and mobile viewports;
+- one critical interaction sequence;
+- fixture identity;
+- required artifact classes;
+- settle policy;
+- retry budget;
+- current stability sample count.
 
-```ts
-interface CaptureFixture {
-  fixtureId: string;
-  timezoneId: string;
-  locale: string;
-  colorScheme: "light" | "dark";
-  reducedMotion: "reduce" | "no-preference";
-  clock: ClockFixture;
-  random: RandomFixture;
-  serverEnvironment: Record<string, string>;
-  networkFixtureId?: string;
-  volatileRegions: VolatileRegion[];
-  settle: SettlePolicy;
-}
-```
+Changing it requires a superseding Run.
 
-## 26. Clock modes
+## 14. Capture Epoch
 
-```ts
-type ClockFixture =
-  | { mode: "fixed_date"; instant: string }
-  | {
-      mode: "installed_controlled";
-      startInstant: string;
-      pauseAt?: string;
-      runForMsBeforeCapture?: number;
-    }
-  | { mode: "real_time"; reason: string };
-```
+`CaptureEpochState` is imported from `schemas/domain-types.ts` and lifecycle follows `spec/10`.
 
-## 27. Fixed-date mode
+One Epoch binds:
 
-For fixed displayed Date with naturally running timers. Verify exact Playwright behavior at scaffold.
+- one Chromium process identity;
+- browser and Playwright versions;
+- fixture and environment hashes;
+- Capture Plan;
+- start/end timestamps;
+- invalidation reasons.
 
-## 28. Installed-controlled mode
+Every artifact used in one Comparison cites the same valid Epoch.
 
-For controlled timer advancement and pausing. Install before app clock use.
+## 15. Browser lifecycle
 
-## 29. Settle policy
+1. launch one contained Chromium;
+2. current stability sample A in fresh context;
+3. current stability sample B in fresh context;
+4. current comparison matrix in fresh contexts as required;
+5. contender comparison matrix in fresh contexts;
+6. seal or invalidate Epoch;
+7. close Chromium and verify descendants.
 
-```ts
-interface SettlePolicy {
-  waitForLoadState?: "domcontentloaded" | "load";
-  waitForSelectors?: string[];
-  waitForResponses?: string[];
-  quietNetworkMs?: number;
-  runClockForMs?: number;
-  animationFrames?: number;
-  finalDelayMs?: number;
-  customFixtureStep?: string;
-}
-```
+No prior-run capture, DOM, accessibility result, or trace enters selection.
 
-Some pages need timers to finish; others must freeze. It is explicit.
+## 16. Epoch-wide invalidation
 
-## 30. Random fixture
+Invalidate the complete active Epoch when comparison continuity is compromised, including:
 
-```ts
-type RandomFixture =
-  | { mode: "seed_math_random"; seed: string }
-  | { mode: "project_fixture"; fixtureId: string }
-  | { mode: "uncontrolled"; reason: string };
-```
+- Chromium crash or disconnect;
+- browser-process identity loss;
+- context-isolation leak;
+- fixture/environment hash change;
+- candidate source mutation during capture;
+- Capture Plan mismatch;
+- origin/ownership violation affecting trust in the environment;
+- required artifact corruption whose scope cannot be isolated safely.
 
-Seed browser `Math.random` before scripts. Do not override crypto randomness by default.
+Preserve diagnostics, stop active candidate server, create a new Epoch, and recapture current plus every contender still participating.
 
-## 31. Server time/randomness
+Invalid Epoch evidence is diagnostic only and never becomes valid later.
 
-Playwright cannot generically control server-rendered time, IDs, ordering, or random API responses.
+## 17. Candidate-local failures
 
-Project must fix, mock, exclude, or be marked unsupported.
+The following are local unless they reveal wider comparison corruption:
 
-## 32. Volatile regions
+- contender build/readiness failure;
+- one page crash while Chromium remains connected;
+- one missing required state or selector;
+- interaction assertion failure;
+- candidate-only console/accessibility regression;
+- candidate artifact write failure whose bytes were never registered.
 
-```ts
-interface VolatileRegion {
-  selector: string;
-  treatment:
-    | "mask_visual"
-    | "exclude_text"
-    | "exclude_geometry"
-    | "manual_review";
-  reason: string;
-}
-```
+Policy:
 
-Exclusions are visible in report.
+1. preserve diagnostics;
+2. apply the bounded local retry where allowed;
+3. fail or mark that Candidate Attempt ineligible after retry exhaustion;
+4. keep valid current captures and browser epoch evidence;
+5. proceed to gating when every candidate has either a complete capture set or a terminal local failure result;
+6. permit deterministic `current_retained` when the current implementation remains qualified.
 
-## 33. Stability probe
+A repeated current-implementation local failure produces `invalid_run` or terminal failure; there is no qualified baseline to retain.
 
-Capture champion at least twice in fresh contexts and compare screenshot regions, text, DOM, geometry, accessibility, and console.
+## 18. Page crash
 
-## 34. Stability limitation
+When Chromium remains connected:
 
-Two captures detect gross nondeterminism only. A one-in-five flake can pass.
+- preserve crash event and available diagnostics;
+- retry once in a fresh context for that Candidate Attempt;
+- repeated contender crash makes the contender ineligible;
+- repeated current crash invalidates the Run's baseline;
+- do not invalidate the entire Epoch solely because one page crashed.
 
-Manifest records sample count, observed variance, exclusions, and classification.
+## 19. Retry defaults
 
-Initial sample count is 2; later configurable.
+- browser launch: 1;
+- complete Epoch restarts: frozen bounded policy, reference default 2;
+- candidate context/page retry: 1;
+- screenshot call before canonical registration: 1 while continuity remains intact;
+- port attempts: up to 3 allowed ports;
+- build/install: 0 automatic retries unless explicitly classified transient;
+- evaluator retries: controlled by `spec/06` and failure matrix.
 
-## 35. Evidence matrix
+Every retry creates an attempt record and preserves prior diagnostics.
 
-Initial minimum:
+## 20. Fixture identity
+
+Fixture includes:
+
+- time zone and locale;
+- color scheme and reduced motion;
+- clock and random policy;
+- server-environment hash;
+- optional network fixture;
+- volatile-region declarations;
+- settle policy;
+- authentication/seed-state reference when used.
+
+Secrets are references, never fixture plaintext.
+
+## 21. Clock and randomness
+
+Supported clock modes:
+
+- fixed displayed date with real timers;
+- installed controlled clock with explicit advancement/pause;
+- real time with recorded reason and limitation.
+
+Supported random modes:
+
+- seeded browser `Math.random` before application scripts;
+- project fixture;
+- uncontrolled with recorded reason.
+
+Do not override cryptographic randomness by default. Server-rendered time/randomness must be fixed, mocked, excluded visibly, or classified unsupported.
+
+Exact Playwright Clock behavior is verified against the pinned release before scaffold acceptance.
+
+## 22. Settle policy
+
+May include load state, selectors, responses, network quiet, controlled clock advancement, animation frames, final delay, and custom fixture step.
+
+Motion is not blindly disabled when completion is part of the required interaction. Policy declares finish, reduce, freeze, or unsupported.
+
+## 23. Volatile regions
+
+A volatile region declares selector, treatment, and reason.
+
+Treatments:
+
+- mask visual;
+- exclude text;
+- exclude geometry;
+- manual review.
+
+Exclusions are visible in reports and evaluator packets.
+
+## 24. Stability probe
+
+Capture the current implementation at least twice in fresh contexts and compare configured screenshot regions, text, DOM, geometry, accessibility, and console evidence.
+
+Two samples detect gross nondeterminism only. Record sample count, observed variance, exclusions, and limitations.
+
+## 25. Evidence matrix and interaction
+
+Minimum:
 
 ```text
 one route
 × populated/default
 × empty
-× error/unavailable
-× mobile
+× unavailable/error
 × desktop
-+ one interaction sequence
+× mobile
++ one critical interaction sequence
 ```
 
-## 36. Interaction trace
+Interaction action vocabulary and configuration are frozen in the Run Configuration. The trace records ordered actions, assertions, screenshots, resulting state, console/network observations, and final fingerprint.
 
-Records actions, screenshots, assertions, resulting state, console errors, and network errors.
-
-## 37. Capture artifacts
+## 26. Required artifacts
 
 Per state/viewport:
 
 - screenshot;
 - DOM summary;
 - accessibility snapshot;
-- element geometry;
-- computed styles sample;
-- console log;
+- geometry;
+- selected computed styles;
+- console summary;
 - network summary;
-- fixture identity;
-- epoch identity.
+- capture metadata;
+- fixture and Epoch identity.
 
-## 38. Accessibility
+Interaction additionally requires action/assertion trace and configured step captures.
 
-Automated checks inform gates but do not prove complete accessibility.
+## 27. Evidence validation
 
-## 39. Evidence validation
+Verify:
 
-Check same epoch, same fixture, route, state, nonblank screenshot, no login redirect, viewport, server ownership, hashes.
+- Run, source, Candidate, Capture Plan, Epoch, fixture, route, state, viewport, and interaction identity;
+- nonblank and non-login-redirect result;
+- server ownership/capability;
+- required artifact registration and hashes;
+- current/contender matrix equivalence;
+- invalidation/staleness status.
 
-Invalid/blank capture never reaches visual judge.
+Invalid evidence never enters an evaluator packet.
 
-## 40. Cleanup per candidate
+## 28. Candidate cleanup
 
-1. Close context.
-2. Stop server.
-3. Verify listener released.
-4. Finalize logs/resources.
-5. Retain worktree for evaluation.
-6. Continue.
+After each candidate:
 
-## 41. External server mode
+1. close browser context;
+2. stop candidate server;
+3. verify listener released;
+4. finalize logs/resources and Gate Results;
+5. preserve or clean workspace according to policy;
+6. continue only when cleanup admission allows it.
 
-User-managed URL; no server cleanup or ownership guarantee; weaker reproducibility flag.
+Cleanup failure remains visible and may block the next workload when ownership is uncertain.
 
-## 42. Failure classes
+## 29. External server mode
 
-- baseline unrenderable;
-- build failed;
-- tests failed;
-- server not ready;
-- listener not owned;
-- fixture failed;
-- blank capture;
-- page crashed;
-- browser disconnected;
-- unstable baseline;
-- uncontrolled volatile content;
-- cleanup failed.
+External URL mode is post-MVP/limited:
 
-## 43. Tests
+- no server cleanup claim;
+- no listener ownership claim;
+- weaker reproducibility classification;
+- explicit local-origin/network policy;
+- never used for Windows reference acceptance.
 
-- `CAP-001`: champion has current run ID.
-- `CAP-002`: cached champion rejected.
-- `CAP-003`: browser disconnect invalidates all.
-- `CAP-004`: page crash retries locally.
-- `CAP-005`: fixed-date semantics verified for pinned Playwright.
-- `CAP-006`: installed-controlled semantics verified.
-- `CAP-007`: seeded random stable across contexts.
-- `CAP-008`: visible server nondeterminism detected where sampled.
-- `CAP-009`: volatile masking represented.
-- `CAP-010`: listener owner is candidate group.
-- `CAP-011`: three states validated.
-- `CAP-012`: interaction replayable.
-- `CAP-013`: stability report states limitations.
+## 30. Required tests
 
-## 44. Scaffold verification
-
-Against exact Playwright version verify:
-
-- `setFixedTime`;
-- install ordering;
-- `pauseAt`;
-- `runFor`;
-- browser disconnect event;
-- context isolation;
-- service-worker cleanup;
-- init-script ordering.
+- current recaptured in active Run/Epoch;
+- prior-run captures rejected;
+- browser disconnect invalidates entire Epoch;
+- one contender page crash retries locally without invalidating current evidence;
+- repeated contender crash leads to deterministic retention path;
+- repeated current crash produces invalid baseline outcome;
+- fixed/controlled Clock semantics verified;
+- seeded randomness stable across contexts;
+- visible server nondeterminism detected where sampled;
+- volatile exclusions represented;
+- listener ownership tied to candidate group;
+- three states and critical interaction validated;
+- gate scheduler never runs a gate before its required evidence exists;
+- source/config change after sealing requires a superseding Run.
