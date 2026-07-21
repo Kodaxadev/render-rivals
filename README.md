@@ -7,7 +7,7 @@ Render Rivals is a local-first visual optimization harness for AI-assisted front
 ## Repository status
 
 **Architecture:** Canonical MVP contracts established  
-**Implementation:** Pre-scaffold; executable schemas/runtime/product code not yet present  
+**Implementation:** Product/runtime remains pre-scaffold; dependency-free documentation conformance is executable  
 **Reference platform:** Windows 11 x64 strong-containment target  
 **License:** Not yet licensed for general reuse or contribution; see [`LICENSE-TBD.md`](LICENSE-TBD.md)  
 **Public packaging:** Not yet available
@@ -98,8 +98,17 @@ Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) — MVP versus post-MVP authority.
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) — public claim gates.
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md) — package, release, and license blockers.
-- [`conformance/README.md`](conformance/README.md) — documentation-conformance scope.
-- [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json) — real pre-repair drift cases for checker regression tests.
+- [`conformance/README.md`](conformance/README.md) — checker scope and commands.
+- [`conformance/check.mjs`](conformance/check.mjs) — clean-tree documentation conformance.
+- [`conformance/check.test.mjs`](conformance/check.test.mjs) — mutation-based regression suite.
+- [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json) — real pre-repair drift cases.
+
+Run:
+
+```text
+node conformance/check.mjs
+node --test conformance/check.test.mjs
+```
 
 Brand exploration is under [`brand/`](brand/) and is not an architecture input.
 
@@ -157,7 +166,7 @@ Architecture decisions are classified, but foundational scaffold acceptance stil
 - secret lifecycle, browser authentication-state, and egress-capability tests;
 - staged migration, backup, crash recovery, rollback, and downgrade tests;
 - store crash injection, trash/restore/purge, storage admission, filesystem and lock doctor;
-- executable documentation conformance using the committed real-drift fixtures;
+- documentation conformance checker and mutation suite remain green;
 - telemetry/crash “off means zero network” tests;
 - license and public packaging claims remain blocked.
 
