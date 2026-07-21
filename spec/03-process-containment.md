@@ -1,21 +1,26 @@
 # 03 — Cross-Platform Process Containment and Resource Enforcement
 
+**Status:** Canonical implementation contract  
+**Launch authority:** `spec/02-runtime-and-bootstrap.md`  
+**Shared process purposes:** `schemas/domain-types.ts`  
+**Resolved/deferred platform decisions:** `docs/SCAFFOLD-DECISION-REGISTER.md`
+
 ## 1. Principle
 
-Containment guarantees are asymmetric. Record what was achieved; never infer parity from a common interface.
+Containment guarantees are asymmetric. Record what was achieved; never infer parity from a common interface or platform name.
+
+Containment limits ordinary and accidental descendant escape. It is not a hostile-code sandbox. Repository code still executes with the user's authority.
 
 ## 2. Capability model
 
 ```ts
-type ContainmentLevel =
+export type ContainmentLevel =
   | "strong"
   | "managed"
   | "best_effort"
   | "unavailable";
-```
 
-```ts
-interface ContainmentCapabilities {
+export interface ContainmentCapabilities {
   platform: "windows" | "linux" | "macos";
   level: ContainmentLevel;
   mechanism:
@@ -33,75 +38,105 @@ interface ContainmentCapabilities {
 }
 ```
 
+Capabilities are measured by doctor fixtures and stored per Session.
+
 ## 3. Capability gating
 
 Examples:
 
-- autonomous generation may require `strong`;
-- judge-only comparison may allow `managed`;
-- external server capture may allow `best_effort`;
-- published benchmark may require container or `strong`.
+- Windows reference MVP requires strong containment;
+- human-only comparison may allow a lower explicitly accepted capability outside reference acceptance;
+- external-server capture is limited and cannot claim server ownership;
+- published benchmarks require a controlled environment or strong containment;
+- future autonomous generation may require stronger policy than prebuilt-contender comparison.
 
-## 4. Windows strong mode
+No command silently lowers the minimum required capability.
 
-### Session Job Object
+## 4. Launch and descendant policy
 
-Rust creates one session Job Object with:
+Rust owns launch authorization, managed root-process creation, containment assignment, observation, resource enforcement, and termination.
 
-- kill on job close;
+Approved managed roots may create descendants only when:
+
+- inheritance into the containment boundary is expected;
+- doctor verifies inheritance for the process class;
+- descendants remain attributable to the owning group;
+- listener/process inspections can detect material escape;
+- capability is downgraded or the Run fails when containment cannot be proven.
+
+This permits contained Playwright-to-Chromium spawning on the Windows reference path while preserving Rust as containment authority.
+
+## 5. Windows strong mode
+
+### 5.1 Session Job Object
+
+Rust creates one Session Job Object with:
+
+- kill on Job close;
 - normal breakaway disabled;
 - silent breakaway disabled;
 - accounting;
-- optional memory/process limits.
+- configured process/memory limits where supported.
 
-### Atomic coordinator membership
+Rust remains outside the Session Job so it can enforce shutdown.
 
-Create coordinator with atomic Job Object assignment through process attribute list. Suspended-then-assign is not primary.
+### 5.2 Coordinator membership
 
-### Console isolation
+Coordinator is created with atomic Job assignment through the process attribute list. Suspended-then-assign is not the primary implementation.
 
-Job membership and console policy are separate. Coordinator receives job membership, no user console, captured stdio, and IPC environment.
+Coordinator receives:
 
-### Nested groups
+- Session Job membership;
+- no inherited user console;
+- captured stdio;
+- authenticated IPC environment.
 
-Where verified:
+### 5.3 Hierarchy
+
+Conceptual hierarchy:
 
 ```text
-session job
-├── coordinator
-├── Playwright/Chromium
-└── run job
-    ├── champion server job
-    ├── challenger server jobs
-    ├── build/test jobs
-    └── agent/judge jobs
+Rust supervisor
+└── Session Job
+    ├── Node coordinator
+    │   └── Playwright-managed Chromium descendants
+    └── Run groups
+        ├── current candidate process groups
+        ├── contender process groups
+        ├── dependency/build/test roots
+        ├── fixture/evaluator roots
+        └── Git/export/doctor utilities
 ```
 
-### Browser containment
+Nested child Jobs are used only where doctor proves host support and semantics. A fallback may use one Session Job plus Render Rivals-owned logical groups and verified process membership.
 
-Chromium is a coordinator descendant. Doctor verifies Job membership for browser, renderer, GPU, and utility processes.
+### 5.4 Browser containment
 
-Failure means session is not reported strong.
+Doctor verifies Job membership for browser, renderer, GPU, crash handler, and utility processes that remain active during capture.
 
-### Candidate termination
+Failure means:
 
-Killing Candidate A must not kill coordinator, browser, or Candidate B.
+- Session is not reported strong for browser capture;
+- the reference MVP cannot start;
+- active epoch is invalidated if failure is discovered during capture.
 
-### Session termination
+### 5.5 Candidate isolation
 
-Closing/terminating session Job removes coordinator, Chromium, run groups, agents, and servers. Rust remains outside.
+Terminating one candidate group must not terminate coordinator, browser, or another candidate group.
 
-### Breakaway
+If the platform cannot provide nested kernel boundaries, Rust maintains explicit process ownership and termination targeting under the Session Job and doctor must prove candidate-local cleanup.
 
-Breakaway is denied and classified as unsupported repository behavior.
+### 5.6 Session termination
 
-### Listener ownership
+Closing or terminating the Session Job removes coordinator, browser descendants, Run groups, evaluators, and servers. Rust then verifies endpoints and remaining identities.
 
-Native layer maps TCP listener PID and Job membership.
+### 5.7 Listener ownership
 
-## 5. Linux strong mode
+Native inspection maps TCP listener PID to verified Session/Run/Candidate ownership. Validity is containment membership, not equality with the original server PID.
 
-Linux strong mode requires:
+## 6. Linux strong mode
+
+Linux strong mode requires all of:
 
 - unified cgroup v2;
 - systemd user manager;
@@ -109,177 +144,105 @@ Linux strong mode requires:
 - writable owned subtree;
 - payload child cgroup;
 - usable `cgroup.kill`;
-- watchdog.
+- watchdog outside payload;
+- successful disposable create/migrate/kill probe.
 
-Presence of `/sys/fs/cgroup` is insufficient.
+Presence of `/sys/fs/cgroup`, systemd, or a recent kernel is insufficient.
 
-## 6. Linux single-writer rule
+### 6.1 Single-writer rule
 
-Supervisor never creates arbitrary cgroups under a systemd-owned subtree.
+Rust never creates arbitrary cgroups under a systemd-owned subtree. It first obtains an explicitly delegated unit.
 
-It obtains an explicitly delegated unit.
-
-## 7. Linux scope acquisition
-
-Preferred mechanism: transient user scope with `Delegate=yes` through systemd user-manager transient-unit API.
-
-Conceptual equivalent:
+### 6.2 Hierarchy
 
 ```text
-systemd-run --user --scope --property=Delegate=yes ...
-```
-
-Exact D-Bus signatures are reverified at scaffold time.
-
-## 8. Linux hierarchy
-
-```text
-transient delegated scope
+transient delegated user unit
 ├── Rust supervisor
 ├── watchdog
 └── payload cgroup
     ├── Node coordinator
-    ├── Playwright/Chromium
-    └── run cgroups
+    ├── Playwright/Chromium descendants
+    └── Run cgroups
         ├── candidate cgroups
-        └── judge cgroups
+        └── evaluator/utility cgroups
 ```
 
-Rust and watchdog remain outside payload so they can kill it.
+Rust and watchdog remain outside payload.
 
-## 9. Coordinator placement
+### 6.3 Acquisition and verification
 
-Coordinator must not run uncontrolled before cgroup placement.
+The Linux spike follows the decisions in `docs/SCAFFOLD-DECISION-REGISTER.md`. Strong mode is reported only after delegated child creation, migration, nested group, writable `cgroup.kill`, and disposable kill tests succeed.
 
-Implementation spike chooses and verifies one:
+### 6.4 Watchdog
 
-- fork child behind synchronization barrier;
-- create scope with child PID before exec;
-- tested transient-scope launcher;
-- equivalent bounded method.
+If Rust disappears, watchdog writes to payload `cgroup.kill`, records the outcome outside payload, and exits after cleanup verification.
 
-## 10. Delegation verification
+### 6.5 Normal shutdown
 
-Verify:
+1. stop admitting work;
+2. terminate payload cgroup;
+3. verify endpoints and descendants absent;
+4. remove child cgroups;
+5. release delegated unit;
+6. stop watchdog.
 
-- unified hierarchy;
-- scope cgroup path;
-- delegated permissions/marker;
-- child cgroup creation;
-- disposable child migration;
-- nested cgroup creation;
-- `cgroup.kill` exists and is writable;
-- disposable kill works.
+## 7. Linux managed fallback
 
-## 11. `cgroup.kill`
-
-Do not infer from kernel version alone.
-
-Strong mode requires file and successful test.
-
-Cgroup v2 without usable `cgroup.kill` is not strong mode.
-
-## 12. Linux watchdog
-
-Watchdog outside payload monitors Rust liveness.
-
-If Rust disappears, watchdog writes `1` to payload `cgroup.kill` and records outcome.
-
-## 13. Normal Linux shutdown
-
-1. Kill payload cgroup.
-2. Remove child cgroups.
-3. Release transient scope.
-4. Confirm descendants gone.
-5. Stop watchdog.
-
-## 14. Linux managed fallback
-
-When delegation unavailable:
+When strong delegation is unavailable, use:
 
 - `PR_SET_CHILD_SUBREAPER`;
 - dedicated process groups;
-- `/proc` descendant tracking;
 - pidfds where available;
+- `/proc` descendant and endpoint tracking;
 - repeated rescans;
 - SIGTERM then SIGKILL;
-- known-port verification.
+- explicit cleanup limitations.
 
-## 15. Managed limitations
+Managed mode cannot guarantee cleanup after Rust crash or deliberate fast detach.
 
-- no complete cleanup after Rust crash;
-- rapid detached process may escape;
-- malicious evasion possible;
-- not equivalent to Job Objects/cgroup kill.
+## 8. macOS best effort
 
-## 16. Linux classification
+Use process groups, process event notifications where available, descendant snapshots, known-port inspection, and repeated graceful/forced signals.
 
-### Strong
+UI and manifests must state `best_effort`. No native parity claim is permitted.
 
-Delegation and kill probes pass.
+## 9. Detachment doctor fixture
 
-### Managed
-
-Subreaper/tracking works but delegated kill boundary unavailable.
-
-### Best effort
-
-Only ordinary process-group cleanup works.
-
-### Unavailable
-
-Normal child tree cannot be cleaned reliably.
-
-## 17. macOS best effort
-
-Use:
-
-- process groups;
-- process event notifications;
-- descendant snapshots;
-- known-port inspection;
-- repeated graceful/forced signals.
-
-## 18. macOS limitations
-
-- deliberate detach may escape;
-- supervisor-crash cleanup not guaranteed;
-- UI must say `best_effort`;
-- strict benchmark should use controlled Linux environment.
-
-## 19. Detachment doctor fixture
+The doctor fixture launches:
 
 ```text
 root helper
 ├── ordinary child
 │   └── ordinary grandchild
 └── detacher
-    ├── creates new session/process group
-    ├── forks/spawns again
+    ├── creates a new process group/session
+    ├── spawns again
     ├── exits intermediate parent
-    ├── binds TCP listener
+    ├── binds a TCP listener
     └── sleeps
 ```
 
-Windows fixture attempts process-group and Job breakaway behavior.
+Windows additionally attempts Job/process-group breakaway behavior. Browser fixture verifies every relevant Chromium descendant.
 
-## 20. Doctor scenarios
+## 10. Doctor scenarios
 
-- `CONT-001`: normal tree cancellation.
-- `CONT-002`: deliberate detachment cleanup.
-- `CONT-003`: coordinator crash cleanup.
-- `CONT-004`: Rust crash cleanup.
-- `CONT-005`: browser descendant membership.
-- `CONT-006`: candidate isolation.
-- `CONT-007`: endpoint ownership.
-- `CONT-008`: breakaway denial classification.
-- `CONT-009`: cgroup strong probe.
-- `CONT-010`: subreaper fallback.
+- normal tree cancellation;
+- deliberate detachment cleanup;
+- coordinator crash cleanup;
+- Rust crash cleanup where claimed;
+- browser descendant membership;
+- candidate-local termination isolation;
+- endpoint ownership;
+- breakaway-denial classification;
+- Linux delegated kill probe;
+- Linux managed fallback;
+- PID reuse and identity mismatch;
+- cleanup result with unverifiable leftovers.
 
-## 21. Resource policy
+## 11. Resource policy
 
 ```ts
-interface LocalResourcePolicy {
+export interface LocalResourcePolicy {
   maxConcurrentCandidates: number;
   maxConcurrentBrowsers: number;
   reserveSystemMemoryMiB: number;
@@ -288,55 +251,67 @@ interface LocalResourcePolicy {
   maxRunDiskMiB: number;
   minimumFreeDiskMiB: number;
   maximumProcessCount: number;
-  maximumOutputMiBPerProcess: number;
+  maximumStdoutMiBPerProcess: number;
+  maximumStderrMiBPerProcess: number;
 }
 ```
 
-## 22. Initial defaults
+MVP defaults:
 
 ```text
 maxConcurrentCandidates = 1
 maxConcurrentBrowsers = 1
+maximumStdoutMiBPerProcess = 64
+maximumStderrMiBPerProcess = 64
 ```
 
-No candidate starts while another candidate server is active.
+Exact memory/disk/process defaults are pinned during the scaffold after measurements on the Windows reference fixture.
 
-## 23. Admission controller
+## 12. Admission controller
 
 Inputs:
 
-- free memory;
-- session memory;
+- free and reserved memory;
+- Session/group memory;
 - process count;
-- free disk;
-- browser count;
-- candidate count;
+- free disk and configured reserve;
+- browser and candidate counts;
 - configured limits;
-- historical workload estimate.
+- historical estimate when available;
+- capability to enforce requested limits.
 
 Outcomes:
 
 - admitted;
 - queued;
 - rejected;
-- requires override.
+- requires explicit override when policy permits.
 
-## 24. Enforcement
+No candidate starts while another candidate server is active in the MVP.
 
-Rust may enforce:
+## 13. Blocking and advisory limits
 
-- memory ceiling;
-- process count;
-- CPU accounting;
-- output-size limit;
-- termination deadline.
+Per `docs/SCAFFOLD-DECISION-REGISTER.md`:
 
-Platform capability determines kernel-backed status.
+Blocking:
 
-## 25. Resource events
+- minimum free-disk reserve;
+- output byte ceiling;
+- process-count ceiling;
+- configured hard memory ceiling when enforceable;
+- inability to enforce a policy marked mandatory.
+
+Advisory until configured hard threshold:
+
+- CPU usage;
+- soft memory pressure;
+- estimated duration;
+- non-kernel-backed resource observations.
+
+## 14. Resource events
 
 ```ts
-type ResourceEvent =
+export type ResourceEvent =
   | { kind: "memory_soft_limit"; groupId: string }
   | { kind: "memory_hard_limit"; groupId: string }
   | { kind: "disk_low"; freeMiB: number }
@@ -345,69 +320,57 @@ type ResourceEvent =
   | { kind: "output_limit"; processId: string };
 ```
 
-## 26. Sequential rationale
+Every event records whether the observation was kernel-enforced, supervisor-enforced, or advisory.
 
-Sequential execution reduces memory contention, ports, install contention, database conflicts, cleanup complexity, and experimental noise without reducing candidate independence.
+## 15. Cleanup verification
 
-## 27. Cleanup verification
+After group termination verify:
 
-After group termination, verify:
-
-- known handles exited;
-- descendants empty where supported;
-- listeners absent;
-- output files closed;
-- accounting finalized.
+- known process identities exited;
+- containment descendants are empty where supported;
+- owned listeners are absent;
+- output files are closed and registered;
+- resource accounting is finalized;
+- retained workspaces and exceptions are explicit.
 
 ```ts
-interface CleanupResult {
+export interface CleanupResult {
   groupId: string;
   completed: boolean;
+  remainingProcessIds: string[];
   remainingPids: number[];
-  remainingEndpoints: NetworkEndpoint[];
+  remainingEndpoints: string[];
   forced: boolean;
+  verification: "complete" | "incomplete" | "unavailable";
   diagnostics: string[];
 }
 ```
 
-If platform cannot prove cleanup, record `cleanup_verification=incomplete`.
+Stored PID values are diagnostic only. Cleanup never kills an unrelated process based only on PID reuse.
 
-## 28. Support declaration
+## 16. Support declaration
 
-### v0
+### MVP reference
 
-- Windows: strong reference target.
-- Linux: experimental strong when delegation probe passes.
-- Linux: managed fallback.
+- Windows 10/11 x64: strong target after doctor passes.
+
+### Experimental
+
+- Linux x64: strong only when delegation/kill/watchdog probes pass;
+- Linux x64: managed fallback;
 - macOS: best effort.
 
-### Later
+Expand support only after doctor and adversarial suites pass on maintained test hosts.
 
-Expand only after doctor/adversarial suites pass on test hosts.
+## 17. Implementation order
 
-## 29. Security boundary
+1. Windows Session Job and exact coordinator launch.
+2. Windows console isolation and root-process launch API.
+3. Output capture and candidate-local group cleanup.
+4. Browser descendant doctor.
+5. Endpoint ownership and resource accounting.
+6. Linux managed fallback.
+7. Linux delegated-scope/watchdog spike.
+8. macOS best-effort observer.
 
-Containment limits accidental and ordinary descendant escape. It is not a hostile-code sandbox.
-
-Repository code runs as user and may access user-readable files/network or consume resources before limits react.
-
-## 30. Implementation order
-
-1. Windows session Job.
-2. Exact coordinator launch.
-3. Windows console isolation.
-4. Child Job lifecycle.
-5. Browser doctor.
-6. Resource accounting.
-7. Linux managed fallback.
-8. Linux delegated-scope spike.
-9. Linux strong watchdog.
-10. macOS best-effort observer.
-
-## 31. Open items
-
-- `OPEN-CONT-001`: Rust Windows API binding layer.
-- `OPEN-CONT-002`: direct systemd D-Bus versus scaffold-stage `systemd-run` acquisition.
-- `OPEN-CONT-003`: supported systemd versions.
-- `OPEN-CONT-004`: macOS observation implementation.
-- `OPEN-CONT-005`: fatal versus advisory resource limits.
+Historical `OPEN-CONT-*` decisions are resolved or deferred in `docs/SCAFFOLD-DECISION-REGISTER.md`.
