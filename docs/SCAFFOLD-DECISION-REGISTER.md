@@ -39,7 +39,7 @@
 | `OPEN-IPC-001` Rust IPC/security libraries | Milestone decision | Use maintained async runtime, serialization, byte-buffer, and platform binding crates selected and pinned at scaffold. Protocol behavior is owned by Render Rivals tests, not by a framework abstraction. |
 | `OPEN-IPC-002` compatibility rules | Resolved for MVP | Protocol major must match exactly. Minor versions may negotiate additive capabilities. Unknown required methods or fields fail closed. No coordinator reconnect within one supervisor session in MVP. |
 | `OPEN-IPC-003` listener inspection | Resolved for Windows MVP | Windows uses native owning-PID TCP tables plus Job membership. Linux and macOS report verified, inferred, or unavailable according to tested capability. |
-| `OPEN-IPC-004` output limits | Resolved for MVP | Default maximum is 64 MiB per stdout stream and 64 MiB per stderr stream per process. Crossing the limit records truncation and terminates or switches to configured tail retention; bytes are never silently discarded. |
+| `OPEN-IPC-004` output limits | Resolved for MVP | Default maximum is 64 MiB stdout and 64 MiB stderr per process, `retain=all`, `terminateOnLimit=true`. Reaching either ceiling records `OUTPUT_LIMIT_EXCEEDED`, preserves exact bytes written up to the ceiling, marks output incomplete, and terminates the owning process/group according to purpose policy. `tail_after_limit` is explicit opt-in only for approved long-lived diagnostic/server workloads; discarded ranges are recorded and truncated output cannot satisfy output-dependent readiness, Gate, evaluator, Git-parser, or completeness requirements. |
 | `OPEN-IPC-005` ConPTY abstraction | Deferred outside MVP | MVP adapters must support pipe-driven noninteractive operation. Private ConPTY support is added only for a selected adapter that demonstrably requires terminal semantics. |
 
 ## 5. Stack and packaging decisions
@@ -51,7 +51,7 @@
 | `OPEN-STACK-003` Rust libraries | Milestone decision | Exact crates are pinned during the bootstrap/supervisor spike after minimal proofs for Job Objects, named pipes, process I/O, Ctrl+C handling, and TCP owner lookup. |
 | `OPEN-STACK-004` exact versions | Milestone decision | `.node-version`, package manager, lockfiles, Playwright/Chromium, TypeScript, Rust toolchain, and CI image are pinned in the first scaffold commit and upgraded only through compatibility tests. |
 | `OPEN-STACK-005` Windows native-package CI | Milestone decision | Required before npm alpha publication, not before local source scaffolding. It must build, test, checksum, and smoke-install the Windows x64 native package. |
-| `OPEN-STACK-006` dashboard tokens | Resolved for MVP | Generate at least 256 bits of session entropy. Use an HttpOnly SameSite=Strict cookie for browser requests, require an origin check and CSRF-safe mutation header, never place the token in URLs, logs, or argv, and invalidate it with the supervisor session. |
+| `OPEN-STACK-006` dashboard authentication | Resolved for MVP | Follow `spec/16`: at least 128-bit randomized `.localhost` origin, one-time five-minute terminal pairing code with bounded failures, at least 256-bit browser credential in a host-only HttpOnly SameSite=Strict Session cookie, exact Host/Origin/CSRF checks, no secret in URL/log/argv/JS storage, and credential invalidation with supervisor Session. The MVP prints URL/code and does not auto-spawn the user's ordinary browser. |
 
 ## 6. Additional development decisions found during audit
 
@@ -95,9 +95,13 @@ Safe mode disables:
 - run mutation except integrity/recovery operations;
 - promotion/export that depends on unverified state.
 
-It permits diagnostics, canonical file inspection, sanitized diagnostic export, and verified cleanup. Native binary or IPC startup failure cannot fall back to safe mode.
+It permits diagnostics, canonical file inspection, sanitized diagnostic export, and verified cleanup. Native binary or IPC startup failure cannot fall back to safe mode. Dashboard access to safe mode still requires the `spec/16` pairing ceremony.
 
-### 6.5 License
+### 6.5 Browser opening
+
+The MVP never auto-spawns the user's ordinary browser. It prints the randomized Session URL and one-time pairing code. A later browser-opening convenience feature requires a separate ownership decision and must not place an existing user browser inside Render Rivals containment or terminate unrelated browser windows.
+
+### 6.6 License
 
 The repository remains all-rights-reserved until a real license replaces `LICENSE-TBD.md`. License selection does not block local scaffolding but blocks external contribution and public OSS release claims.
 
