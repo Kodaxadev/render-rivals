@@ -1,10 +1,13 @@
 # 04 — Supervisor IPC, Authentication, Process I/O, and Endpoint Inspection
 
-## 1. Purpose
+**Status:** Canonical implementation contract  
+**Shared process purposes:** `schemas/domain-types.ts`  
+**Path authority:** `spec/11-artifact-event-and-schema-contracts.md`  
+**Compatibility/default decisions:** `docs/SCAFFOLD-DECISION-REGISTER.md`
 
-The native supervisor can launch arbitrary executables as the user. Its local control channel is security-sensitive.
+## 1. Purpose and threat model
 
-## 2. Threat model
+The native supervisor can authorize and launch arbitrary managed root executables as the user. Its control channel is security-sensitive.
 
 Protect against:
 
@@ -12,107 +15,107 @@ Protect against:
 - another machine user;
 - remote named-pipe clients;
 - stale endpoint reuse;
-- malformed frames;
+- malformed or oversized frames;
 - unauthorized spawn requests;
 - path traversal;
-- shell injection.
+- shell injection;
+- operation replay with changed payload;
+- unverified process/listener identity.
 
-Do not claim protection against a fully compromised same-user process with memory/environment access.
+Do not claim protection against a fully compromised same-user process with memory or environment access.
 
-## 3. Endpoint lifetime
+## 2. Endpoint lifetime
 
-A new endpoint is generated per supervisor session.
+A new random endpoint is generated per supervisor Session. It accepts one expected coordinator, closes to new clients after authentication, and is never reused.
 
-It is random, single-client, closed after coordinator connection, and never reused.
+Canonical conceptual endpoints:
 
-## 4. Windows endpoint
+### Windows
 
 ```text
-\\.\pipe\visual-optimizer-<random-session-id>
+\\.\pipe\render-rivals-<random-session-id>
 ```
 
 Controls:
 
 - explicit DACL;
-- current user SID;
-- optional LocalSystem;
+- current user SID and optional LocalSystem only;
 - remote clients rejected;
 - one pipe instance;
-- expected client PID;
-- client Job membership;
-- nonce.
+- expected client PID/process identity;
+- Session containment membership;
+- one-time nonce.
 
-Default pipe security is rejected.
-
-## 5. Linux endpoint
+### Linux
 
 ```text
-$XDG_RUNTIME_DIR/visual-optimizer/<session-id>/supervisor.sock
+$XDG_RUNTIME_DIR/render-rivals/<session-id>/supervisor.sock
 ```
 
-Controls:
+Controls: parent `0700`, socket `0600`, kernel peer UID/GID/PID, nonce, one connection.
 
-- parent mode `0700`;
-- socket mode `0600`;
-- kernel peer UID/GID/PID;
-- nonce;
-- one connection.
-
-## 6. macOS endpoint
+### macOS
 
 ```text
-$TMPDIR/visual-optimizer-<uid>/<session-id>/supervisor.sock
+$TMPDIR/render-rivals-<uid>/<session-id>/supervisor.sock
 ```
 
-Controls:
+Controls: parent `0700`, socket `0600`, `getpeereid()`, nonce, one connection.
 
-- parent mode `0700`;
-- socket mode `0600`;
-- `getpeereid()`;
-- nonce;
-- one connection.
+Old `visual-optimizer` endpoint names are noncanonical.
 
-## 7. Coordinator hello
+## 3. Coordinator authentication
 
 ```ts
 interface CoordinatorHello {
-  protocolVersion: number;
+  protocolMajor: number;
+  protocolMinor: number;
   sessionId: string;
   nonce: string;
   coordinatorPid: number;
   nodeExecPath: string;
   coordinatorBuild: string;
+  requestedCapabilities: string[];
 }
 ```
 
-Rust verifies session, nonce, expected PID, peer credentials, Node path, protocol, and containment membership.
+Rust verifies:
 
-## 8. Post-auth behavior
+- Session and one-time nonce;
+- expected process identity and peer credentials;
+- exact Node path;
+- coordinator build/protocol compatibility;
+- Session containment membership;
+- single-client ownership.
 
-- no second coordinator;
-- no reconnect in v0;
-- unexpected disconnect is coordinator failure;
-- Unix socket path may be unlinked after connection;
-- Windows server creates no new instance.
+No reconnect is supported within one Session in MVP. Unexpected disconnect is coordinator failure.
 
-## 9. Framing
+## 4. Protocol compatibility
 
-Control protocol:
+Per `docs/SCAFFOLD-DECISION-REGISTER.md`:
+
+- protocol major must match exactly;
+- minor versions may negotiate additive capabilities;
+- unknown required method, field, or capability fails closed;
+- optional unknown fields are rejected in MVP unless a versioned schema explicitly permits them;
+- protocol behavior is covered by golden fixtures shared by Rust and TypeScript.
+
+## 5. Framing
 
 ```text
 4-byte little-endian unsigned payload length
 UTF-8 JSON payload
 ```
 
-Maximum frame size is enforced.
-
-## 10. Envelope
+A configured maximum frame size is enforced before allocation.
 
 ```ts
 interface SupervisorEnvelope {
-  protocolVersion: 1;
+  protocolMajor: number;
+  protocolMinor: number;
   sessionId: string;
   requestId?: string;
+  operationId?: string;
   sequence: number;
   kind: "request" | "response" | "event";
   method: string;
@@ -122,15 +125,24 @@ interface SupervisorEnvelope {
 }
 ```
 
-## 11. Sequencing
+Each direction has monotonic safe-integer sequence. Duplicate, decreasing, gapped required response, or unsafe-integer sequence is rejected and diagnosed.
 
-Each direction has monotonic sequence. Duplicate, decreasing, or invalid request sequence is rejected. Event gaps are explicit.
+## 6. Method schemas and idempotency
 
-## 12. Schema validation
+Every method has a strict versioned schema.
 
-Each method has strict schema. Unknown methods/properties fail. Protocol evolution is versioned.
+Side-effecting requests require `operationId`:
 
-## 13. No shell strings
+- repeated matching operation returns the recorded result;
+- repeated operation with different canonical payload is rejected;
+- transport retry does not create a duplicate process or cleanup operation;
+- command acceptance is distinct from observed completion.
+
+Unknown methods and properties fail closed.
+
+## 7. Process specification
+
+`purpose` uses `ProcessPurpose` from `schemas/domain-types.ts`.
 
 ```ts
 interface ProcessSpec {
@@ -141,64 +153,61 @@ interface ProcessSpec {
   stdinMode: "closed" | "pipe" | "pty";
   outputPolicy: ProcessOutputPolicy;
   groupId: string;
-  purpose:
-    | "build"
-    | "test"
-    | "server"
-    | "agent"
-    | "judge"
-    | "fixture"
-    | "doctor";
+  purpose: ProcessPurpose;
+  maySpawnContainedDescendants: boolean;
+  admissionToken: string;
 }
 ```
 
-Rust never interprets `pnpm dev && echo done` as a command. If a shell is explicitly required, the shell is the executable and the request is classified accordingly.
+Rust never interprets a command such as `pnpm dev && echo done`. If a shell is explicitly required, the shell is the executable and the request records shell classification and acknowledgement.
 
-## 14. Executable validation
+Process purposes include dependency, build, test, server, browser, fixture, evaluator, agent, Git, export, doctor, and utility operations.
+
+## 8. Executable and path validation
 
 Validate:
 
-- nonempty executable;
-- no NUL;
-- valid CWD;
-- allowed root;
-- env size;
-- arg count/size;
-- group existence;
-- admission token;
-- purpose.
+- nonempty executable and no NUL;
+- canonical executable identity where possible;
+- valid canonical working directory;
+- working directory within an approved root;
+- argument count and byte limits;
+- environment count/byte limits;
+- known group and Run ownership;
+- nonstale admission token;
+- declared purpose and descendant policy;
+- resource/output policy.
 
-## 15. Approved roots
+Approved roots may include repository, candidate workspace, transient Session root, cache root, package-manager store, and canonical data root only for purpose-specific operations.
 
-Coordinator registers:
+Project-provided paths never gain write access to arbitrary canonical locations.
 
-- repository;
-- worktree root;
-- session root;
-- tool cache;
-- package-manager store.
+## 9. Environment filtering
 
-Process CWD must be within approved root.
+Coordinator constructs an allowlisted process environment. Rust applies final deny/allow rules.
 
-## 16. Environment filtering
+Sensitive values are tagged and excluded/redacted from lifecycle records. Reserved `RENDER_RIVALS_*` Session variables are supplied only to the coordinator or explicitly authorized internal helpers, not inherited by arbitrary project commands.
 
-Coordinator constructs environment; Rust applies final deny/allow rules. Sensitive values are tagged and redacted from lifecycle records.
+## 10. Output architecture
 
-## 17. Output architecture
+Control frames and process bytes are separate.
 
-Control and process bytes are separate.
+Canonical process-relative layout:
 
 ```text
 processes/<process-id>/
+  process.json
   stdout.bin
   stderr.bin
   lifecycle.json
   usage.json
 ```
 
-Rust drains pipes continuously.
+`spec/11` determines the owning candidate/run path and artifact registration. Raw stdout/stderr/lifecycle/usage files are registered artifacts or canonical process records as specified there.
 
-## 18. Binary output benefits
+Rust drains stdout and stderr continuously into binary-safe files.
+
+Benefits:
 
 - malformed UTF-8 support;
 - ANSI preservation;
@@ -207,7 +216,7 @@ Rust drains pipes continuously.
 - offset reads;
 - crash durability.
 
-## 19. Output notification
+## 11. Output notifications
 
 ```ts
 interface OutputAvailableEvent {
@@ -219,32 +228,30 @@ interface OutputAvailableEvent {
 }
 ```
 
-Coordinator reads referenced bytes.
+Coordinator reads referenced bytes. Output notifications may be coalesced. They are not canonical semantic events.
 
-## 20. Parsing ownership
+## 12. Parsing ownership
 
-TypeScript adapters parse provider formats and server readiness. Rust remains provider-neutral.
+TypeScript adapters parse provider formats, Git output, readiness output, and evaluator results. Rust remains provider-neutral and records raw bytes plus native lifecycle facts.
 
-## 21. Backpressure
+## 13. Backpressure and limits
 
 ```text
 child pipe
 → Rust bounded memory buffer
-→ per-process file
-→ output event
+→ per-process binary file
+→ availability notification
 ```
 
-If disk cannot keep up:
+If storage cannot keep up:
 
-1. emit warning;
-2. stop admitting workloads;
-3. apply output policy;
-4. terminate if needed;
-5. record truncation.
+1. emit native warning;
+2. stop workload admission;
+3. apply configured output policy;
+4. terminate process/group when durability cannot be maintained;
+5. record exact truncation/termination.
 
-Never silently discard.
-
-## 22. Output policy
+Default MVP ceiling is 64 MiB stdout plus 64 MiB stderr per process. Never silently discard bytes.
 
 ```ts
 interface ProcessOutputPolicy {
@@ -252,27 +259,28 @@ interface ProcessOutputPolicy {
   maxStderrMiB: number;
   retain: "all" | "tail_after_limit";
   liveEvents: boolean;
+  terminateOnLimit: boolean;
 }
 ```
 
-## 23. Stdin
+Any switch to tail retention records discarded byte ranges and cannot be represented as complete output.
 
-Support:
+## 14. Stdin and private terminals
+
+Supported modes:
 
 - closed;
 - pipe;
-- private PTY/ConPTY.
+- private PTY/ConPTY when implemented.
 
-`writeStdin` only for compatible process.
+`writeStdin` works only for compatible active processes.
 
-## 24. Private PTY
+Private terminal is not the user console. ConPTY is deferred outside MVP unless a selected adapter proves it is required.
 
-Private terminal is not user console. Coordinator may write, resize, close, and capture it. Adapter declares need.
-
-## 25. Lifecycle events
+## 15. Native lifecycle events
 
 ```ts
-type SupervisorEvent =
+export type SupervisorEvent =
   | { kind: "process.started"; processId: string; pid: number }
   | { kind: "process.output_available"; data: OutputAvailableEvent }
   | { kind: "process.resource"; snapshot: ResourceSnapshot }
@@ -282,61 +290,54 @@ type SupervisorEvent =
   | { kind: "supervisor.warning"; code: string; message: string };
 ```
 
-## 26. TypeScript interface
+Native events are observations. Coordinator converts relevant facts into canonical semantic Run events.
+
+## 16. TypeScript supervisor client
 
 ```ts
 interface ProcessSupervisor {
-  spawn(spec: ProcessSpec): Promise<ManagedProcess>;
-  terminate(processId: string, mode: "graceful" | "force"): Promise<void>;
-  terminateGroup(groupId: string, mode: "graceful" | "force"): Promise<CleanupResult>;
+  spawn(spec: ProcessSpec, operationId: string): Promise<ManagedProcess>;
+  terminate(processId: string, mode: "graceful" | "force", operationId: string): Promise<void>;
+  terminateGroup(groupId: string, mode: "graceful" | "force", operationId: string): Promise<CleanupResult>;
   writeStdin(processId: string, data: Uint8Array): Promise<void>;
   subscribe(listener: (event: SupervisorEvent) => void): () => void;
-  readOutput(
-    processId: string,
-    stream: "stdout" | "stderr",
-    range: { offset: number; length: number },
-  ): Promise<Uint8Array>;
+  readOutput(processId: string, stream: "stdout" | "stderr", range: { offset: number; length: number }): Promise<Uint8Array>;
   wait(processId: string): Promise<ProcessExit>;
   getStats(groupId: string): Promise<ResourceSnapshot>;
   listGroupProcesses(groupId: string): Promise<ManagedProcessInfo[]>;
-  containsProcess(groupId: string, pid: number): Promise<boolean>;
+  containsProcess(groupId: string, processIdentity: ProcessIdentity): Promise<boolean>;
   inspectListener(endpoint: NetworkEndpoint): Promise<ListenerInspection>;
 }
 ```
 
-## 27. Listener inspection
+PID alone is never a `ProcessIdentity`.
+
+## 17. Listener inspection
 
 ```ts
 interface ListenerInspection {
   endpoint: NetworkEndpoint;
   state: "absent" | "listening" | "connected";
   ownerPid: number | null;
+  ownerProcessId: string | null;
   ownerGroupId: string | null;
   ownershipConfidence: "verified" | "inferred" | "unavailable";
   diagnostics: string[];
 }
 ```
 
-Listener owner may be descendant worker. Validity is group membership, not equality with root command PID.
+Listener owner may be a descendant worker. Validity is verified group membership, not equality with root PID.
 
-## 28. Platform inspection
+Reference implementation:
 
-### Windows
+- Windows: native TCP tables with owning PID plus Job/logical-group membership;
+- Linux: tested `/proc`/netlink/native mechanism;
+- macOS: supported process/socket inspection, otherwise unavailable.
 
-Use native TCP tables with owning PID and Job membership.
-
-### Linux
-
-Use `/proc`, netlink, or tested native mechanism.
-
-### macOS
-
-Use supported process/socket inspection. Report unavailable when exact ownership cannot be verified.
-
-## 29. Readiness probes
+## 18. Readiness probes
 
 ```ts
-type ReadinessProbe =
+export type ReadinessProbe =
   | { kind: "tcp"; host: string; port: number }
   | { kind: "http"; path: string; acceptedStatuses: number[]; bodyPattern?: string }
   | { kind: "output"; stream: "stdout" | "stderr" | "either"; pattern: string }
@@ -344,20 +345,9 @@ type ReadinessProbe =
   | { kind: "command"; executable: string; args: string[] };
 ```
 
-No dedicated health endpoint is required.
+A profile declares required/optional probes, timeout, poll interval, and diagnostics. Typical order: listener exists, ownership verifies, HTTP responds, browser navigates and asserts readiness.
 
-## 30. Readiness composition
-
-Profile defines required/optional probes, timeout, retry interval, and diagnostics.
-
-Typical:
-
-1. TCP listener exists.
-2. Listener belongs to candidate group.
-3. HTTP responds.
-4. Playwright navigates.
-
-## 31. Port lease
+## 19. Port leases
 
 ```ts
 interface PortLease {
@@ -371,65 +361,50 @@ interface PortLease {
 }
 ```
 
-## 32. Port modes
+Modes:
 
-### Strict assigned
+- strict assigned: choose range, launch strict, verify owner, retry collision;
+- server assigned: server reports port, then ownership verifies;
+- external: user-managed URL with limited capability and no ownership claim.
 
-Choose range, probe, launch strict, verify owner, retry collision.
+The bind-release race cannot be eliminated generically. Detect and retry; a lease never proves socket ownership.
 
-### Server assigned
+## 20. Protocol violations
 
-Server chooses/reports port, then verify.
+Examples:
 
-### External
-
-User provides URL; lifecycle marked external.
-
-## 33. Bind-release race
-
-Cannot eliminate generic race between probe close and server bind. Detect and retry; never assume lease owns socket.
-
-## 34. Protocol violations
-
-- invalid nonce;
-- wrong peer PID;
-- oversized frame;
-- malformed JSON;
-- unsupported version;
-- sequence violation;
+- invalid nonce or peer identity;
+- oversized/malformed frame;
+- unsupported protocol;
+- sequence/idempotency violation;
 - unknown method;
-- invalid root;
-- unknown group;
-- stale admission token.
+- invalid root/group/purpose;
+- stale admission token;
+- changed payload under reused operation ID.
 
-Security-sensitive violation terminates session.
+Security-sensitive violation terminates Session after safe cleanup.
 
-## 35. Audit record
+## 21. Audit record
 
-Each request records request ID, method, group/process, accepted/rejected, validation, time, coordinator identity. Sensitive values redacted.
+Each request records request/operation ID, method, group/process, canonical payload hash, acceptance/rejection, validation result, time, coordinator identity, and completion observation. Sensitive values are redacted.
 
-## 36. Tests
+## 22. Required tests
 
-- `IPC-001`: nonce correct but PID wrong rejected.
-- `IPC-002`: PID correct but nonce wrong rejected.
-- `IPC-003`: second connection rejected.
-- `IPC-004`: remote pipe client rejected.
-- `IPC-005`: Unix socket permissions correct.
-- `IPC-006`: peer credentials verified.
-- `IPC-007`: oversized frame terminates protocol.
-- `IPC-008`: binary stdout exact.
-- `IPC-009`: multi-process output separated.
-- `IPC-010`: slow reader does not immediately block drain.
-- `IPC-011`: truncation explicit.
-- `IPC-012`: metacharacters inert.
-- `IPC-013`: CWD traversal rejected.
-- `IPC-014`: listener owner verified as descendant.
-- `IPC-015`: unknown ownership reported honestly.
+- nonce/PID/peer mismatch rejected;
+- second connection and remote pipe client rejected;
+- Unix permissions and peer credentials verified;
+- protocol major/minor negotiation follows policy;
+- oversized and malformed frames fail before dangerous allocation;
+- operation replay is idempotent and changed replay rejected;
+- binary stdout/stderr exact and separated;
+- slow reader does not block draining;
+- output limit/truncation explicit;
+- shell metacharacters remain inert;
+- working-directory traversal rejected;
+- reserved Session variables do not leak to project processes;
+- listener owner verified as descendant group member;
+- unknown ownership reported honestly;
+- PID reuse cannot satisfy process identity;
+- old `visual-optimizer` endpoint paths are rejected.
 
-## 37. Open items
-
-- `OPEN-IPC-001`: Rust IPC/security libraries.
-- `OPEN-IPC-002`: protocol compatibility rules.
-- `OPEN-IPC-003`: listener inspection implementations.
-- `OPEN-IPC-004`: default output limits.
-- `OPEN-IPC-005`: ConPTY abstraction.
+Historical `OPEN-IPC-*` decisions are resolved or deferred in `docs/SCAFFOLD-DECISION-REGISTER.md`.
