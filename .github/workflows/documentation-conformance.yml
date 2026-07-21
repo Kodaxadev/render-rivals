@@ -1,5 +1,6 @@
 name: Documentation Conformance
 
+# Temporary verification branch changes this comment only; main retains the same job.
 on:
   pull_request:
     paths:
