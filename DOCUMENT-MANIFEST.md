@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 4.2.1  
+**Inventory format:** 4.3  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -10,6 +10,7 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 
 - Architecture/MVP contracts: established.
 - Executable implementation: pre-scaffold, except for the dependency-free documentation-conformance checker.
+- Continuation: production Stage 1 is blocked until Stage 0.5 records `proceed`.
 - License: placeholder only; no general reuse or contribution permission yet.
 - Public packages: unavailable.
 
@@ -69,12 +70,14 @@ These control canonical digest, timestamp, decimal and unit formats; shared IDs,
 - [`adr/ADR-0010-quality-first-accounting.md`](adr/ADR-0010-quality-first-accounting.md)
 - [`adr/ADR-0011-selection-outcomes-and-user-decisions.md`](adr/ADR-0011-selection-outcomes-and-user-decisions.md)
 - [`adr/ADR-0012-run-promotion-phase-naming.md`](adr/ADR-0012-run-promotion-phase-naming.md)
+- [`adr/ADR-0013-stage-0-5-evidence-gate.md`](adr/ADR-0013-stage-0-5-evidence-gate.md)
 
-ADR-0011 is incorporated history. ADR-0012 makes `promoting` the Run adoption phase; general Export Operations remain separate.
+ADR-0011 is incorporated history. ADR-0012 makes `promoting` the Run adoption phase. ADR-0013 inserts Stage 0.5 and blocks production Stage 1 until a valid `proceed` record exists.
 
 ## Development and release contracts
 
 - [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md)
+- [`docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md`](docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md)
 - [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md)
 - [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 - [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md)
@@ -83,7 +86,7 @@ ADR-0011 is incorporated history. ADR-0012 makes `promoting` the Run adoption ph
 - [`docs/DEVELOPMENT-GAP-REGISTER.md`](docs/DEVELOPMENT-GAP-REGISTER.md)
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md)
 
-The invariant matrix defines semantic record combinations; the gap register distinguishes implementation proof from architecture; the test strategy turns those requirements into release gates.
+The Stage 0.5 contract tests the value hypothesis using lightweight non-production mechanics. Only `proceed` opens the production scaffold. The invariant matrix defines semantic record combinations; the gap register distinguishes implementation proof from architecture; the test strategy turns production requirements into release gates.
 
 ## Documentation conformance
 
@@ -139,15 +142,16 @@ Only files that actually exist in Git history are listed. The partial Design War
 - [`MANIFEST.json`](MANIFEST.json)
 - [`LICENSE-TBD.md`](LICENSE-TBD.md)
 
-## Pending scaffold artifacts
+## Pending scaffold and experiment artifacts
 
+- Stage 0.5 experiment execution and explicit `proceed`, `pivot`, `stop`, or `inconclusive` record;
 - executable Zod and generated JSON Schema for primitives, entities, Operations, Capture classes, API payloads, locks and trash manifests;
 - RFC 8785 plus Rust/TypeScript digest, timestamp, decimal and unit goldens;
 - valid and invalid fixtures covering the Record Invariant Matrix;
 - Run-state fixture migration from pre-scaffold `exporting` to `promoting`;
 - Operation reconciliation, store crash-injection, Capture completeness, active-content preview, trash and lock suites;
 - generated API command/client registry;
-- implementation monorepo;
+- implementation monorepo only after a valid Stage 0.5 `proceed` decision;
 - randomized-host pairing and Windows 11 native/package/browser proof.
 
 ## Public release blockers
