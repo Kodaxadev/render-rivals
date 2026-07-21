@@ -1,8 +1,8 @@
-# ARCHIVED — Original Design Warden Draft
+# ARCHIVED — Partial Design Warden Summary
 
 **NONCANONICAL. Do not scaffold from this file.**
 
-Original lines 1–440 preserved for history.
+The full original Design Warden draft is not present in this repository and was never committed to its Git history. This short fragment is the only version preserved here. Missing parts must not be reconstructed from memory or treated as repository history.
 
 ---
 
