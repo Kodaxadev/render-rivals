@@ -30,6 +30,7 @@ MVP:
 - ordinary Export Operation as report/diagnostics/bundles;
 - files/events as canonical history;
 - one manually opened, terminal-paired local dashboard browser Session;
+- canonical cross-language JSON/hash/timestamp/measurement formats;
 - local observability with remote telemetry/crash upload disabled by default;
 - no automatic merge, push, deployment, generation, Pause, cloud service, browser auto-launch, updater, or background daemon.
 
@@ -54,9 +55,11 @@ Project and local evaluator commands run with the user's operating-system author
 15. [`spec/15-observability-diagnostics-and-telemetry-contracts.md`](spec/15-observability-diagnostics-and-telemetry-contracts.md)
 16. [`spec/16-dashboard-session-authentication-and-pairing.md`](spec/16-dashboard-session-authentication-and-pairing.md)
 17. [`spec/17-local-api-envelopes-operations-and-pagination.md`](spec/17-local-api-envelopes-operations-and-pagination.md)
+18. [`spec/18-canonical-primitives-json-hashing-and-measurements.md`](spec/18-canonical-primitives-json-hashing-and-measurements.md)
 
-Shared serialized vocabulary, stable errors, API envelopes, and cross-record validation:
+Shared serialized vocabulary, primitives, stable errors, API envelopes, and cross-record validation:
 
+- [`schemas/primitives.ts`](schemas/primitives.ts)
 - [`schemas/domain-types.ts`](schemas/domain-types.ts)
 - [`schemas/error-codes.ts`](schemas/error-codes.ts)
 - [`schemas/api-types.ts`](schemas/api-types.ts)
@@ -88,20 +91,21 @@ Brand exploration is under [`brand/`](brand/) and is not an architecture input.
 When statements conflict:
 
 1. accepted ADRs control deliberate architecture decisions;
-2. `schemas/domain-types.ts`, `schemas/error-codes.ts`, and `schemas/api-types.ts` control shared vocabulary they define;
-3. canonical specs control implementation behavior;
-4. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where interfaces and prose are otherwise underspecified;
-5. `spec/11` controls live filesystem/commit semantics;
-6. `spec/13` controls configuration, CLI, general local API routes, safe mode, and commands;
-7. `spec/14` controls Git/source/workspace/branch semantics;
-8. `spec/15` controls logs, metrics, diagnostics, telemetry, and crash reporting;
-9. `spec/16` controls dashboard origin isolation, pairing, browser credential, Host/Origin/CSRF, and browser-opening policy;
-10. `spec/17` controls API envelopes, operation status, revision rules, pagination, and Artifact response behavior;
-11. MVP contract narrows first release without weakening runtime invariants;
-12. failure/security/test contracts control required negative behavior and proof;
-13. UI/wireframe documents expose only legal enabled commands;
-14. marketing/brand/archive never override implementation contracts;
-15. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
+2. `schemas/primitives.ts` and `spec/18` control canonical JSON, digest, timestamp, decimal, unit, and measurement formats;
+3. `schemas/domain-types.ts`, `schemas/error-codes.ts`, and `schemas/api-types.ts` control shared vocabulary they define;
+4. canonical specs control implementation behavior;
+5. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where interfaces and prose are otherwise underspecified;
+6. `spec/11` controls live filesystem/commit semantics;
+7. `spec/13` controls configuration, CLI, general local API routes, safe mode, and commands;
+8. `spec/14` controls Git/source/workspace/branch semantics;
+9. `spec/15` controls logs, metrics, diagnostics, telemetry, and crash reporting;
+10. `spec/16` controls dashboard origin isolation, pairing, browser credential, Host/Origin/CSRF, and browser-opening policy;
+11. `spec/17` controls API envelopes, operation status, revision rules, pagination, and Artifact response behavior;
+12. MVP contract narrows first release without weakening runtime invariants;
+13. failure/security/test contracts control required negative behavior and proof;
+14. UI/wireframe documents expose only legal enabled commands;
+15. marketing/brand/archive never override implementation contracts;
+16. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
 
 ADR-0011 is fully incorporated and now records rationale/history rather than acting as a temporary override.
 
@@ -128,6 +132,8 @@ This mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-boundary.md) as clarified
 - Current implementation is recaptured in each selection Run.
 - Browser continuity failures invalidate full Capture Epoch; Candidate-local failures do not unless comparability is compromised.
 - Files and append-only streams are canonical; database may be rebuildable index only.
+- Every canonical SHA-256 value is full lowercase `sha256:<64 hex>` and canonical JSON hashes use RFC 8785 bytes.
+- Persisted cost uses exact decimal `MonetaryAmount`, not floating-point dollars.
 - Recommendation, User Decision, Promotion, and Export Operation are distinct.
 - Remote telemetry, automatic crash upload, third-party dashboard analytics, and hidden background services are disabled/absent by default.
 - No automatic merge/push/deployment or self-updater.
@@ -140,6 +146,7 @@ Before foundational scaffold acceptance:
 
 - pin Node/pnpm/Playwright/Chromium/Rust/dependencies;
 - implement Zod/JSON Schema, fixtures, migrations, compatibility tests, every Record Invariant Matrix row, and generated API command/envelope registry;
+- implement RFC 8785 canonical JSON, full digest/timestamp/decimal/unit validators, and Rust/TypeScript golden hashes;
 - generate Rust/TypeScript protocol goldens;
 - implement canonical ID/error validators;
 - implement and test randomized-host dashboard pairing, operation status, revision/idempotency, and bounded pagination;
@@ -175,19 +182,20 @@ Milestone-dependent library/version decisions are listed in the Scaffold Decisio
 Architecture changes update:
 
 1. affected canonical spec;
-2. shared schemas/error/API registry and Record Invariant Matrix when vocabulary or cross-field meaning changes;
+2. shared primitive/domain/error/API registry and Record Invariant Matrix when vocabulary, encoding, or cross-field meaning changes;
 3. ADR for deliberate architecture decision;
 4. failure/security/test/observability contracts;
 5. UI/API contracts when commands/routes change;
 6. package/public-claim contracts when release behavior changes;
 7. [`MANIFEST.json`](MANIFEST.json) and [`DOCUMENT-MANIFEST.md`](DOCUMENT-MANIFEST.md).
 
-Automated documentation conformance should fail on missing links, duplicate shared unions/commands, unregistered error codes, deprecated active names, old storage/env/package names, route drift, illegal MVP controls, schema/invariant/API registry mismatch, or unapproved telemetry/public claims.
+Automated documentation conformance should fail on missing links, duplicate shared primitives/unions/commands, unregistered error codes, deprecated active names, old storage/env/package names, raw canonical digests, floating persisted currency, route drift, illegal MVP controls, schema/invariant/API registry mismatch, or unapproved telemetry/public claims.
 
 ## Source freshness
 
 Version-sensitive claims are reverified at scaffold and dependency upgrades, especially:
 
+- RFC 8785 library behavior across TypeScript/Rust;
 - Playwright Clock/browser lifecycle;
 - randomized `.localhost` browser resolution and cookie behavior;
 - Windows Job/console/process/named-pipe/TCP owner APIs;
