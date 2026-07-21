@@ -1,0 +1,23 @@
+{
+  "schema": "render-rivals/stage-0.5-task-selection",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "selectedAt": "<UTC timestamp>",
+  "selectionRule": "<precommitted selection rule>",
+  "replacementRule": "<precommitted invalid-task replacement rule>",
+  "taskIds": [],
+  "diversityCoverage": {
+    "routesOrProductAreas": [],
+    "responsivePatterns": [],
+    "informationDensityLevels": [],
+    "interactionTypes": [],
+    "requiredStressors": [
+      "primary_action_clarity",
+      "responsive_behavior",
+      "empty_or_error_state",
+      "critical_interaction",
+      "accessibility_or_keyboard"
+    ]
+  },
+  "status": "draft"
+}
