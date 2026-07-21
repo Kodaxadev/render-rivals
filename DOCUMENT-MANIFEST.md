@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 4.3  
+**Inventory format:** 4.3.1  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -91,12 +91,14 @@ The Stage 0.5 contract tests the value hypothesis using lightweight non-producti
 ## Documentation conformance
 
 - [`conformance/README.md`](conformance/README.md)
+- [`conformance/check-all.mjs`](conformance/check-all.mjs)
 - [`conformance/check-core.mjs`](conformance/check-core.mjs)
+- [`conformance/check-operation-states.mjs`](conformance/check-operation-states.mjs)
 - [`conformance/check.mjs`](conformance/check.mjs)
 - [`conformance/check.test.mjs`](conformance/check.test.mjs)
 - [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json)
 
-Run `node conformance/check.mjs` for the clean-tree check and `node --test conformance/check.test.mjs` for the mutation suite. The ten negative cases are real pre-repair defects; the tests recreate them in owned temporary copies and require class-specific detection.
+Run `node conformance/check.mjs` for the clean-tree check and `node --test conformance/check.test.mjs` for the mutation suite. The eleven negative cases are real pre-repair defects; the tests recreate them in owned temporary copies and require class-specific detection.
 
 ## Product and public planning
 
