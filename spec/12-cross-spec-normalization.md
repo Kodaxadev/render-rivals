@@ -1,201 +1,207 @@
 # 12 — Cross-Spec Normalization and Shared Contracts
 
 **Status:** Canonical implementation contract  
-**Purpose:** Remove duplicate authorities for vocabulary, shared types, storage paths, and session/run ownership.
+**Purpose:** Remove duplicate authorities for vocabulary, shared types, storage paths, process launch, Session/Run ownership, Promotion, Export Operation, and command semantics.
 
 ## 1. Authority
 
-This specification normalizes terms used by specs 01–11. It does not replace their detailed runtime requirements.
+When older text conflicts:
 
-When an older section conflicts with this file:
+1. accepted ADRs control architecture decisions;
+2. `schemas/domain-types.ts` controls shared persisted unions/interfaces;
+3. `spec/11` controls canonical filesystem and commit protocols;
+4. `spec/13` controls configuration, CLI, local API, and safe mode;
+5. this file controls equivalence mappings and relative-path interpretation;
+6. older local examples are explanatory only and must not be implemented literally.
 
-1. accepted ADRs control;
-2. `schemas/domain-types.ts` controls persisted enum and interface names;
-3. `spec/11-artifact-event-and-schema-contracts.md` controls canonical filesystem layout;
-4. this file controls equivalence mappings and relative-path interpretation;
-5. the older local example is noncanonical and must not be implemented literally.
+## 2. Vocabulary
 
-## 2. Canonical vocabulary
+Canonical persisted/API terms:
 
-Persisted and API vocabulary:
+- current implementation;
+- contender;
+- candidate;
+- Recommendation;
+- User Decision;
+- Promotion;
+- Export Operation;
+- `contender_recommended`;
+- `current_retained`;
+- `tie`;
+- `human_review_required`;
+- `invalid_run`.
 
-- `current implementation`
-- `contender`
-- `candidate`
-- `contender_recommended`
-- `current_retained`
-- `tie`
-- `human_review_required`
-- `invalid_run`
+Explanatory mappings:
 
-Explanatory prose may use these aliases:
-
-| Explanatory term | Canonical term |
+| Older/prose term | Canonical meaning |
 |---|---|
 | champion | current implementation |
 | challenger | contender |
-| promote | recommend or export, depending context |
-| escalate | human review required |
-| winner | recommended candidate |
+| winner | recommended Candidate |
+| promote | recommend or create Promotion, depending context |
+| escalate | `human_review_required` |
+| export evidence/report | Export Operation |
 
-Aliases must not appear as persisted enum values, schema keys, event payload values, or stable API names.
+Aliases never appear as persisted enum values or stable API names.
 
-## 3. Shared TypeScript contracts
+## 3. Shared types
 
-`schemas/domain-types.ts` is the sole canonical definition for:
+`schemas/domain-types.ts` is sole canonical definition for:
 
-- `RecommendationOutcome`;
-- `UserDecisionAction`;
-- `PairwiseVerdict`;
-- `EvaluationPurpose`;
-- `InferenceUsage`;
-- recommendation, decision, and promotion record shapes;
-- run and recovery state unions.
+- IDs and prefixes;
+- Candidate role;
+- Recommendation outcome;
+- User Decision action;
+- Pairwise verdict;
+- Evaluation/Process purpose;
+- Session/Run/Epoch states;
+- Recovery disposition;
+- Inference usage;
+- Recommendation, Decision, Promotion, and Export Operation records.
 
-Markdown examples are explanatory. They must import, quote, or reference these types rather than define competing unions.
+Markdown examples reference rather than redefine these.
 
-## 4. Recommendation semantics
+## 4. Recommendation and Decision
 
-The five recommendation outcomes are:
+Recommendation outcomes:
 
-- `contender_recommended`: an eligible contender materially proves better;
-- `current_retained`: improvement is not proven or a contender is ineligible;
-- `tie`: eligible candidates are materially indistinguishable under the policy;
-- `human_review_required`: evidence is valid but automated policy cannot safely resolve it;
-- `invalid_run`: comparison or baseline validity is insufficient for a recommendation.
+- contender recommended;
+- current retained;
+- tie;
+- human review required;
+- invalid Run.
 
-A recommendation is advisory and does not modify source.
+Decision actions:
 
-## 5. User-decision semantics
+- accept Recommendation;
+- retain current;
+- decline Recommendation;
+- select another eligible Candidate;
+- defer;
+- invalidate Run.
 
-The six decision actions are:
+Export is not a Decision action.
 
-- `accept_recommendation`;
-- `retain_current`;
-- `decline_recommendation`;
-- `select_other_eligible_candidate`;
-- `defer`;
-- `invalidate_run`.
+## 5. Promotion versus Export Operation
 
-`exported_without_acceptance` is not a decision action. Export is represented only by a Promotion record. A decision may authorize an export; it is not itself an export.
+Promotion is a candidate adoption handoff:
 
-## 6. Canonical inference accounting
+- patch;
+- local branch;
+- preserved workspace.
 
-The canonical `InferenceUsage` uses:
+It always requires selected Candidate and authorizing nonstale Decision.
 
-- `adapter`, not `agent`;
-- the closed `EvaluationPurpose` union;
-- `startedAt` and `completedAt`;
-- nullable token and cost fields;
-- `policySnapshotId`, not `policySnapshot`.
+Export Operation is non-adoption output:
 
-Unavailable values remain `null`. They are never estimated silently.
+- report;
+- diagnostics;
+- Run/evidence bundle;
+- screenshots;
+- configuration template;
+- selected logs.
 
-## 7. Canonical storage roots
+It may have no Candidate or Decision and never implies acceptance.
 
-`spec/11` owns all canonical live-storage paths.
+Any older text describing report/diagnostic export as Promotion is superseded.
 
-Conceptual defaults:
+## 6. Inference accounting
 
-- Windows: `%LOCALAPPDATA%/RenderRivals/data`
-- Linux: `$XDG_STATE_HOME/render-rivals` or `~/.local/state/render-rivals`
-- macOS: `~/Library/Application Support/RenderRivals/data`
+Canonical `InferenceUsage` uses `adapter`, closed purpose, start/end timestamps, nullable token/cost values, and `policySnapshotId`. Unknown remains null.
 
-The repository marker is `.render-rivals/project.json`.
+## 7. Process launch authority
 
-Old `.visual-optimizer`, `visual-optimizer/sessions`, and cache-root canonical layouts are superseded. Candidate workspaces and disposable browser/package caches may use a separate cache root, but durable run history does not.
+Rust owns authorization, managed root-process creation, containment, observation, resource enforcement, and termination.
 
-## 8. Run directory authority
+Approved contained processes may create descendants only when inheritance is expected and doctor-verified. Playwright-launched Chromium follows this contained-descendant policy.
 
-The canonical run directory is:
+“Rust owns process creation” means managed roots and launch authority; it does not forbid verified contained descendant creation.
+
+## 8. Storage roots
+
+`spec/11` owns live paths.
+
+Defaults:
+
+- Windows `%LOCALAPPDATA%/RenderRivals/data`;
+- Linux XDG state root;
+- macOS Application Support.
+
+Marker: `.render-rivals/project.json`.
+
+Old `.visual-optimizer`, `visual-optimizer/sessions`, and cache-as-canonical layouts are superseded.
+
+## 9. Run layout mappings
+
+Canonical Run root:
 
 ```text
 <data-root>/projects/<project-id>/runs/<run-id>/
 ```
 
-`spec/11` defines its exact layout.
+Older mappings:
 
-Older examples named `manifest.json`, `decision.json`, `metrics.json`, `accounting.json`, or `cleanup.json` as top-level run files. These are superseded as follows:
-
-| Older name | Canonical representation |
+| Older | Canonical |
 |---|---|
-| `manifest.json` | `run.json`, `run-config.json`, and artifact manifest |
-| `decision.json` | `decisions/<decision-id>.json` |
-| `metrics.json` | typed artifacts and derived projections |
-| `accounting.json` | evaluation/process usage records and derived reports |
-| `cleanup.json` | cleanup entity/result under the canonical run layout |
+| top-level `manifest.json` | `run.json`, `run-config.json`, Artifact manifest |
+| top-level `decision.json` | `decisions/<id>.json` |
+| `metrics.json` | typed Artifacts/derived projections |
+| `accounting.json` | Evaluation/Process usage and derived reports |
+| `cleanup.json` | cleanup operation records |
+| `raw-output.json` | `raw-output.bin` plus `validation.json` |
+| report under Promotion | Export Operation |
 
-No compatibility file with the older name is required in the MVP.
+## 10. Candidate and process paths
 
-## 9. Candidate and process paths
+Any `processes/<process-id>/...` example in earlier specs is relative to the owning Candidate/Run process directory defined by `spec/11`.
 
-Candidate-attempt and process records follow `spec/11`.
+Raw provider/agent streams are registered Artifacts or process output; arbitrary sibling filenames are not required unless an adapter registers them.
 
-Any path in specs 03 or 04 written as:
+## 11. Gates and failure scope
 
-```text
-processes/<process-id>/stdout.bin
-```
+Gate phases:
 
-is a path relative to the owning candidate or run process directory, not a second top-level storage root.
+- pre-capture;
+- runtime/capture;
+- post-capture evidence.
 
-Raw agent/provider streams are registered artifacts or process outputs. Files named `agent-events.raw` or `agent-events.ndjson` are not required canonical siblings unless an adapter explicitly registers them as artifacts.
+Candidate-local failures do not invalidate full Epoch unless browser/environment comparability is compromised. Browser crash/disconnect/identity loss, isolation leak, fixture/environment drift, source mutation during capture, or unscoped Artifact corruption invalidate full Epoch.
 
-## 10. Database policy
-
-There is no canonical database in the initial implementation.
-
-SQLite or another local database may later be a rebuildable projection. Deleting it must leave every run, event, artifact, recommendation, decision, and promotion reconstructable from canonical files.
-
-Specs 07 and 11 describe the same rule; `spec/11` owns the persistence details.
-
-## 11. Session and run lifecycles
-
-A Session and a Run are separate aggregates.
+## 12. Session and Run
 
 ```text
 Supervisor Session
-  starting
-  authenticating_coordinator
-  ready
-  running / idle
-  draining
-  ended
-       │
-       └── owns zero or more sequential Run operations
-             draft
-             validating
-             ready
-             preparing
-             capturing
-             gating
-             evaluating
-             awaiting_decision
-             exporting
-             terminal/interrupted
+  starting -> authenticating -> ready/running -> draining -> completed/crashed
+       └── hosts sequential Run operations
+             draft -> validating -> ready -> preparing -> capturing
+             -> gating -> evaluating -> awaiting_decision -> exporting/terminal
 ```
 
-Rules:
+Session describes native availability. Run describes durable product work. Run may survive Session. Session end does not automatically make Run terminal.
 
-- Session state describes native supervisor/coordinator availability.
-- Run state describes one durable product attempt.
-- A session may observe multiple runs over time.
-- A run may survive one session and resume in another.
-- Session `running` does not imply a particular Run state.
-- Session `draining` stops new side effects and cleans native resources; it does not rewrite Run history.
-- `recoverable` is never a Run state; it is represented by `RecoveryDisposition`.
+## 13. CLI/API and re-evaluation
 
-## 12. Natural-language wording
+`spec/13` owns filenames, merge rules, commands, exit codes, local routes, SSE, safe mode, and operation idempotency.
 
-Narrative phrases such as “run invalid” or “contender recommended” are allowed in prose. Code, schemas, event payloads, fixtures, and tests use the exact enum values from `schemas/domain-types.ts`.
+There is no MVP pause command/state.
 
-## 13. Required follow-through
+Re-evaluation and any sealed source/fixture/gate/factor/policy change create a superseding Run and new Capture Epoch.
 
-Conforming implementation work must:
+## 14. Database
 
-- import canonical shared types rather than copy unions;
-- generate JSON Schemas from the shared schema package when scaffolding begins;
-- reject deprecated persisted vocabulary;
-- use only the `spec/11` live-storage layout;
-- treat old path examples as relative or superseded according to this file;
-- include compatibility tests that fail if duplicate enum definitions drift.
+No canonical database initially. SQLite may later be rebuildable. Specs 07/11 express the same rule; spec11 owns persistence detail.
+
+## 15. Conformance
+
+An implementation is nonconforming if it:
+
+- defines duplicate shared unions;
+- persists deprecated aliases;
+- uses old storage/endpoint/env names;
+- treats report export as Promotion;
+- allows Promotion without Candidate/Decision;
+- invalidates full Epoch for isolated contender failure;
+- exposes UI command without legal domain command;
+- mutates sealed Run Configuration;
+- trusts Session state as Run state;
+- requires database for recovery.
