@@ -1,7 +1,7 @@
 # 12 — Cross-Spec Normalization and Shared Contracts
 
 **Status:** Canonical implementation contract  
-**Purpose:** Remove duplicate authorities for vocabulary, shared types, stable errors, record invariants, storage paths, process launch, Session/Run ownership, dashboard authentication, Promotion, Export Operation, and command semantics.
+**Purpose:** Remove duplicate authorities for vocabulary, shared types, stable errors, API commands/envelopes, record invariants, storage paths, process launch, Session/Run ownership, dashboard authentication, Promotion, Export Operation, and command semantics.
 
 ## 1. Authority
 
@@ -10,14 +10,16 @@ When older text conflicts:
 1. accepted ADRs control architecture decisions;
 2. `schemas/domain-types.ts` controls shared persisted unions/interfaces;
 3. `schemas/error-codes.ts` controls stable error identifiers;
-4. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where structure alone is insufficient;
-5. `spec/11` controls canonical filesystem and commit protocols;
-6. `spec/13` controls configuration, CLI, local API, safe mode, and general command semantics;
-7. `spec/14` controls Git/source/workspace/branch behavior;
-8. `spec/15` controls observability, diagnostics, telemetry, and crash reporting;
-9. `spec/16` controls dashboard origin isolation, pairing, cookies, Host/Origin/CSRF, and browser-opening policy;
-10. this file controls equivalence mappings and relative-path interpretation;
-11. older local examples are explanatory only and must not be implemented literally.
+4. `schemas/api-types.ts` controls shared local API command/envelope vocabulary;
+5. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where structure alone is insufficient;
+6. `spec/11` controls canonical filesystem and commit protocols;
+7. `spec/13` controls configuration, CLI, local API route inventory, safe mode, and general command semantics;
+8. `spec/14` controls Git/source/workspace/branch behavior;
+9. `spec/15` controls observability, diagnostics, telemetry, and crash reporting;
+10. `spec/16` controls dashboard origin isolation, pairing, cookies, Host/Origin/CSRF, and browser-opening policy;
+11. `spec/17` controls API envelopes, operation status, revision requirements, pagination, error detail, and Artifact content responses;
+12. this file controls equivalence mappings and relative-path interpretation;
+13. older local examples are explanatory only and must not be implemented literally.
 
 ## 2. Vocabulary
 
@@ -49,7 +51,7 @@ Explanatory mappings:
 
 Aliases never appear as persisted enum values or stable API names.
 
-## 3. Shared types, errors, and invariants
+## 3. Shared types, errors, API, and invariants
 
 `schemas/domain-types.ts` is sole canonical definition for:
 
@@ -65,6 +67,8 @@ Aliases never appear as persisted enum values or stable API names.
 - Recommendation, Decision, Promotion, and Export Operation records.
 
 `schemas/error-codes.ts` is sole stable error-code registry.
+
+`schemas/api-types.ts` is sole shared registry for API command names, command/accepted/status/query/page/error envelopes, and operation states.
 
 `docs/RECORD-INVARIANT-MATRIX.md` defines outcome/status-dependent required, nullable, empty, supersession, retry, and terminal-field combinations.
 
@@ -208,7 +212,17 @@ Dashboard browser authentication is a Session capability and never a Run state.
 
 ## 14. CLI/API and re-evaluation
 
-`spec/13` owns filenames, merge rules, commands, exit codes, local routes, SSE, safe mode, and operation idempotency except where `spec/16` narrows browser authentication.
+`spec/13` owns filenames, merge rules, CLI commands, route inventory, exit codes, SSE, safe mode, and operation idempotency at the service level.
+
+`spec/17` narrows the HTTP shape:
+
+- closed `ApiCommandName` registry;
+- `OperationId` and revision requirements;
+- resolvable operation-status route;
+- canonical/derived query envelopes;
+- bounded opaque-cursor pagination;
+- registered/redacted error bodies;
+- Artifact content/range behavior.
 
 There is no MVP pause command/state.
 
@@ -222,14 +236,17 @@ No canonical database initially. SQLite may later be rebuildable. Specs 07/11 ex
 
 An implementation is nonconforming if it:
 
-- defines duplicate shared unions/error registries/recommendation reason registries;
+- defines duplicate shared unions/error/command registries;
 - accepts a structurally valid record that violates the Record Invariant Matrix;
 - persists deprecated aliases;
 - uses old storage/endpoint/env names;
 - treats report export as Promotion;
 - allows Promotion without Candidate/Decision;
 - invalidates full Epoch for isolated contender failure;
-- exposes UI command without legal domain command;
+- exposes UI command without legal domain/API command;
+- accepts arbitrary free-form API command names;
+- returns dead or secret-bearing operation status paths;
+- exposes unbounded collection API;
 - mutates sealed Run Configuration;
 - trusts Session state as Run state;
 - serves dashboard data before pairing or uses a shared loopback bearer cookie without randomized host isolation;
