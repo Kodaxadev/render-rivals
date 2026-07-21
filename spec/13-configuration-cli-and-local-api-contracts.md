@@ -1,120 +1,99 @@
 # 13 — Configuration Discovery, CLI, and Local API Contracts
 
 **Status:** Canonical implementation contract  
-**Scope:** Configuration filenames and precedence, command-line behavior, exit codes, dashboard API, SSE events, idempotency, revision preconditions, and safe mode  
+**Scope:** Configuration files/precedence, CLI behavior, exit codes, local API, SSE, idempotency, revision preconditions, safe mode, Promotion, and Export Operation  
 **Shared types:** `schemas/domain-types.ts`
 
 ## 1. Purpose
 
-Render Rivals exposes the same domain services through a local browser dashboard and a CLI. The two surfaces must not invent different defaults, transitions, retry behavior, or policy.
-
-This specification removes implementation ambiguity around:
-
-- where configuration lives;
-- how configuration layers merge;
-- which environment variables are reserved;
-- which CLI commands exist;
-- what exit codes mean;
-- how dashboard commands map to domain operations;
-- how clients resume event streams;
-- how safe mode behaves.
+CLI and local dashboard expose the same domain/application services. They must not invent different defaults, transitions, retry behavior, or policy.
 
 ## 2. Configuration files
 
-### 2.1 User-global configuration
-
-The user-global configuration is:
+### User-global
 
 ```text
 <data-root>/config/user.jsonc
 ```
 
-It contains user defaults only. It is not copied into source repositories.
-
-### 2.2 Project marker
-
-The project marker is:
+### Project marker
 
 ```text
 <repository>/.render-rivals/project.json
 ```
 
-It contains stable project identity and minimal registration metadata. It must not contain secrets, run history, raw logs, or large evidence.
+Contains identity/registration only; no secrets, Run history, raw logs, or evidence.
 
-### 2.3 Project configuration
-
-The project configuration is:
+### Project configuration
 
 ```text
 <repository>/.render-rivals/config.jsonc
 ```
 
-A project may omit this file and rely on detected/default values. Creating it is an explicit user action.
+Optional and created explicitly.
 
-### 2.4 Run templates
-
-Run templates are stored outside the repository:
+### Run templates
 
 ```text
 <data-root>/projects/<project-id>/templates/<template-id>.json
 ```
 
-A template is mutable planning data. Starting validation resolves it into an immutable `run-config.json` under the Run root.
+Mutable planning data. Validation resolves it into immutable `run-config.json`.
 
-### 2.5 Session secret bindings
+### Secret bindings
 
-Secret bindings are session-only and are not written to the files above. The canonical Run Configuration stores only references, presence, transmission policy, and redaction classification.
+Session-only; canonical configuration stores reference, presence, scope, transmission policy, and redaction classification, never raw value.
 
-## 3. Configuration precedence
+## 3. Precedence
 
 Lowest to highest:
 
 1. built-in defaults;
-2. user-global `user.jsonc`;
-3. project `config.jsonc`;
-4. selected run template;
-5. explicit dashboard draft values;
+2. user-global configuration;
+3. project configuration;
+4. selected Run template;
+5. dashboard draft values;
 6. explicit CLI flags;
-7. session-only secret bindings.
+7. Session-only secret bindings.
 
-The resolved configuration records provenance for every field.
+Every resolved field records provenance.
 
 ## 4. Merge semantics
 
-- Scalars replace lower-precedence scalars.
-- Objects merge recursively by schema field.
-- Arrays replace the complete lower-precedence array unless the schema explicitly declares keyed merge behavior.
-- Named maps merge by key.
-- `null` clears a value only when the schema declares the field clearable.
-- Unknown fields are rejected.
-- Security and containment requirements cannot be weakened silently by a higher layer.
-- Command arrays replace as complete executable-plus-argument records; arguments are not concatenated across layers.
-- Gate and factor definitions merge only by stable key when the schema explicitly permits it; conflicting definitions fail validation.
+- scalars replace;
+- objects recursively merge by schema;
+- arrays replace unless explicitly keyed;
+- named maps merge by key;
+- `null` clears only clearable fields;
+- unknown fields reject;
+- security/capability cannot silently weaken;
+- executable/argument commands replace as complete records;
+- Gate/Factor definitions merge only by stable key where schema permits;
+- conflicting protected/security definitions fail validation.
 
-## 5. Configuration discovery
+## 5. Project discovery
 
-Given a selected path, project discovery:
+Given a path:
 
-1. canonicalizes the path;
-2. locates the nearest permitted repository root;
-3. rejects ambiguous nested repositories unless the user chooses one explicitly;
-4. reads `.render-rivals/project.json` when present;
-5. verifies project identity;
-6. reads `.render-rivals/config.jsonc` when present;
-7. detects package manager, lockfile, scripts, and framework hints;
-8. presents detected values separately from stored explicit values.
+1. canonicalize;
+2. locate nearest permitted repository root;
+3. reject ambiguous nested repositories until user selects one;
+4. read/verify marker;
+5. read optional project config;
+6. detect Git, package manager, lockfile, scripts, and framework hints;
+7. present detected values separately from stored explicit values.
 
-Detection never overwrites project configuration automatically.
+Detection never overwrites configuration automatically.
 
-## 6. Environment variables
+## 6. Reserved environment
 
-Reserved bootstrap/session variables use the prefix:
+Prefix:
 
 ```text
 RENDER_RIVALS_
 ```
 
-Initial reserved variables:
+Initial variables:
 
 ```text
 RENDER_RIVALS_BOOTSTRAP_NODE_EXEC_PATH
@@ -130,118 +109,108 @@ RENDER_RIVALS_SAFE_MODE
 
 Rules:
 
-- endpoint and nonce never appear in argv;
-- reserved variables are not generic user configuration overrides;
-- no automatic double-underscore environment-to-config expansion exists in the MVP;
-- project command environment is configured field-by-field;
-- secret values use explicit references or session bindings;
-- unknown `RENDER_RIVALS_*` variables are ignored with diagnostics unless a future version registers them.
+- endpoint/nonce never argv/URL/log;
+- reserved values are not generic config overrides;
+- no automatic environment-to-config expansion;
+- project environment configured field-by-field;
+- secrets use explicit bindings;
+- unknown reserved variables ignored with diagnostics unless registered.
 
-## 7. CLI executable
+## 7. CLI executable and global flags
 
-The canonical CLI command is conceptually:
+Conceptual executable:
 
 ```text
 render-rivals
 ```
 
-The npm package may expose the same binary name even if the final package scope differs.
-
-## 8. Global CLI options
+Global flags:
 
 ```text
---json                 Machine-readable stdout
---data-root <path>     Explicit canonical data root for this invocation
---project <path|id>    Select project
---run <run-id>         Select run where supported
---non-interactive      Never prompt; fail when required input is missing
---verbose              Include structured diagnostic detail
---safe-mode            Start read-only recovery mode
---version              Print component versions
---help                 Print command help
+--json
+--data-root <path>
+--project <path|id>
+--run <run-id>
+--non-interactive
+--verbose
+--safe-mode
+--version
+--help
 ```
 
-Sensitive values are never accepted through ordinary command-line flags because argv may be observable.
+Sensitive values are never accepted through ordinary flags.
 
-## 9. CLI commands
+## 8. CLI commands
 
-### 9.1 `init`
-
-Registers a project and optionally creates `.render-rivals/config.jsonc`.
+### `init`
 
 ```text
 render-rivals init [path]
 ```
 
-It never modifies source code or package manifests.
+Registers Project and optionally writes project config. Never modifies source/package manifests.
 
-### 9.2 `doctor`
-
-Checks installation, supervisor, containment, browser, Git, project commands, paths, storage, ports, and fixture prerequisites.
+### `doctor`
 
 ```text
 render-rivals doctor [--project <path|id>] [--full]
 ```
 
-`--full` may execute destructive-looking doctor fixtures only inside owned temporary roots and after explicit trust/confirmation.
+Checks installation, supervisor, containment, browser, Git, commands, paths, storage, ports, fixture, and failure fixtures. Full destructive-looking checks occur only inside owned temp roots after explicit confirmation.
 
-### 9.3 `run`
-
-Creates or starts a Run from explicit inputs or a template.
+### `run`
 
 ```text
 render-rivals run --project <path|id> [--template <id>] [--config <path>]
 ```
 
-In noninteractive mode, missing required fields are configuration errors.
+Creates/starts Run. Noninteractive missing input is validation error.
 
-### 9.4 `inspect`
-
-Shows project, run, candidate, event, artifact, integrity, or capability state without mutation.
+### `inspect`
 
 ```text
-render-rivals inspect <project|run|candidate|artifact|diagnostics> <id-or-path>
+render-rivals inspect <project|run|candidate|artifact|export|diagnostics> <id-or-path>
 ```
 
-### 9.5 `resume`
+Read-only canonical/derived state.
 
-Assesses and performs only the recovery action allowed by the current durable state.
+### `resume`
 
 ```text
 render-rivals resume --run <run-id> [--action <allowed-action>]
 ```
 
-It never assumes that the requested action is valid merely because the user supplied it.
+Performs only current permitted recovery action.
 
-### 9.6 `export`
-
-Creates a report, patch, branch, workspace preservation record, or diagnostic bundle after validating preconditions.
+### `promote`
 
 ```text
-render-rivals export --run <run-id> --kind <report|patch|branch|workspace|diagnostics>
+render-rivals promote --run <run-id> --kind <patch|branch|workspace>
 ```
 
-### 9.7 `cleanup`
+Creates candidate adoption handoff. Requires nonstale authorizing User Decision and selected eligible Candidate.
 
-Cleans verified owned resources and reports anything remaining.
+### `export`
+
+```text
+render-rivals export [--run <run-id>] --kind <report|diagnostics|run-bundle|evidence|screenshots|config|logs>
+```
+
+Creates a general Export Operation. It does not imply candidate acceptance and may not need a Run or Candidate depending kind.
+
+### `cleanup`
 
 ```text
 render-rivals cleanup [--run <run-id>] [--session <session-id>] [--diagnostics]
 ```
 
-It never terminates a process whose ownership cannot be verified.
+Cleans verified owned resources only.
 
-## 10. CLI output contract
+## 9. CLI output
 
-Human output:
+Human output uses stable codes, stdout for results, stderr for warnings/failures, no secrets/tokens, and paths only after verification.
 
-- uses concise headings and stable error codes;
-- sends normal results to stdout;
-- sends warnings and failures to stderr;
-- never prints secrets or session tokens;
-- prints artifact/report paths only after durable verification.
-
-JSON output uses one envelope:
+JSON:
 
 ```ts
 interface CliResult<T> {
@@ -256,57 +225,50 @@ interface CliResult<T> {
 }
 ```
 
-Progress in `--json` mode is emitted as NDJSON on stderr or through an explicitly selected progress file; stdout contains exactly one final result document.
+In `--json`, stdout contains one final document. Progress is NDJSON on stderr or explicit progress file.
 
-## 11. Exit codes
+## 10. Exit codes
 
 | Code | Meaning |
 |---:|---|
-| `0` | Command completed successfully, including valid current-retained or no-material-improvement outcomes |
-| `2` | Usage, configuration, or validation error |
+| `0` | Success, including current retained/no material improvement |
+| `2` | Usage/configuration/validation error |
 | `3` | Required platform/runtime capability unavailable |
-| `4` | Run or requested operation failed with valid diagnostics |
-| `5` | Run interrupted or recovery action required |
-| `6` | Integrity or security failure; mutation refused |
-| `7` | Explicit user cancellation |
-| `8` | Requested resource not found |
+| `4` | Run/Promotion/Export Operation failed with diagnostics |
+| `5` | Interrupted or recovery required |
+| `6` | Integrity/security failure; mutation refused |
+| `7` | Explicit cancellation |
+| `8` | Resource not found |
 
-Exit codes do not encode Recommendation outcome. Machine consumers read the JSON result and canonical run records.
+Recommendation outcome is read from canonical JSON, not exit code.
 
-## 12. Local dashboard server
+## 11. Local dashboard server
 
-The coordinator serves:
+Serves loopback:
 
 ```text
 http://127.0.0.1:<port>/
 ```
 
-Rules:
+Requirements:
 
-- bind loopback only by default;
-- random available port unless explicitly configured;
-- per-session authentication token;
-- no token in URL, query string, logs, or page source;
-- HttpOnly SameSite=Strict session cookie;
-- verify `Origin` on mutation requests;
-- require a CSRF-safe custom mutation header;
-- set restrictive content-security policy;
-- serve artifacts only by registered Artifact ID;
-- close with the coordinator session.
+- random available port unless configured;
+- Session token never URL/query/log/page source;
+- HttpOnly SameSite=Strict cookie;
+- Origin verification and CSRF-safe custom mutation header;
+- restrictive CSP;
+- Artifact serving by registered ID only;
+- closes with coordinator.
 
-## 13. API versioning
-
-All API routes use:
+## 12. API version
 
 ```text
 /api/v1/
 ```
 
-The API is local product API, not a public compatibility standard in the MVP.
+Local product API, not public interoperability guarantee.
 
-## 14. Query routes
-
-Minimum query surface:
+## 13. Query routes
 
 ```text
 GET /api/v1/session
@@ -318,16 +280,16 @@ GET /api/v1/runs/:runId
 GET /api/v1/runs/:runId/events
 GET /api/v1/runs/:runId/candidates
 GET /api/v1/runs/:runId/evidence
+GET /api/v1/promotions/:promotionId
+GET /api/v1/exports/:exportOperationId
 GET /api/v1/artifacts/:artifactId/metadata
 GET /api/v1/artifacts/:artifactId/content
 GET /api/v1/diagnostics
 ```
 
-Queries expose canonical or explicitly labeled derived projections.
+Queries label derived projections explicitly.
 
-## 15. Command routes
-
-Commands are nouns plus explicit operations rather than generic PATCH mutation:
+## 14. Command routes
 
 ```text
 POST /api/v1/projects/register
@@ -340,15 +302,13 @@ POST /api/v1/runs/:runId/retry
 POST /api/v1/runs/:runId/recover
 POST /api/v1/runs/:runId/decisions
 POST /api/v1/runs/:runId/promotions
-POST /api/v1/runs/:runId/exports
+POST /api/v1/exports
 POST /api/v1/cleanup
 ```
 
-There is no MVP `pause` command.
+No MVP pause endpoint. Run-scoped export uses `POST /api/v1/exports` with Run source entity; it is not nested as Promotion.
 
-## 16. Command envelope
-
-Every mutation request contains:
+## 15. Command envelope
 
 ```ts
 interface CommandRequest<T> {
@@ -357,11 +317,7 @@ interface CommandRequest<T> {
   command: string;
   payload: T;
 }
-```
 
-Every accepted command returns:
-
-```ts
 interface CommandAccepted {
   operationId: string;
   accepted: true;
@@ -370,109 +326,92 @@ interface CommandAccepted {
 }
 ```
 
-Acceptance means validation and durable command intent succeeded. It does not mean the side effect completed.
+Acceptance means durable intent, not completed side effect.
 
-## 17. Idempotency and conflicts
+## 16. Idempotency and conflicts
 
-- `operationId` is required for every mutation.
-- Repeating the same operation ID and canonical payload returns the recorded result.
-- Reusing an operation ID with a different payload is rejected.
-- `expectedRevision` protects against stale dashboard tabs and conflicting commands.
-- A revision mismatch returns HTTP `409` with current state metadata.
-- Invalid state transition returns HTTP `409` with allowed commands.
-- Validation errors return HTTP `422`.
-- Authentication failures return HTTP `401` or `403` without leaking endpoint detail.
+- operation ID required for mutation;
+- repeated same ID/payload returns result;
+- changed payload under same ID rejected;
+- expected revision protects stale clients;
+- revision/state/operation/destination conflict → `409`;
+- semantic validation → `422`;
+- auth/origin/CSRF policy → `401/403`.
 
-## 18. Event streaming
+Promotion retry verifies Candidate/Decision/source/destination. Export retry verifies operation kind/source entities/redaction/destination.
 
-The dashboard uses Server-Sent Events:
+## 17. SSE
 
 ```text
 GET /api/v1/events
 GET /api/v1/runs/:runId/events/stream
 ```
 
-Requirements:
+- canonical event ID/durable offset;
+- `Last-Event-ID` resume;
+- replay from canonical events;
+- heartbeat no domain state;
+- clients refetch after gaps;
+- raw process bytes excluded;
+- slow clients cannot block output draining.
 
-- event IDs are canonical event IDs or durable stream offsets;
-- support `Last-Event-ID` resume;
-- replay from canonical events when available;
-- heartbeats contain no domain state;
-- clients treat SSE as notification and refetch authoritative state after gaps;
-- high-volume raw process bytes are never embedded in SSE;
-- slow clients cannot block canonical output draining.
-
-## 19. HTTP status semantics
+## 18. HTTP statuses
 
 | Status | Meaning |
 |---:|---|
-| `200` | Query or already-completed idempotent command result |
-| `202` | Side-effecting command accepted and running |
-| `400` | Malformed request envelope |
-| `401` | Missing or invalid session authentication |
-| `403` | Authenticated but prohibited by origin, CSRF, safe mode, or policy |
-| `404` | Resource absent or intentionally undisclosed |
-| `409` | Revision, state, operation, or destination conflict |
-| `413` | Request exceeds configured size |
-| `422` | Schema-valid request with invalid domain/configuration semantics |
-| `429` | Local admission or command-rate limit |
-| `500` | Internal failure with stable diagnostic code |
-| `503` | Supervisor/runtime dependency unavailable |
+| `200` | Query or completed idempotent command |
+| `202` | Side-effecting command accepted |
+| `400` | Malformed envelope |
+| `401` | Invalid/missing Session authentication |
+| `403` | Origin/CSRF/safe-mode/policy prohibited |
+| `404` | Absent or intentionally undisclosed |
+| `409` | Revision/state/operation/destination conflict |
+| `413` | Request too large |
+| `422` | Invalid domain/config semantics |
+| `429` | Local admission/rate limit |
+| `500` | Internal failure with stable code |
+| `503` | Supervisor/runtime unavailable |
 
-## 20. Safe mode
+## 19. Safe mode
 
-Safe mode is a session capability, not a Run state.
+Safe mode is Session capability, not Run state. Requires healthy authenticated supervisor/coordinator.
 
-It requires a healthy authenticated supervisor/coordinator session and permits:
+Permits read-only inspection, integrity/recovery assessment, verified cleanup, sanitized diagnostic Export Operation, and configuration viewing without secret resolution.
 
-- read-only project/run/artifact inspection;
-- integrity scanning;
-- recovery assessment;
-- verified cleanup;
-- sanitized diagnostic export;
-- configuration viewing without secret resolution.
+Prohibits project commands, browser/evaluator, source/workspace mutation, new Run, unsafe Decision/Promotion, and exports whose source integrity cannot be verified.
 
-It prohibits:
+Native/IPC startup failure cannot use safe mode.
 
-- project command execution;
-- browser launch and capture;
-- evaluator invocation;
-- source/workspace mutation;
-- new Run start;
-- decision or promotion mutation when required state cannot be verified.
+## 20. Re-evaluation and revision
 
-If the native supervisor or IPC cannot start, safe mode is unavailable; the bootstrap prints installation diagnostics and exits.
+Re-evaluating prior decision creates a new Run. It may import source provenance, task/config draft, gates/factors, and report links but must recapture in a new valid Epoch.
 
-## 21. Re-evaluation and revision commands
+Changing sealed source, fixture, gates, factors, evaluator policy, protected dimensions, or runtime policy creates a superseding Run.
 
-Re-evaluating a previous decision creates a new Run.
+## 21. Promotion versus Export Operation rules
 
-The new Run may import:
-
-- source snapshot provenance;
-- task brief;
-- configuration as a draft template;
-- factor/gate definitions;
-- historical report links.
-
-It must recapture current and contender evidence in a new valid epoch. It never treats prior-run captures as selectable evidence.
-
-Changing source, fixture, gates, factors, evaluator policy, protected dimensions, or runtime policy after validation creates a superseding Run rather than mutating the sealed Run Configuration.
+- patch/branch/workspace contender handoff → Promotion;
+- report/diagnostics/Run bundle/evidence/screenshots/config/logs → Export Operation;
+- Export Operation never satisfies or implies User Decision;
+- Promotion always requires Candidate and Decision;
+- a report may be exported for current-retained, tie, human-review, invalid, cancelled, or failed Runs when safe;
+- safe-mode diagnostics are Export Operations, never Promotions.
 
 ## 22. Required tests
 
-- user/project/template/CLI precedence and provenance;
-- arrays replace rather than accidentally concatenate;
-- security requirements cannot be weakened silently;
-- secrets never appear in resolved canonical configuration;
-- reserved session variables never enter argv or logs;
-- CLI JSON stdout contains one final document;
-- no-material-improvement exits `0`;
-- interrupted run exits `5`;
-- stale expected revision returns `409`;
-- repeated operation ID is idempotent;
-- repeated operation ID with changed payload is rejected;
-- SSE resumes after `Last-Event-ID` and refetches after a gap;
-- raw process output is not streamed through SSE;
-- safe mode blocks command execution;
-- re-evaluation creates a new Run and new Capture Epoch.
+- configuration precedence/provenance and array replacement;
+- security requirements cannot weaken;
+- secrets absent from canonical config;
+- reserved variables absent argv/logs;
+- JSON stdout one final document;
+- no-material-improvement exit `0`;
+- interrupted exit `5`;
+- stale revision `409`;
+- operation idempotency and changed replay rejection;
+- SSE resume/refetch after gap;
+- raw bytes absent from SSE;
+- safe mode blocks execution;
+- re-evaluation creates new Run/Epoch;
+- report export works without Candidate/acceptance;
+- patch/branch/workspace command fails without nonstale Decision;
+- Promotion and Export Operation status URLs resolve to different entity schemas.
