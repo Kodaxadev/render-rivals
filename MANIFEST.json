@@ -1,17 +1,18 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "2.1.0",
+  "schemaVersion": "3.0.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
     "sourceOfTruth": "Git tree on the referenced commit",
-    "contentIdentity": "Git blob SHA",
+    "contentIdentity": "Git blob SHA and commit history",
     "notes": [
-      "This inventory records the maintained document and shared-type surface.",
-      "Git provides exact content identity and history.",
-      "Tagged release bundles may later include a CI-generated checksum manifest.",
-      "Archive files remain historical and are not implementation inputs.",
-      "Shared persisted enum and record vocabulary is defined once in schemas/domain-types.ts."
+      "This is a maintained inventory, not a self-referential checksum list.",
+      "Tagged release bundles may later include a CI-generated checksummed manifest.",
+      "Archive files are historical and never implementation inputs.",
+      "Shared persisted vocabulary is defined in schemas/domain-types.ts.",
+      "Stable errors are defined in schemas/error-codes.ts.",
+      "The repository is pre-scaffold and not yet licensed for public reuse."
     ]
   },
   "canonicalSpecifications": [
@@ -26,10 +27,13 @@
     "spec/09-domain-model-and-identifiers.md",
     "spec/10-run-and-candidate-state-machines.md",
     "spec/11-artifact-event-and-schema-contracts.md",
-    "spec/12-cross-spec-normalization.md"
+    "spec/12-cross-spec-normalization.md",
+    "spec/13-configuration-cli-and-local-api-contracts.md",
+    "spec/14-git-source-snapshot-and-workspace-contracts.md"
   ],
-  "canonicalSharedTypes": [
-    "schemas/domain-types.ts"
+  "canonicalSharedSources": [
+    "schemas/domain-types.ts",
+    "schemas/error-codes.ts"
   ],
   "acceptedArchitectureDecisions": [
     "adr/ADR-0001-typescript-rust-boundary.md",
@@ -46,17 +50,22 @@
   ],
   "implementationContracts": [
     "docs/MVP-VERTICAL-SLICE.md",
-    "docs/FAILURE-RECOVERY-MATRIX.md"
+    "docs/FAILURE-RECOVERY-MATRIX.md",
+    "docs/TEST-AND-VALIDATION-STRATEGY.md",
+    "security/THREAT-MODEL.md",
+    "docs/SCAFFOLD-DECISION-REGISTER.md",
+    "docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md"
   ],
-  "productPlanning": [
+  "productAndPublicPlanning": [
     "docs/PRODUCT-UI-SCENE-PLAN.md",
-    "docs/MARKETING-AND-DOCS-SITE-PLAN.md",
     "docs/ROUTE-LEVEL-WIREFRAME-SPEC.md",
-    "docs/PLANNING-SCOPE-STATUS.md"
+    "docs/PLANNING-SCOPE-STATUS.md",
+    "docs/MARKETING-AND-DOCS-SITE-PLAN.md"
   ],
   "schemaSurface": [
     "schemas/README.md",
-    "schemas/domain-types.ts"
+    "schemas/domain-types.ts",
+    "schemas/error-codes.ts"
   ],
   "sourceVerification": [
     "sources/official-runtime-verification.md"
@@ -83,14 +92,25 @@
   "repositoryEntryDocuments": [
     "README.md",
     "DOCUMENT-MANIFEST.md",
+    "MANIFEST.json",
     "LICENSE-TBD.md"
   ],
-  "pendingGeneratedImplementationArtifacts": [
-    "versioned Zod schemas",
+  "pendingScaffoldArtifacts": [
+    "Zod schema registry",
     "generated JSON Schema",
-    "valid and invalid schema fixtures",
-    "schema migrations",
-    "schema compatibility tests",
-    "duplicate-enum drift tests"
+    "valid and invalid fixtures",
+    "schema migrations and compatibility tests",
+    "Rust and TypeScript protocol goldens",
+    "documentation conformance script",
+    "implementation monorepo scaffold",
+    "Windows native containment and packaged-build proof"
+  ],
+  "publicReleaseBlockers": [
+    "real software license",
+    "contribution and security policies",
+    "package name and native distribution",
+    "browser distribution decision",
+    "checksums, provenance, SBOM, and third-party notices",
+    "tested support matrix and migration path"
   ]
 }
