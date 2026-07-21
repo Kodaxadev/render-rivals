@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "4.3.0",
+  "schemaVersion": "4.3.1",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -96,7 +96,9 @@
   ],
   "conformance": [
     "conformance/README.md",
+    "conformance/check-all.mjs",
     "conformance/check-core.mjs",
+    "conformance/check-operation-states.mjs",
     "conformance/check.mjs",
     "conformance/check.test.mjs",
     "conformance/fixtures/documentation-drift-regression.json"
