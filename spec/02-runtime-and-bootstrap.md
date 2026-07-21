@@ -1,118 +1,122 @@
 # 02 — Runtime, Bootstrap, Session Lifecycle, and Terminal Policy
 
+**Status:** Canonical implementation contract  
+**Shared Session state:** `schemas/domain-types.ts`  
+**Command/configuration contract:** `spec/13-configuration-cli-and-local-api-contracts.md`  
+**Scaffold decisions:** `docs/SCAFFOLD-DECISION-REGISTER.md`
+
 ## 1. Purpose
 
-This file defines startup, terminal ownership, exact Node selection, signals, session lifetime, and shutdown.
+This specification defines startup, terminal ownership, exact Node selection, managed process launch, Session lifetime, safe mode, and shutdown.
 
-## 2. Process hierarchy
+## 2. Process and authority model
 
 ```text
 User shell
 └── npm/npx JavaScript bootstrap
     └── Rust session supervisor
-        └── Node coordinator
-            ├── local dashboard server
-            ├── Playwright driver
-            │   └── Chromium tree
-            └── supervised workloads
-                ├── build/test commands
-                ├── application server
-                ├── coding agent
-                └── model judge
+        ├── Node coordinator (managed root process)
+        │   ├── local dashboard server
+        │   └── Playwright driver
+        │       └── Chromium descendants when inherited containment is verified
+        └── managed workload roots requested by coordinator
+            ├── dependency/build/test commands
+            ├── application servers
+            ├── fixtures
+            ├── evaluators or optional agents
+            ├── Git/export commands
+            └── doctor utilities
 ```
 
-The bootstrap and Rust supervisor are distinct intentionally.
+Rust owns:
+
+- launch authorization;
+- managed root-process creation;
+- containment assignment;
+- native process observation;
+- resource enforcement;
+- process and group termination;
+- endpoint ownership inspection;
+- terminal and Session lifecycle.
+
+An approved contained process may create descendants only under the inheritance and doctor requirements in `docs/SCAFFOLD-DECISION-REGISTER.md`.
+
+The coordinator owns semantic orchestration but does not claim native success until the supervisor reports it.
 
 ## 3. JavaScript bootstrap
 
-The npm package exposes a small JavaScript `bin` entry.
+The npm package exposes a minimal JavaScript `bin` entry.
 
-### Responsibilities
+Responsibilities:
 
-1. Verify the running Node major is supported.
-2. Read `process.execPath`.
-3. Resolve coordinator bundle path.
-4. Locate platform Rust binary.
-5. Verify native binary metadata where distributed.
-6. Create bootstrap-liveness channel.
-7. Launch Rust with inherited terminal handles.
-8. Pass bootstrap metadata through environment and inherited handles.
-9. Install nonterminating interrupt handlers after Rust starts.
-10. Wait for Rust.
-11. Return Rust exit code.
+1. verify supported Node major;
+2. read exact `process.execPath` and Node version;
+3. resolve coordinator bundle and platform native package;
+4. verify native package metadata/checksum where distributed;
+5. create bootstrap-liveness channel;
+6. launch Rust with inherited terminal handles;
+7. pass bootstrap metadata through environment and inherited handles;
+8. install nonterminating interrupt handlers after Rust is ready;
+9. wait for Rust;
+10. return Rust exit code.
 
-### Non-responsibilities
-
-The bootstrap does not:
-
-- launch coordinator directly;
-- launch Playwright;
-- run repository commands;
-- parse agent events;
-- create worktrees;
-- bind dashboard;
-- create supervisor IPC;
-- decide graceful shutdown;
-- clean candidate processes.
+The bootstrap does not launch coordinator, Chromium, repository commands, Git worktrees, evaluators, or dashboard directly.
 
 ## 4. Exact Node executable
 
-PATH lookup is unreliable with nvm, fnm, Volta, shims, and shell changes.
-
-Bootstrap passes exact `process.execPath` through:
+Bootstrap supplies:
 
 ```text
-VISOPT_BOOTSTRAP_NODE_EXEC_PATH
+RENDER_RIVALS_BOOTSTRAP_NODE_EXEC_PATH
+RENDER_RIVALS_BOOTSTRAP_NODE_VERSION
 ```
 
 Rust:
 
-1. reads it;
-2. rejects relative or empty path;
-3. canonicalizes when supported;
-4. verifies executable exists;
-5. runs `<path> --version`;
-6. compares with bootstrap-reported version;
-7. launches coordinator using exactly that executable.
+1. rejects missing or relative path;
+2. canonicalizes where supported;
+3. verifies the executable exists;
+4. runs `<path> --version`;
+5. compares with bootstrap version;
+6. launches coordinator using exactly that path.
 
-Rust never resolves coordinator `node` from PATH.
+Rust never resolves coordinator `node` from `PATH`.
 
-## 5. Coordinator command
+Coordinator command:
 
 ```text
 <exact-node-path> <coordinator-entry-file>
 ```
 
-The coordinator entry is an installed JavaScript bundle.
-
-## 6. Endpoint and nonce delivery
+## 5. Session endpoint and nonce
 
 Rust generates:
 
-- session ID;
-- IPC endpoint;
+- Session ID;
+- native IPC endpoint;
 - one-time coordinator nonce;
 - protocol version;
-- session root;
-- coordinator role.
+- transient Session root;
+- coordinator role/capabilities.
 
-Pass through environment:
+It supplies:
 
 ```text
-VISOPT_SESSION_ID
-VISOPT_SUPERVISOR_ENDPOINT
-VISOPT_SUPERVISOR_NONCE
-VISOPT_SUPERVISOR_PROTOCOL
-VISOPT_SESSION_ROOT
+RENDER_RIVALS_SESSION_ID
+RENDER_RIVALS_SUPERVISOR_ENDPOINT
+RENDER_RIVALS_SUPERVISOR_NONCE
+RENDER_RIVALS_SUPERVISOR_PROTOCOL
+RENDER_RIVALS_SESSION_ROOT
+RENDER_RIVALS_DATA_ROOT
 ```
 
-Never pass endpoint or nonce in argv.
+Endpoint and nonce never appear in argv, URL, logs, or page source.
 
-Environment delivery does not protect against a fully compromised same-user process; it avoids free command-line leakage.
+The Session root is transient operational storage. Canonical Run history remains under the data root defined by `spec/11`.
 
-## 7. Terminal authority
+## 6. Terminal authority
 
-Rust is terminal authority.
+Rust is the only terminal authority after startup.
 
 Rust owns:
 
@@ -122,261 +126,131 @@ Rust owns:
 - final exit summary;
 - optional shutdown confirmation.
 
-Coordinator sends semantic progress events. Rust renders them.
+Coordinator sends semantic progress events. Rust chooses terminal formatting. Bootstrap prints only failures that occur before Rust is ready.
 
-Bootstrap prints only failures before Rust is ready.
-
-## 8. Why Node does not own terminal
-
-On Windows, Ctrl+C reaches console-attached processes. If coordinator, servers, and agents share the console, third-party handlers race orderly shutdown.
-
-Therefore:
-
-- coordinator uses pipes and IPC;
-- children use pipes or private PTY/ConPTY;
-- no supervised process receives user Ctrl+C directly.
-
-## 9. Windows console policy
-
-### Bootstrap and Rust
-
-Bootstrap and Rust may share shell console.
-
-Bootstrap handlers prevent exit after Rust starts.
-
-Rust installs authoritative console handler.
-
-### Coordinator
-
-Coordinator launches without user interactive console.
-
-Candidate implementation:
-
-- `CREATE_NO_WINDOW` for ordinary pipe-driven coordinator;
-- new process group where required;
-- private hidden console only when an API requires it.
-
-### Noninteractive children
-
-Builds, tests, servers, and headless agents use:
-
-- no inherited user console;
-- explicit stdin;
-- captured stdout/stderr;
-- containment group.
-
-### Interactive children
-
-Adapters requiring terminal semantics request private ConPTY.
-
-Private terminal is not connected to user console input.
-
-### Graceful interruption
-
-Rust does not broadcast user `CTRL_C_EVENT`.
-
-Graceful child stop can use:
-
-- adapter stdin command;
-- stdin close;
-- targeted private-group `CTRL_BREAK_EVENT`;
-- process protocol request;
-- HTTP shutdown if configured.
-
-Forced stop uses containment termination.
-
-## 10. Unix terminal policy
-
-Rust remains in foreground terminal process group.
-
-Bootstrap ignores/absorbs interrupt after Rust starts.
-
-Coordinator and supervised workloads use separate process groups or sessions with pipe/PTY stdio.
-
-Rust remains logical signal authority.
-
-## 11. Bootstrap liveness
-
-Bootstrap creates dedicated one-way liveness pipe.
-
-Bootstrap holds writer; Rust holds reader.
-
-Unexpected bootstrap exit produces EOF.
-
-Rust treats EOF as loss of owning invocation and begins emergency cleanup.
-
-PID remains metadata, not primary liveness signal.
-
-## 12. Session lifecycle
-
-A session starts when Rust creates native resources and authenticates coordinator.
-
-A session may contain multiple runs.
-
-It ends on:
-
-- user exit;
-- coordinator restart request;
-- coordinator crash;
-- native failure;
-- bootstrap loss;
-- forced interrupt.
-
-## 13. Session state
-
-```ts
-type SessionState =
-  | "starting"
-  | "authenticating_coordinator"
-  | "ready"
-  | "running"
-  | "shutdown_requested"
-  | "draining"
-  | "forced_termination"
-  | "completed"
-  | "crashed";
-```
-
-## 14. Startup sequence
-
-### Step 1 — Bootstrap validation
-
-Validate Node and artifacts.
-
-### Step 2 — Rust launch
-
-Launch Rust with terminal and liveness pipe.
-
-### Step 3 — Native session creation
-
-Rust creates:
-
-- session directory;
-- containment primitives;
-- secure IPC endpoint;
-- nonce;
-- process-output root.
-
-### Step 4 — Coordinator launch
-
-Launch exact Node executable using platform containment and console policy.
-
-### Step 5 — Coordinator authentication
-
-Coordinator proves:
-
-- nonce;
-- session ID;
-- expected peer identity;
-- protocol version.
-
-### Step 6 — Capability probe
-
-Rust reports containment and process capabilities.
-
-### Step 7 — Coordinator readiness
-
-Coordinator starts local server and reports dashboard URL.
-
-### Step 8 — Terminal ready
-
-Rust prints URL and status.
-
-## 15. First Ctrl+C
-
-Rust records interrupt and sends:
-
-```text
-session.shutdown_requested
-```
-
-Coordinator:
-
-1. rejects new run mutations;
-2. cancels agent/judge work;
-3. stops active server;
-4. closes Playwright contexts;
-5. closes Chromium;
-6. flushes event logs;
-7. writes run status;
-8. releases leases;
-9. reports cleanup intent;
-10. sends `coordinator.shutdown_ready`.
-
-## 16. Grace period
-
-Rust waits bounded duration.
-
-Grace duration is configurable but not unbounded.
-
-## 17. Second Ctrl+C
-
-Second interrupt skips remaining grace and terminates session containment.
-
-## 18. Coordinator exit intent
-
-Before intentional exit:
-
-```ts
-type CoordinatorExitIntent =
-  | { kind: "user_shutdown" }
-  | { kind: "normal_completion" }
-  | { kind: "restart_requested"; reason: string };
-```
-
-Rust associates intent with process identity, sequence, time, and expected code class.
-
-## 19. Exit classification
-
-### Clean
-
-Valid intent plus expected exit code.
-
-### Crash
-
-No valid intent.
-
-### Abnormal
-
-Intent exists but code mismatches, IPC closes early, grace expires, or identity changes.
-
-### Forced
-
-Rust terminates process or containment boundary.
-
-## 20. Coordinator crash
-
-1. Mark active run interrupted.
-2. Terminate run groups.
-3. Terminate Chromium.
-4. Preserve output and evidence.
-5. Write crash manifest.
-6. Print recovery path.
-7. Exit nonzero.
-
-No automatic coordinator restart in v0.
-
-## 21. Rust crash
+## 7. Console and signal policy
 
 ### Windows
 
-Kill-on-close Job handles should terminate contained descendants; doctor verifies.
+- Bootstrap and Rust may share the user shell console.
+- Coordinator launches without the user's interactive console.
+- Pipe-driven managed roots use captured stdio and no inherited user console.
+- Interactive adapters, when later supported, use private ConPTY not connected to user input.
+- Rust does not broadcast user `CTRL_C_EVENT` to managed workloads.
+- Graceful stop uses adapter protocol, stdin close, private-group `CTRL_BREAK_EVENT`, HTTP shutdown, or process-specific mechanism.
+- Forced stop terminates the verified containment boundary.
 
-### Linux strong
+### Unix
 
-Watchdog kills payload cgroup.
+- Rust remains in the foreground terminal process group.
+- Bootstrap absorbs interrupt after Rust starts.
+- Coordinator and managed workload roots use separate process groups/sessions with pipe or private PTY stdio.
+- Rust remains logical signal authority.
 
-### Managed/best effort
+## 8. Bootstrap liveness
 
-No complete crash guarantee is claimed.
+Bootstrap creates a dedicated one-way liveness channel. Bootstrap holds writer and Rust holds reader.
 
-## 22. Bootstrap crash
+Unexpected EOF is owner loss. Rust begins emergency cleanup. Stored PID is metadata, not the primary liveness mechanism.
 
-Liveness EOF initiates emergency shutdown.
+## 9. Session lifecycle
 
-Shell termination, npm wrapper loss, and bootstrap crash are all owner-loss events.
+A Session starts when Rust creates native resources and authenticates coordinator. A Session may host zero or more sequential Run operations. A durable Run may survive one Session and resume under another.
 
-## 23. Progress events
+`SessionState` is imported from `schemas/domain-types.ts`:
+
+- `starting`;
+- `authenticating_coordinator`;
+- `ready`;
+- `running`;
+- `shutdown_requested`;
+- `draining`;
+- `forced_termination`;
+- `completed`;
+- `crashed`.
+
+`ready` means no Run workload is currently active. `running` means at least one Run operation or recovery/cleanup operation is active. MVP scheduler permits one active Run workload at a time.
+
+## 10. Startup sequence
+
+1. Bootstrap validates Node and artifacts.
+2. Bootstrap launches Rust with terminal and liveness channel.
+3. Rust creates transient Session root, containment primitives, secure endpoint, nonce, and output roots.
+4. Rust launches coordinator using exact Node and containment/console policy.
+5. Coordinator authenticates nonce, Session ID, peer identity, protocol, Node path, and build.
+6. Rust reports measured containment and process capabilities.
+7. Coordinator opens canonical data root and starts loopback dashboard server.
+8. Coordinator reports ready or read-only safe-mode capability.
+9. Rust prints dashboard URL and status.
+
+## 11. Safe mode
+
+Safe mode follows `spec/13` and `docs/SCAFFOLD-DECISION-REGISTER.md`.
+
+It is available only after supervisor and coordinator authenticate successfully. It permits read-only inspection, integrity scan, recovery assessment, verified cleanup, and sanitized diagnostics.
+
+It prohibits project commands, browser launch, evaluator calls, source/workspace mutation, new Run start, and unsafe promotion.
+
+Native binary, endpoint, or coordinator-authentication failure cannot fall back to safe mode.
+
+## 12. First Ctrl+C
+
+Rust records interrupt and emits `session.shutdown_requested`.
+
+Coordinator:
+
+1. rejects new mutations;
+2. records cancellation intent for active operations;
+3. stops scheduling;
+4. requests graceful process and browser shutdown;
+5. flushes semantic events and artifact registrations;
+6. writes Run interruption/cancellation state where authority remains;
+7. releases dashboard and run leases;
+8. sends `coordinator.shutdown_ready`.
+
+## 13. Grace and repeated interrupt
+
+Rust waits a bounded configurable grace period. A second interrupt skips remaining grace and force-terminates verified Session containment.
+
+## 14. Coordinator exit intent
+
+```ts
+interface CoordinatorExitIntent {
+  kind: "user_shutdown" | "normal_completion" | "restart_requested";
+  reason: string | null;
+}
+```
+
+Rust associates intent with coordinator identity, sequence, timestamp, and expected exit-code class.
+
+Classification:
+
+- clean: valid intent plus expected exit;
+- crash: no valid intent;
+- abnormal: intent/exit/IPC/identity mismatch;
+- forced: Rust terminated coordinator or Session containment.
+
+## 15. Coordinator interruption
+
+On unexpected coordinator exit:
+
+1. mark active Run interrupted when durable authority permits;
+2. terminate verified Run groups and browser descendants;
+3. preserve process output and evidence;
+4. write native Session/crash observations;
+5. print recovery path;
+6. exit nonzero.
+
+No automatic coordinator restart in MVP.
+
+## 16. Supervisor and bootstrap interruption
+
+- Windows kill-on-close Job behavior must be doctor-verified.
+- Linux strong watchdog kills payload cgroup when Rust disappears.
+- Managed/best-effort platforms make no complete crash-cleanup guarantee.
+- Bootstrap liveness EOF initiates emergency Session shutdown.
+
+## 17. Progress events
 
 ```ts
 interface ProgressEvent {
@@ -389,85 +263,77 @@ interface ProgressEvent {
 }
 ```
 
-Rust decides formatting. Raw child logs appear only in verbose mode.
+Progress is observational UI data, not canonical state. Raw child bytes are never embedded in progress events.
 
-## 24. Dashboard ownership
+## 18. Dashboard ownership
 
-Dashboard server runs in coordinator.
+Dashboard server runs in coordinator and binds loopback according to `spec/13`. Closing the browser UI does not end Session. Dashboard ends with coordinator.
 
-Closing browser UI does not end session.
+## 19. Containment lifetime
 
-Dashboard ends with coordinator.
+Root native containment lifetime is Session, not Run. Run and candidate groups are subordinate. Rust remains outside payload kill boundaries where required to enforce cleanup.
 
-## 25. Root lifetime
+## 20. Environment policy
 
-Root native containment lifetime is supervisor session, not run.
+Rust supplies a minimal coordinator environment:
 
-Run and candidate groups are subordinate.
-
-## 26. Environment policy
-
-Rust supplies minimal coordinator environment:
-
-- inherited PATH where needed for repository commands;
-- session variables;
-- safe temp root;
+- reserved Session variables;
+- safe temporary root;
+- data root;
 - locale unless overridden;
-- sanitized Node loading options.
+- sanitized Node-loading options;
+- inherited `PATH` only where needed.
 
-Evaluate and possibly scrub:
+Evaluate and scrub dangerous loader/debug injection such as `NODE_OPTIONS`, custom loaders, and debugger flags according to frozen policy.
 
-- `NODE_OPTIONS`;
-- loader injection;
-- debugging flags.
+## 21. Windows breakaway
 
-## 27. Windows breakaway classification
+Session and Run jobs deny normal and silent breakaway.
 
-Session job denies breakaway.
-
-If repo tooling requires `CREATE_BREAKAWAY_FROM_JOB`, classify:
+Repository tooling requiring Job breakaway is classified:
 
 ```text
 unsupported_repository_process_breakaway
 ```
 
-Report executable, Windows error, group, and manual reproduction hint.
+Report executable, Windows error, group, and reproduction guidance. Do not mislabel it as a generic build failure.
 
-Do not present as mystery build failure.
-
-## 28. Startup failure classes
+## 22. Startup failure classes
 
 - unsupported Node;
-- native binary missing;
-- native integrity failure;
+- native package missing or integrity failure;
 - exact Node mismatch;
-- IPC creation failure;
-- coordinator authentication failure;
+- endpoint creation failure;
+- coordinator launch/authentication failure;
 - containment probe failure;
 - dashboard bind failure;
-- session directory failure.
+- Session/data-root failure;
+- incompatible component protocol.
 
-## 29. Tests
+## 23. Required tests
 
-- `BOOT-001`: exact bootstrap Node is launched.
-- `BOOT-002`: PATH changes do not alter coordinator Node.
-- `BOOT-003`: endpoint/nonce absent from argv.
-- `BOOT-004`: first Ctrl+C requests graceful shutdown.
-- `BOOT-005`: second Ctrl+C forces shutdown.
-- `BOOT-006`: dev server does not receive user Ctrl+C.
-- `BOOT-007`: bootstrap crash triggers cleanup.
-- `BOOT-008`: coordinator crash differs from clean exit.
-- `BOOT-009`: intent plus wrong code is abnormal.
-- `BOOT-010`: terminal restores after forced stop.
-- `BOOT-011`: private PTY child cancels without console fan-out.
-- `BOOT-012`: breakaway failure is classified.
+- exact bootstrap Node is launched despite `PATH` change;
+- reserved endpoint/nonce are absent from argv, URLs, and logs;
+- first Ctrl+C requests graceful shutdown;
+- second Ctrl+C forces verified containment;
+- dev server does not receive user Ctrl+C directly;
+- bootstrap crash triggers cleanup;
+- coordinator crash differs from clean/abnormal/forced exit;
+- terminal restores after forced stop;
+- browser descendants inherit verified containment;
+- disallowed descendant escape downgrades/fails capability;
+- safe mode cannot execute project commands;
+- Session may host sequential Runs while a Run can resume under another Session;
+- old `VISOPT_*` variables are not recognized as canonical.
 
-## 30. Scaffold verification spike
+## 24. Scaffold verification spike
 
 Demonstrate on Windows:
 
 - Rust alone reacts to user interrupt;
 - coordinator waits for IPC shutdown;
-- dev server receives no direct console event;
+- managed roots receive no direct user console event;
 - forced containment kills descendants;
-- exact Node path survives a version-manager PATH change.
+- Playwright-launched Chromium inherits Session Job membership;
+- exact Node survives version-manager `PATH` changes;
+- safe mode is read-only and unavailable when native startup fails.
