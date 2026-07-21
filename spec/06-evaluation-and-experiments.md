@@ -1,28 +1,31 @@
-# 06 — Pairwise Evaluation, Controls, Human Ratings, and Experimental Sequence
+# 06 — Pairwise Evaluation, Adapter Protocol, Human Ratings, and Experiments
 
 **Status:** Canonical implementation contract  
 **Shared types:** `schemas/domain-types.ts`  
-**Vocabulary normalization:** `spec/12-cross-spec-normalization.md`
+**Storage:** `spec/11-artifact-event-and-schema-contracts.md`  
+**Security:** `spec/07-storage-security-and-configuration.md`
 
 ## 1. Hypothesis
 
-Given one shared renderable current implementation, one or more hard-gate-valid contenders, the same task brief, and same-epoch evidence, an evidence-backed selector can recommend a better final implementation than retaining current, random eligible selection, or serious linear refinement.
+Given a qualified current implementation, eligible contenders, one task brief, and same-Epoch evidence, an evidence-backed selector can outperform retaining current, random eligible selection, and serious linear refinement.
 
-The first proof is quality-first rather than token-constrained. Usage is measured, not silently optimized away.
+The first proof is quality-first. Usage is measured, not hidden or prematurely optimized.
 
 ## 2. Eligible set
 
-The eligible set contains:
+Contains:
 
-- the qualified current implementation;
-- each contender whose mandatory gates pass;
-- only candidates with complete, valid same-epoch evidence.
+- qualified current implementation;
+- every contender whose mandatory gates pass;
+- only Candidates with complete valid selectable evidence.
 
-Rejected or stale candidates remain recorded for diagnosis but do not enter aesthetic selection.
+Failed, ineligible, invalid-Epoch, or stale Candidates remain diagnostic and do not enter aesthetic selection.
 
-## 3. Canonical outcomes
+MVP has one Contender; experimental tooling may later support more.
 
-This specification does not define a local outcome union. It uses `RecommendationOutcome` from `schemas/domain-types.ts`:
+## 3. Recommendation outcomes
+
+Uses `RecommendationOutcome`:
 
 - `contender_recommended`;
 - `current_retained`;
@@ -30,268 +33,260 @@ This specification does not define a local outcome union. It uses `Recommendatio
 - `human_review_required`;
 - `invalid_run`.
 
-A recommendation is produced by deterministic policy over validated gates and evidence. An evaluator never writes the recommendation directly.
+Evaluator produces evidence, never Recommendation directly. Deterministic policy owns outcome.
 
-## 4. Pairwise verdicts
+## 4. Factor verdicts
 
-Each factor uses `PairwiseVerdict`:
+Uses `PairwiseVerdict`:
 
 - `a_materially_better`;
 - `b_materially_better`;
 - `no_material_difference`;
 - `unable_to_judge`.
 
-Every verdict includes:
+Each verdict includes confidence/null, rationale, Artifact citations, limitations, and protected-regression concerns. Uncited scalar quality scores are invalid.
 
-- confidence or explicit unknown;
-- concise rationale;
-- artifact citations;
-- limitations;
-- protected-regression concerns.
+## 5. Immutable comparison packet
 
-A scalar quality score without cited factor evidence is invalid output.
+Packet includes:
 
-## 5. Comparison packet
-
-An immutable packet contains:
-
-- task brief and product constraints;
-- anonymous candidate labels where configured;
-- valid capture-epoch identity;
-- state/viewport/interaction matrix;
-- registered artifact allowlist;
+- schema/version and packet hash;
+- Run/Comparison/Epoch IDs;
+- task brief, product constraints, and protected dimensions;
+- anonymous labels where configured;
+- route/state/viewport/interaction matrix;
+- Artifact allowlist with hashes/media/roles;
 - gate eligibility summary;
-- factor definitions;
-- protected dimensions;
-- evaluator instructions and policy hash;
-- excluded evidence and reasons.
+- Factor definitions and policy;
+- excluded evidence/reasons;
+- evaluator instructions/policy hash;
+- redaction/remote-transmission report.
 
-The evaluator may cite only artifacts in the packet.
+Evaluator may cite only allowed Artifact IDs.
 
-## 6. Evaluation factors
+## 6. MVP factors
 
-The MVP factor set is:
-
-- task and product fit;
+- task/product fit;
 - primary-action clarity;
 - information hierarchy;
-- visual coherence and intentionality;
+- visual coherence/intentionality;
 - responsive quality;
-- empty and error-state quality;
-- interaction and recovery clarity.
+- empty/error-state quality;
+- interaction/recovery clarity.
 
-Factor weights and thresholds are frozen in the Run Configuration. Protected regressions are vetoes, not weighted tradeoffs.
+Weights/thresholds freeze in Run Configuration. Protected regressions veto independent of weight.
 
-## 7. Order reversal
+## 7. Generic command evaluator adapter
 
-Every model-backed selector comparison runs twice:
+The first machine-evaluator integration is a generic supervised command adapter.
 
-1. current as A, contender as B;
-2. contender as A, current as B.
+### 7.1 Invocation
 
-The evidence, task brief, factor definitions, and policy remain identical. Only presentation order changes.
+The coordinator creates an owned evaluator attempt directory:
 
-Material disagreement cannot be averaged into a winner. It yields `tie`, `human_review_required`, or `current_retained` according to frozen policy.
+```text
+<run>/evaluations/<evaluation-id>/adapter/
+  request.json
+  result.json.tmp
+```
 
-## 8. Critic and selector separation
+It launches an explicit executable plus args through the supervisor, for example:
 
-When multiple evaluator roles are used:
+```text
+<executable> --input <absolute-owned-request-path> --output <absolute-owned-temp-result-path>
+```
 
-- critics identify evidence-backed strengths, weaknesses, and regressions;
-- selectors compare candidates using validated evidence;
-- the policy engine applies gates, vetoes, thresholds, and outcome rules.
+Rules:
 
-A critic may disagree with another critic. Disagreement is retained and surfaced.
+- no implicit shell;
+- working directory is an owned evaluator attempt directory;
+- request and output paths are generated by Render Rivals;
+- output must remain within that directory;
+- stdout/stderr are captured separately and are not the result document;
+- timeout/resource/output limits apply;
+- successful exit alone does not mean valid evaluation;
+- result file is read, stored as raw bytes, validated, and registered through `spec/11`;
+- adapter cannot write canonical entity files directly.
 
-## 9. Human-only mode
+### 7.2 Request envelope
 
-Human-only mode uses the same immutable comparison packet and evidence allowlist.
+```ts
+interface EvaluatorCommandRequest {
+  schema: "render-rivals/evaluator-request";
+  schemaVersion: "1.0.0";
+  evaluationId: EvaluationId;
+  comparisonId: ComparisonId;
+  purpose: EvaluationPurpose;
+  packetArtifactId: ArtifactId;
+  packetPath: string;
+  packetHash: string;
+  outputSchema: "render-rivals/evaluator-result@1.0.0";
+  deadlineAt: string;
+}
+```
 
-It still requires:
+The packet path is local operational data and is not portable identity.
 
-- complete gates;
-- valid comparison evidence;
-- factor-level ratings;
-- citations or region/step references;
-- explicit limitations;
-- a typed User Decision.
+### 7.3 Result envelope
+
+```ts
+interface EvaluatorCommandResult {
+  schema: "render-rivals/evaluator-result";
+  schemaVersion: "1.0.0";
+  evaluationId: EvaluationId;
+  comparisonId: ComparisonId;
+  packetHash: string;
+  candidateLabels: { a: string; b: string };
+  factors: Array<{
+    factorId: EvaluationFactorId;
+    verdict: PairwiseVerdict;
+    confidence: number | null;
+    rationale: string;
+    citations: Array<{
+      artifactId: ArtifactId;
+      locator?: string;
+      relevance: string;
+    }>;
+    limitations: string[];
+    protectedRegressionConcerns: string[];
+  }>;
+  overallLimitations: string[];
+  usage: InferenceUsage | null;
+}
+```
+
+Runtime schema validation checks exact IDs/hash, required Factors, finite confidence range, citation allowlist, and Candidate-label consistency.
+
+### 7.4 Output adoption
+
+Adapter output flow:
+
+1. process exits or timeout/cancel occurs;
+2. exact output bytes are copied into canonical `raw-output.bin`;
+3. `validation.json` records parse/schema/provenance/citation/semantic checks;
+4. accepted normalized Evidence Records are written separately;
+5. temp result is removed/quarantined;
+6. process logs/usage remain registered.
+
+Malformed output never overwrites raw bytes and cannot create Evidence.
+
+## 8. Evaluator trust boundary
+
+The packet allowlist controls what Render Rivals intentionally sends to remote evaluators and what the evaluator may cite.
+
+It is **not an operating-system sandbox** for a local evaluator command. A user-configured local evaluator executable runs with the user's authority and may technically access other readable files or network resources.
+
+Therefore:
+
+- local evaluator command requires trust acknowledgement like Project commands;
+- command/executable identity is recorded;
+- working directory/environment are minimized;
+- no source root is passed unless policy permits it;
+- Render Rivals does not claim filesystem/network isolation;
+- remote provider adapters receive only the allowlisted packet through Render Rivals-owned code;
+- threat model distinguishes local trusted command from remote data transmission.
+
+## 9. Order reversal
+
+Every model-backed selector comparison runs twice in fresh evaluator Attempts:
+
+1. current A / contender B;
+2. contender A / current B.
+
+Packet evidence/policy remains identical apart from anonymous presentation order. Material disagreement cannot be averaged into a winner; policy returns tie, human review, or current retained.
+
+## 10. Critic and selector roles
+
+Optional critics identify evidence-backed strengths, weaknesses, and regressions. Selector compares Candidates. Policy applies gates/vetoes/thresholds.
+
+Critic disagreement is retained. MVP may use one command adapter for selector only; multi-role ensemble is post-MVP.
+
+## 11. Human-only mode
+
+Uses same packet/allowlist and still requires gates, valid evidence, Factor ratings, references, limitations, and typed Decision.
 
 Human-only mode does not claim automated selector performance.
 
-## 10. Human rating contract
+Human ratings are append-only and may record Factor verdicts/confidence/rationale/references, overall preference, protected concerns, usability, and adoption intent.
 
-A human review may record:
+## 12. Deterministic Recommendation policy
 
-- factor verdicts;
-- confidence;
-- rationale;
-- evidence references;
-- overall preference;
-- protected-regression flags;
-- usability concerns;
-- whether the result would be adopted.
-
-Ratings are append-only artifacts. Later ratings do not erase prior ratings.
-
-## 11. Deterministic recommendation policy
-
-The policy engine considers:
-
-- current and contender eligibility;
-- comparison validity;
-- factor coverage;
-- confidence thresholds;
-- order-reversal stability;
-- protected-regression vetoes;
-- contradictory evidence;
-- source, fixture, policy, and artifact staleness.
+Considers eligibility, Comparison validity, Factor coverage, confidence, reversal, protected vetoes, contradictions, and staleness.
 
 Typical mapping:
 
-- material, stable contender advantage with no veto → `contender_recommended`;
-- valid evidence without proven improvement → `current_retained`;
-- materially indistinguishable eligible candidates → `tie`;
-- valid but unresolved evidence → `human_review_required`;
-- invalid baseline or comparison → `invalid_run`.
+- stable material contender advantage/no veto → contender recommended;
+- valid evidence/no proven improvement → current retained;
+- indistinguishable eligible Candidates → tie;
+- valid unresolved evidence → human review;
+- invalid baseline/comparison → invalid Run.
 
-## 12. Experimental controls
+## 13. Invalid evaluator output
 
-The first experiment compares Render Rivals against:
+Reject when:
+
+- result missing/unreadable/malformed;
+- schema/IDs/packet hash mismatch;
+- Factors absent/duplicated/unknown;
+- confidence nonfinite/out of range;
+- citation absent/outside packet/hash invalid;
+- Candidate identity/order confused;
+- relies on unstored external evidence;
+- policy/provenance mismatch;
+- output file escapes owned path;
+- attempt timed out/cancelled before a complete valid result.
+
+Raw bytes/logs remain diagnostic. No accepted Evidence/Recommendation.
+
+Corrective retry occurs only when adapter explicitly declares it and receives identical packet hash plus validation errors; otherwise new Attempt follows frozen retry policy.
+
+## 14. Tie-break
+
+Optional and frozen. Receives same canonical evidence, cannot override gates or rehabilitate invalid evidence, records separate usage/provenance, and may still return tie/human review.
+
+## 15. Accounting and provenance
+
+Each invocation records provider, adapter/version, executable/model where known, purpose, input/raw/normalized Artifacts, validation, usage, timing, process identity, retry/supersession, and external transmission.
+
+`InferenceUsage` is imported. Unknown values remain null.
+
+## 16. Experimental controls
+
+Compare against:
 
 - retain current;
 - random eligible choice;
-- serious linear refinement using the same task brief;
+- serious linear refinement;
 - evidence-only human review where useful.
 
-Controls must use:
+Controls use same baseline, task, route/states, fixture, viewports, and practical time window. Individual screenshots are not independent samples.
 
-- the same source baseline;
-- the same target route and states;
-- the same fixture;
-- the same viewports;
-- the same time window where practical;
-- the same evaluator policy where applicable.
+Randomize/anonymize presentation where practical; hide source/agent/cost until quality judgment; exclude invalid Candidates before aesthetic review.
 
-## 13. Experimental unit
+Primary measure: blinded preference/adoption versus controls.
 
-The experimental unit is one task on one project with:
+Secondary: gate failure, no-improvement, reversal conflict, evaluator rejection, protected veto, completion/recovery, elapsed time, usage/cost, diversity.
 
-- one current source snapshot;
-- one or more contender snapshots;
-- one frozen Run Configuration;
-- one valid evidence set per compared candidate;
-- one recommendation;
-- one or more blinded human ratings.
+## 17. Decision, Promotion, Export
 
-Do not treat individual screenshots as independent experimental samples.
+- Recommendation advises.
+- User Decision responds.
+- Promotion hands off selected Contender as patch/branch/workspace.
+- Export Operation creates reports/diagnostics/bundles without adoption semantics.
 
-## 14. Randomization and blinding
+## 18. Required tests
 
-Where practical:
-
-- candidate labels are neutral;
-- left/right order is randomized;
-- source/agent identity is hidden from raters;
-- order reversal is recorded;
-- raters do not see token cost before quality judgment;
-- invalid candidates are excluded before aesthetic review.
-
-## 15. Primary and secondary measures
-
-Primary measure:
-
-- blinded human preference or adoption rate for the selected implementation versus controls.
-
-Secondary measures:
-
-- gate-failure rate;
-- no-material-improvement rate;
-- order-reversal conflict rate;
-- evaluator rejection rate;
-- protected-regression veto rate;
-- run completion and recovery rate;
-- elapsed time;
-- token and cost telemetry;
-- candidate diversity.
-
-## 16. Accounting
-
-This specification uses the sole canonical `InferenceUsage` interface from `schemas/domain-types.ts`.
-
-It uses:
-
-- `adapter`, not `agent`;
-- closed `EvaluationPurpose` values;
-- start and completion timestamps;
-- nullable token and cost values;
-- `policySnapshotId`.
-
-Unknown values remain `null`.
-
-## 17. Evaluator provenance
-
-Each invocation records:
-
-- provider;
-- adapter and version;
-- model when known;
-- purpose;
-- immutable input artifact;
-- raw output artifact;
-- normalized output artifact;
-- schema-validation result;
-- citation-validation result;
-- usage;
-- retry/supersession links.
-
-Raw output is never overwritten by normalized output.
-
-## 18. Invalid output
-
-Evaluator output is rejected when:
-
-- it is malformed;
-- required factors are absent;
-- citations cannot be resolved;
-- cited artifacts are outside the packet;
-- confidence is invalid;
-- candidate identity is confused;
-- conclusions rely on unrecorded external evidence;
-- policy/provenance does not match the invocation.
-
-Rejected output remains stored for diagnosis and cannot feed recommendation policy.
-
-## 19. Tie breaking
-
-Tie-break evaluation is optional and must be declared in the frozen policy.
-
-A tie breaker:
-
-- receives the same canonical evidence set;
-- cannot override mandatory gates;
-- cannot convert invalid evidence into valid evidence;
-- records separate usage and provenance;
-- may still return `tie` or `human_review_required`.
-
-## 20. Decision and export separation
-
-Recommendation, User Decision, and Promotion are separate entities.
-
-- Recommendation states what the policy advises.
-- User Decision records the user's response.
-- Promotion performs a non-destructive export.
-
-`exported_without_acceptance` is not a User Decision action.
-
-## 21. Required tests
-
-- outcome vocabulary imports from `schemas/domain-types.ts`;
-- no persisted `champion`, `challenger`, `promote`, `retain_champion`, or `escalate` enum values;
-- A/B and B/A packets differ only in presentation order;
-- invalid citation rejects evaluator output;
-- protected regression vetoes recommendation;
-- unknown accounting fields remain null;
-- human-only mode uses the same evidence allowlist;
-- rejected output cannot create a Recommendation;
-- no-material-improvement maps to `current_retained`;
-- invalid baseline maps to `invalid_run`.
+- command request/result schemas validate;
+- executable/args no implicit shell;
+- adapter cannot select arbitrary canonical output path;
+- stdout noise does not corrupt result document;
+- missing/partial/malformed result preserves raw bytes and rejects Evidence;
+- packet hash/IDs/order verified;
+- citations restricted to packet;
+- A/B vs B/A differ only presentation order;
+- protected regression vetoes;
+- unknown usage null;
+- human mode uses same allowlist;
+- rejected output cannot create Recommendation;
+- local evaluator trust warning is explicit;
+- report Export Operation remains separate from Promotion.
