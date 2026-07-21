@@ -17,7 +17,9 @@ Given a qualified current implementation and one or more independently prepared 
 3. evaluate eligible candidates pairwise;
 4. retain the current implementation when improvement is ambiguous;
 5. recommend a contender only when evidence indicates a material improvement;
-6. require an explicit user decision before any non-destructive export.
+6. require an explicit user decision before any candidate adoption or Promotion.
+
+Ordinary report, diagnostic, and evidence Export Operations may be created without accepting a Contender when their source integrity and redaction policy permit them.
 
 The first question is whether this process produces better decisions. Token efficiency, runtime, and integration breadth are secondary until the quality mechanism demonstrates value.
 
@@ -96,7 +98,11 @@ The explicit human response using `UserDecisionAction`.
 
 ### Promotion
 
-A non-destructive export operation authorized by a nonstale User Decision. Promotion may create a patch, local branch, preserved workspace, or report. Promotion never means automatic merge.
+A non-destructive candidate-adoption handoff authorized by a nonstale User Decision. Promotion may create a patch, local branch, or preserved Workspace. Promotion never means automatic merge and never includes ordinary report or diagnostic export.
+
+### Export Operation
+
+A non-adoption output operation that may create reports, diagnostics, evidence bundles, screenshots, configuration templates, or selected logs. It does not imply Contender acceptance and need not identify a Candidate when its kind does not require one.
 
 ### Recovery disposition
 
@@ -165,6 +171,7 @@ Ordinary repository use. Broader generation, multi-contender rounds, CI integrat
 - `FR-031` Candidate-local failures do not invalidate an otherwise continuous browser epoch unless comparison integrity was compromised.
 - `FR-032` Re-evaluation and changes to sealed source, fixture, gates, factors, or policy create a new or superseding Run.
 - `FR-033` CLI and dashboard commands call the same domain services and state transitions.
+- `FR-034` General Export Operation is distinct from User Decision and Promotion.
 
 ## 9. Nonfunctional requirements
 
@@ -178,7 +185,7 @@ Ordinary repository use. Broader generation, multi-contender rounds, CI integrat
 - `NFR-008` Vendor assumptions include a dated policy snapshot.
 - `NFR-009` Process output is drained continuously and retained per process under explicit limits.
 - `NFR-010` Workloads do not start when resource admission fails.
-- `NFR-011` Configuration, CLI, and local API behavior follow `spec/13`.
+- `NFR-011` Configuration, CLI, and local API behavior follow specs 13, 16, 17, and 19.
 
 ## 10. Core invariants
 
@@ -202,7 +209,7 @@ Ordinary repository use. Broader generation, multi-contender rounds, CI integrat
 - `INV-018` Strong containment is measured, not inferred from platform name.
 - `INV-019` Linux strong mode requires delegated ownership and a verified kill boundary.
 - `INV-020` Stability samples are evidence, not guarantees.
-- `INV-021` Recommendation is not Promotion, and User Decision is not export.
+- `INV-021` Recommendation is not Promotion, User Decision is not export, and Export Operation is not adoption.
 - `INV-022` Terminal business outcome never hides cleanup status.
 - `INV-023` A candidate-local failure cannot silently alter or invalidate evidence belonging to another candidate.
 
@@ -230,7 +237,7 @@ A small study can expose false recommendation, inertia, excessive escalation, fa
 
 Reference platform:
 
-- Windows 10/11 x64 strong Job Object mode.
+- Windows 11 x64 strong Job Object mode.
 
 First repository scope:
 
