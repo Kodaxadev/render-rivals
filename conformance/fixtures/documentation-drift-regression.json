@@ -1,8 +1,8 @@
 {
   "schema": "render-rivals/documentation-conformance-regression-fixture",
-  "schemaVersion": "1.1.0",
+  "schemaVersion": "1.2.0",
   "capturedAt": "2026-07-20T00:00:00.000Z",
-  "purpose": "Preserve real repository drift cases as negative fixtures before repair. The future documentation-conformance checker must fail these synthetic cases and pass the repaired repository.",
+  "purpose": "Preserve real repository drift cases as negative fixtures before repair. The documentation-conformance checker must fail these synthetic cases and pass the repaired repository.",
   "cases": [
     {
       "id": "DOC-RUN-STATE-EXPORTING",
@@ -68,6 +68,18 @@
         "spec/16-dashboard-session-authentication-and-pairing.md",
         "spec/17-local-api-envelopes-operations-and-pagination.md"
       ]
+    },
+    {
+      "id": "DOC-OPERATION-STATE-TABLE-DRIFT",
+      "class": "operation_state_registry_drift",
+      "sourcePaths": [
+        "schemas/api-types.ts",
+        "schemas/operation-types.ts",
+        "spec/17-local-api-envelopes-operations-and-pagination.md"
+      ],
+      "brokenExample": "spec/17 listed only accepted, running, completed, failed, and cancelled while both shared unions also defined reconciling and interrupted",
+      "rule": "ApiOperationState, OperationState, and the spec/17 status table must contain the same closed state set and interrupted must remain nonterminal.",
+      "expectedRepair": "Add reconciling and interrupted rows plus their timestamp, result, error, and transition semantics"
     },
     {
       "id": "DOC-CLI-PROMOTE-OMITTED",
