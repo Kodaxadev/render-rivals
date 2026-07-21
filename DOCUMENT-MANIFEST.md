@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 3.4  
+**Inventory format:** 3.5  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -32,18 +32,20 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 15. [`spec/15-observability-diagnostics-and-telemetry-contracts.md`](spec/15-observability-diagnostics-and-telemetry-contracts.md)
 16. [`spec/16-dashboard-session-authentication-and-pairing.md`](spec/16-dashboard-session-authentication-and-pairing.md)
 17. [`spec/17-local-api-envelopes-operations-and-pagination.md`](spec/17-local-api-envelopes-operations-and-pagination.md)
+18. [`spec/18-canonical-primitives-json-hashing-and-measurements.md`](spec/18-canonical-primitives-json-hashing-and-measurements.md)
 
-Specs 12–17 normalize shared authority, lock configuration/CLI/API and Git behavior, prevent local observability from becoming implicit remote telemetry, define the first-browser pairing ceremony, and bound local API operations/collections.
+Specs 12–18 normalize shared authority, lock configuration/CLI/API and Git behavior, prevent local observability from becoming implicit remote telemetry, define the first-browser pairing ceremony, bound local API operations/collections, and make Rust/TypeScript hashes and measurements byte-compatible.
 
 ## Shared schema and invariant sources
 
+- [`schemas/primitives.ts`](schemas/primitives.ts)
 - [`schemas/domain-types.ts`](schemas/domain-types.ts)
 - [`schemas/error-codes.ts`](schemas/error-codes.ts)
 - [`schemas/api-types.ts`](schemas/api-types.ts)
 - [`schemas/README.md`](schemas/README.md)
 - [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 
-These control shared IDs, enums, records, states, purposes, policy references, stable errors, API commands/envelopes, and cross-record cardinality/nullability. Full Zod/JSON Schema, generated clients, fixtures, migrations, and compatibility tests remain scaffold work.
+These control canonical digest/timestamp/decimal/unit formats, shared IDs/enums/records/states, stable errors, API commands/envelopes, and cross-record cardinality/nullability. Full Zod/JSON Schema, canonicalization libraries/goldens, generated clients, fixtures, migrations, and compatibility tests remain scaffold work.
 
 ## Accepted ADRs
 
@@ -124,6 +126,7 @@ Archive never drives scaffolding.
 ## Pending scaffold artifacts
 
 - Zod/JSON Schema registry and generated API command/client registry;
+- RFC 8785 canonical JSON plus Rust/TypeScript digest/timestamp/decimal/unit goldens;
 - valid/invalid fixtures covering the Record Invariant Matrix;
 - migrations/compatibility tests;
 - Rust/TypeScript protocol goldens;
@@ -142,4 +145,4 @@ Archive never drives scaffolding.
 
 ## Conformance note
 
-Intentional references to rejected old names or migration values exist in normalization, tests, ADR history, and archive. Future stale-token automation must use explicit path/section allowlists rather than fail on every raw string occurrence.
+Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, and archive. Future stale-token/canonical-value automation must use explicit path/section allowlists rather than fail on every raw string occurrence.
