@@ -1,0 +1,57 @@
+name: Documentation Conformance
+
+on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "DOCUMENT-MANIFEST.md"
+      - "MANIFEST.json"
+      - "LICENSE-TBD.md"
+      - "spec/**"
+      - "adr/**"
+      - "docs/**"
+      - "schemas/**"
+      - "sources/**"
+      - "archive/**"
+      - "brand/**"
+      - "security/**"
+      - "conformance/**"
+      - ".github/workflows/documentation-conformance.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "README.md"
+      - "DOCUMENT-MANIFEST.md"
+      - "MANIFEST.json"
+      - "LICENSE-TBD.md"
+      - "spec/**"
+      - "adr/**"
+      - "docs/**"
+      - "schemas/**"
+      - "sources/**"
+      - "archive/**"
+      - "brand/**"
+      - "security/**"
+      - "conformance/**"
+      - ".github/workflows/documentation-conformance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check clean-tree documentation conformance
+        run: node conformance/check.mjs --json
+      - name: Run mutation regression suite
+        run: node --test conformance/check.test.mjs
