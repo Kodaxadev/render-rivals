@@ -1,428 +1,531 @@
 # Render Rivals Test and Validation Strategy
 
 **Status:** Implementation contract for scaffold and release acceptance  
-**Purpose:** Convert architectural invariants into executable tests, fixtures, fault injection, and platform acceptance gates.
+**Purpose:** Convert architecture, failure, security, record-invariant, Operation, Capture, retention, and lock contracts into executable tests, fixtures, fault injection, and platform gates.
 
 ## 1. Principles
 
 1. Test observable contracts, not implementation trivia.
-2. Every failure/recovery claim has a deterministic fixture.
-3. Canonical schema, event, hash, and state tests precede UI polish.
-4. Windows strong-containment acceptance runs on a real Windows host, not only mocked APIs.
-5. Platform limitations are test results, not comments.
-6. Flaky capture tests are product failures until the uncontrolled source is identified.
+2. Every failure and recovery claim has a deterministic fixture.
+3. Primitive, schema, Event, hash, state, Operation, and store tests precede UI polish.
+4. Windows strong-containment and lock acceptance runs on a real Windows host, not only mocked APIs.
+5. Platform limitations are measured test results, not comments.
+6. Flaky Capture tests are product failures until the uncontrolled source is identified.
 7. Golden fixtures are versioned and reviewed like production code.
-8. Tests never mutate the developer's real Project, Git configuration, credentials, or global package cache destructively.
-9. Network use is disabled by default in tests unless the test explicitly owns a local server or recorded provider fixture.
-10. No test passes by sleeping for an arbitrary duration when an observable condition exists.
+8. Tests never mutate a developer's real Project, Git configuration, credentials, source tree, global package cache, or browser profile destructively.
+9. Network is denied by default unless a test explicitly owns the local endpoint or recorded provider fixture.
+10. No arbitrary sleep passes when an observable condition exists.
+11. A document is not accepted as implemented until its required proof exists.
+12. Negative tests are first-class: fail-closed behavior must be demonstrated, not inferred.
+13. Test secrets use synthetic values and must remain absent from retained output.
 
 ## 2. Test layers
 
-### Layer A — Pure domain
+### Layer A — Primitive and pure domain
 
-- ID and enum validators;
+- ID/prefix/ULID validators;
+- RFC 8785 canonical values;
+- SHA, timestamps, decimals, units, safe integers and overflow;
 - state reducers and forbidden transitions;
-- Recommendation policy;
+- Run `promoting` and no general-Export transition;
+- Recommendation policy and reason codes;
 - Gate dependency graph;
 - configuration merge/provenance;
-- retry/idempotency decisions;
+- retry/idempotency/supersession decisions;
 - staleness and hash binding;
-- Promotion versus Export Operation;
-- path normalization pure logic.
+- Promotion versus Export;
+- path normalization pure logic;
+- every Record Invariant Matrix row.
 
-Runs on every commit and platform.
+Runs on every commit and supported development platform.
 
 ### Layer B — Schema and serialization
 
-- Zod and generated JSON Schema agreement;
-- valid/invalid fixtures;
-- canonical JSON bytes/hash;
+- Zod/generated JSON Schema agreement;
+- valid/invalid primitive, entity, API, Operation, Capture, lock and trash fixtures;
+- canonical bytes and cross-language digest;
+- strict JSON duplicate-key/UTF-8/number rejection;
 - NDJSON complete/torn/corrupt lines;
-- migration golden fixtures;
-- unknown major read-only behavior;
-- exact ID prefix/ULID validation;
+- migration goldens, including pre-scaffold Run `exporting` to `promoting`;
+- unknown-major read-only behavior;
+- generated command/Artifact/error registry agreement;
 - cross-language protocol fixtures.
 
-### Layer C — Canonical store
+### Layer C — Canonical store and Operation ledger
 
-- atomic Artifact/entity writes;
-- event/snapshot ordering crash points;
+- atomic Artifact/entity/Operation writes;
+- Event/snapshot/Operation ordering at every crash point;
+- durable acceptance before side effect;
+- same-ID exact replay and changed replay rejection;
+- interrupted/reconciling Operation recovery;
+- proof-based branch/export/process/Artifact/cleanup adoption;
 - reconstruction without index;
-- locks and stale ownership;
 - orphan/quarantine;
-- retention/deletion reachability;
+- integrity/recovery reports;
 - import/export checksums/redaction;
-- Promotion and Export Operation persistence.
+- Promotion/Export persistence and lineage.
 
 Uses isolated temporary filesystems and fault-injectable adapters.
 
-### Layer D — Native supervisor
+### Layer D — Lock, retention, and storage maintenance
+
+- OS-held cross-process locks plus metadata;
+- global lock order and deadlock stress;
+- heartbeat, clock jump, suspend/resume, PID reuse and corrupt metadata;
+- multiple Sessions and one active executing Run per Project;
+- Project execution lease;
+- reference graph and deletion eligibility;
+- Run/Project trash, restore, purge and crash reconciliation;
+- seven-day grace and nonretroactive policy;
+- storage admission, low-disk reserve and no silent purge;
+- cache/preserved Workspace ownership;
+- no cleanup while app is closed.
+
+### Layer E — Native supervisor
 
 - bootstrap/exact Node;
 - endpoint authentication/framing/idempotency;
 - process launch/containment;
-- binary output/backpressure/limits;
+- browser descendant containment;
+- binary output/backpressure/64 MiB limits;
 - resource accounting;
 - terminal signals;
 - listener ownership;
 - graceful/forced cleanup;
-- coordinator/bootstrap/supervisor loss.
+- coordinator/bootstrap/supervisor loss;
+- native proof Artifacts for Operation reconciliation.
 
-### Layer E — Git/workspace
+### Layer F — Git and Workspace
 
 - source snapshots;
-- dirty trees, patches, worktrees;
-- LFS/submodules/symlinks/case/line endings/modes;
-- branch Promotion;
-- cleanup and active-worktree safety.
+- dirty trees, patches and worktrees;
+- LFS, submodules, symlinks, case, Unicode, line endings and modes;
+- Workspace drift and protected paths;
+- patch/branch Promotion;
+- cleanup and active-working-tree safety.
 
-### Layer F — Browser/capture/gates
+### Layer G — Browser, Capture, Artifact formats, and Gates
 
-- fixture/state/interaction setup;
-- contained Chromium descendants;
+- deterministic fixture/state/interaction setup;
+- current pinned Playwright Clock;
+- current pinned `page.ariaSnapshot`/`locator.ariaSnapshot` raw YAML;
+- canonical PNG screenshot options;
+- DOM, axe, geometry, computed styles, console, network, interaction and metadata schemas;
+- metadata-last Capture commit;
+- volatile-region masks/exclusions;
 - stability samples;
-- candidate-local versus Epoch-wide failure;
-- capture matrix and Artifact commit;
+- Candidate-local versus Epoch-wide failure;
 - phased Gates;
-- browser crash/disconnect;
-- context leakage;
-- deterministic clock/random/locale/fonts.
+- browser crash/disconnect and context leakage;
+- redaction, truncation and Artifact limits.
 
-### Layer G — Evaluator
+### Layer H — Evaluator and Decision
 
-- command adapter request/result;
-- malformed/partial/noisy output;
-- citation validation;
+- command adapter request/result/raw bytes;
+- malformed, partial and noisy output;
+- citation validation and Artifact allowlist;
 - order reversal;
-- timeout/cancel;
-- usage accounting;
+- timeout and cancellation;
+- exact token/decimal cost accounting;
 - human-only mode;
-- deterministic Recommendation.
+- deterministic Recommendation;
+- Recommendation/Decision supersession and stale authorization.
 
-### Layer H — Local API/CLI/UI
+### Layer I — Local API, pairing, Artifact serving, CLI, and UI
 
-- authentication/CSRF/Origin/CSP;
-- command idempotency/revision conflict;
+- randomized-host pairing, cookie, Host, Origin, CSRF and CSP;
+- only pairing route before authentication;
+- closed command registry and command/route agreement;
+- Operation status, revisions and replay;
+- bounded pagination/filtering;
 - SSE resume/gap/refetch;
 - safe mode;
 - CLI exit/JSON output;
-- route guards;
-- keyboard/accessibility;
-- no illegal Pause/post-seal actions;
+- route guards and legal commands;
+- passive image preview and escaped text/JSON/YAML;
+- HTML/SVG/PDF/Markdown/trace/archive active-content blocking;
+- MIME magic, ranges and filenames;
+- keyboard and screen-reader behavior;
+- no illegal Pause or post-seal action;
 - Promotion/Export separation.
 
-### Layer I — End-to-end acceptance
+### Layer J — End-to-end acceptance
 
-Clean installation through Project registration, Run, capture, Gate, evaluation, Decision, Promotion/Export, cleanup, restart, and reconstruction.
+Clean installation through pairing, Project registration, Run, Capture, Gates, evaluation, Decision, Promotion and general Export, cleanup, restart, recovery, trash/restore and reconstruction.
 
-## 3. Fixture repository catalog
+## 3. Fixture catalog
 
-Each fixture is tiny, deterministic, and has a declared expected result.
+Every fixture is tiny, deterministic, self-contained, and declares expected state, Events, Artifacts, errors, cleanup, and retention.
 
-### `fixture-valid-dashboard`
+### Product fixtures
 
-- Vite/TypeScript;
-- `/dashboard`;
-- populated, empty, unavailable states;
-- desktop/mobile;
-- one filter/submit interaction;
-- deterministic local data/time/randomness;
-- no external network.
+- `fixture-valid-dashboard`: Vite/TypeScript `/dashboard`, populated/empty/unavailable, desktop/mobile, one interaction, fixed local data/time/randomness, no external network.
+- `fixture-contender-material-improvement`: valid material improvement with no protected regression.
+- `fixture-contender-no-improvement`: visual change that retains current.
+- `fixture-protected-regression`: appealing visual change with keyboard/interaction/accessibility veto.
+- `fixture-current-invalid`: invalid current; no retain-current preference outcome.
+- `fixture-build-failure`: Contender fails before Capture; current remains qualified.
+- `fixture-page-crash`: one local retry succeeds and repeated failure becomes Candidate-local terminal.
+- `fixture-browser-disconnect`: full Epoch invalidation.
+- `fixture-context-leak`: service worker/storage leak between Candidates.
+- `fixture-nondeterministic`: unseeded time/random/animation/server response.
 
-### `fixture-contender-material-improvement`
+### Store and Operation fixtures
 
-Valid current and materially stronger Contender with no protected regression.
+- `fixture-operation-ledger`: accepted/running/reconciling/interrupted/terminal, exact replay and changed replay.
+- `fixture-side-effect-reconciliation`: branch/file/process/Artifact/cleanup exact and ambiguous outcomes.
+- `fixture-storage-pressure`: no-space, short write, reserve crossing and atomic duplicate-space requirements.
+- `fixture-trash-restore-purge`: Run and Project deletion, grace, restore conflict and partial purge.
+- `fixture-lock-contention`: two processes/Sessions, stale metadata, live OS lock, PID reuse, clock jump and order inversion.
 
-### `fixture-contender-no-improvement`
+### Runtime and Git fixtures
 
-Visually different but policy should retain current.
+- `fixture-stubborn-process`: detached child/listener, ignored graceful signal and PID reuse.
+- `fixture-output-flood`: stdout/stderr exact limit, tail opt-in and parser incompleteness.
+- `fixture-git-edge-cases`: dirty/binary/CRLF/mode/symlink/case/Unicode/LFS/submodule/shallow/sparse.
 
-### `fixture-protected-regression`
+### Capture and Artifact fixtures
 
-Stronger visual treatment but broken keyboard/interaction/required state.
+- `fixture-capture-registry`: all required Capture classes and metadata bindings.
+- `fixture-aria-snapshot`: semantic tree, iframe/root/depth and redaction.
+- `fixture-capture-truncation`: oversized DOM, ARIA, console, network, screenshot and trace.
+- `fixture-artifact-active-content`: HTML, SVG, PDF, Markdown, JS, CSS, source map, archive and Playwright trace payloads attempting same-origin execution.
+- `fixture-artifact-media-mismatch`: extension/type/magic/polyglot/decode bombs and dimensions.
+- `fixture-artifact-text-safety`: HTML injection, ANSI, bidi controls, duplicate JSON keys, unsafe YAML tags/aliases.
 
-### `fixture-build-failure`
+### Evaluator and security fixtures
 
-Contender build fails; current remains qualified; deterministic retention without full Epoch recapture.
-
-### `fixture-current-invalid`
-
-Current build/readiness/state fails; no retain-current outcome allowed.
-
-### `fixture-page-crash`
-
-First Contender page crashes, second context succeeds; then variant crashes repeatedly.
-
-### `fixture-browser-disconnect`
-
-Chromium disconnects during current and during Contender; full Epoch invalidation.
-
-### `fixture-context-leak`
-
-Candidate-local storage/service worker leak intentionally crosses context to prove detection.
-
-### `fixture-nondeterministic`
-
-Unseeded time/random/animation/server value to exercise stability failure and volatile exclusions.
-
-### `fixture-storage-pressure`
-
-Large output/Artifact with injected no-space and short-write behavior.
-
-### `fixture-stubborn-process`
-
-Detached child/listener, ignored graceful signal, PID reuse simulation.
-
-### `fixture-git-edge-cases`
-
-Subfixtures for dirty/binary/CRLF/mode/symlink/case/LFS/submodules/shallow/sparse.
-
-### `fixture-evaluator-adapter`
-
-Modes: valid, malformed JSON, wrong packet hash, invalid citation, missing Factor, nonfinite confidence, timeout, partial write, noisy stdout, conflicting order result.
-
-### `fixture-security-paths`
-
-Traversal, symlink/junction escape, archive bomb, malformed media, CSP injection, secret emission.
+- `fixture-evaluator-adapter`: valid, malformed JSON, wrong packet hash, invalid citation, missing Factor, nonfinite confidence, timeout, partial write, noisy stdout and reversed conflict.
+- `fixture-pairing-attacks`: alternate Host/port, DNS rebinding, CORS/form, expired/reused code, cookie sharing and stolen route IDs.
+- `fixture-security-paths`: traversal, symlink/junction escape, archive bomb, malformed media, secret emission.
 
 ## 4. Fault injection points
 
-The implementation exposes test-only injected failures behind nonproduction adapters:
+Test-only adapters inject failure:
 
-- before/after intent append;
-- before/after side effect;
-- before/after completion event fsync;
-- before/after summary temp write/replace;
-- before/after Artifact rename/manifest append;
-- stream short write/torn tail;
-- disk reserve crossing;
-- coordinator crash;
-- supervisor connection loss;
+- before/after Operation acceptance write;
+- before/after intent Event;
+- before/after external/native side effect;
+- before/after proof Artifact;
+- before/after completion Event and snapshot;
+- before/after Artifact rename and manifest append;
+- before/after Capture metadata commit;
+- stream short write and torn tail;
+- disk reserve crossing/full volume;
+- lock acquisition/heartbeat/metadata replacement;
+- coordinator or supervisor loss;
 - browser disconnect/page crash;
-- process output backpressure;
-- evaluator result partial write;
-- export/branch side effect before record;
+- output backpressure/limit;
+- evaluator partial result;
+- branch/export result before record;
+- trash rename/index/manifest/purge step;
 - cleanup failure.
 
 Production binaries do not expose unauthenticated fault controls.
 
-## 5. State-machine coverage
+## 5. Primitive and cross-language goldens
 
-Generate tests from a declared transition table:
+Rust and TypeScript consume the same expected canonical bytes and results for:
 
-- every allowed Run/Candidate/Workspace/Process/Epoch/Capture/Gate/Evaluation/Promotion/Export transition;
-- every forbidden pair;
-- expected revision conflict;
+- RFC 8785 ordering, escaping, numbers and Unicode;
+- duplicate-key/invalid UTF-8 rejection;
+- raw payload and canonical-value SHA;
+- Event hash excluding NDJSON LF;
+- full lowercase-prefixed digest validation;
+- exact millisecond UTC timestamps;
+- safe integer boundaries and overflow;
+- revision and sequence starting/increment rules;
+- confidence and null;
+- canonical decimals and monetary sums;
+- token null versus zero;
+- byte/MiB conversions;
+- canonical paths.
+
+Any mismatch blocks scaffold acceptance.
+
+## 6. State and invariant coverage
+
+Generate tests from declared tables and matrix:
+
+- every allowed and forbidden Run, Candidate, Workspace, Process, Epoch, Capture, Gate, Evaluation, Promotion, Export and Operation transition;
+- `awaiting_decision -> promoting -> completed` and destination-conflict return;
+- no general Export Run transition;
 - terminal no-reopen;
-- interrupted recovery target;
-- duplicate operation ID;
-- changed replay rejection;
-- stale Decision/Recommendation;
-- candidate-local failure to gating;
+- interrupted/reconciling recovery;
+- expected revision conflict;
+- duplicate/changing Operation replay;
+- stale Recommendation/Decision;
+- every Recommendation and Decision cardinality row;
+- Promotion/Export terminal timestamp, failure and retry fields;
+- Candidate-local failure to deterministic gating;
 - full Epoch invalidation.
 
-The declared table and implementation reducer must not be maintained independently without a consistency test.
+Transition/invariant source and implementation reducer must have a consistency test.
 
-## 6. Schema compatibility
+## 7. Store and recovery crash matrix
 
-For every schema version:
+For each side-effecting protocol, terminate the process after every durable step and verify recovery:
 
-- valid fixture accepted by TypeScript/Zod and generated JSON Schema validator;
-- invalid fixture rejected with stable path/code;
-- canonical round-trip preserves meaning;
-- unknown extensions preserved only where allowed;
-- previous supported minor read successfully;
-- unknown major read-only;
-- migration deterministic and idempotent on already-migrated input;
-- migration failure leaves original bytes.
+- Event intent/snapshot/completion;
+- Artifact temp, rename, manifest and owner snapshot;
+- Operation acceptance, start, effect, proof and terminalization;
+- branch creation and commit verification;
+- Export destination creation and manifest;
+- trash manifest, rename and Project index;
+- purge item-by-item failure;
+- lock metadata and owner death;
+- migration/import adoption;
+- cleanup process/listener observations.
 
-## 7. Protocol compatibility
+Recovery never blindly repeats ambiguous effects and never reports success without exact proof.
 
-Golden frames are consumed by Rust and TypeScript implementations.
+## 8. Capture determinism and completeness
 
-Test:
+Acceptance pins Node, package manager, Playwright/Chromium, fixture dependencies, fonts, locale, time zone, viewport, scale, theme, motion, clock/random, animation/settle, and benchmark OS image.
 
-- valid major/minor negotiation;
-- incompatible major;
-- missing required capability;
-- malformed/oversize/duplicate/decreasing frames;
-- operation replay;
-- binary output offsets;
-- unknown method/property;
-- peer/session identity failures.
+Validate:
 
-## 8. Capture determinism
+- canonical PNG, not derived WebP/JPEG;
+- raw ARIA YAML and separate axe findings;
+- DOM, geometry, styles, console, network and interaction;
+- Capture metadata references every required committed Artifact;
+- no placeholder/empty/truncated Artifact satisfies completeness;
+- current and Contender exact option/policy parity;
+- masks/exclusions are visible limitations;
+- invalid Epoch makes owned evidence unusable without rewriting bytes.
 
-Acceptance environment pins:
+A golden screenshot is diagnostic, never the only assertion.
 
-- Node/package manager;
-- Playwright/Chromium;
-- fixture dependencies;
-- fonts;
-- locale/time zone;
-- viewport/device scale;
-- theme/reduced motion;
-- clock/random seed;
-- animation/settle policy;
-- OS image where benchmarked.
+## 9. Artifact serving security
 
-A golden screenshot is diagnostic, not the only assertion. Validate DOM, text, accessibility, geometry, styles, console, network, and metadata.
+Tests prove:
 
-Expected visual changes require explicit fixture review and regenerated hashes with rationale.
+- raw content is attachment, no-sniff and no-store;
+- active/ambiguous content never runs under dashboard origin or cookie;
+- HTML/SVG/PDF/Markdown/trace cannot read API, submit commands or access SSE;
+- passive image magic, decoder, dimension, frame and decompression limits;
+- escaped text blocks markup, ANSI and bidi abuse;
+- strict JSON and safe YAML parsing with size/depth/alias limits;
+- filename/header CRLF/path/device-name safety;
+- valid and invalid single ranges, overflow and no multipart;
+- quarantine/missing/corrupt/deleted not served valid;
+- unsupported preview has no raw-navigation fallback;
+- CSP is not weakened to support preview.
 
-## 9. Flake policy
+## 10. Pairing and API tests
 
-- A test is flaky when identical immutable inputs produce inconsistent pass/fail without declared variance.
-- Do not add blind retries to hide flakes.
-- Quarantine only with owner, issue, reproduction, expiry, and nonrelease-blocking justification.
-- Capture/recovery/containment flakes block reference release.
-- Record seed, versions, host capability, event/log paths, and timing on every failure.
+- randomized `.localhost` cookie isolation from numeric/plain/other Session hosts;
+- pairing code absent from URL, argv, environment, DOM after submit, history, logs and telemetry;
+- expiry, single use, bounded failures, logout and Session invalidation;
+- application/API/SSE/Artifact unavailable before pairing;
+- exact Host, Origin, CSRF and no CORS;
+- closed command registry and route mismatch rejection;
+- expected-revision matrix;
+- accepted status path resolves and contains no secret/full URL;
+- Operation states and canonical record agree;
+- pagination default/max, deterministic ordering, cursor binding and tamper/expiry;
+- no unbounded list endpoint;
+- error codes registered and details bounded/redacted;
+- content negotiation and body-size limits;
+- CLI/API command semantics agree.
 
-## 10. Security tests
+## 11. Lock and multi-Session tests
 
-- dashboard loopback only;
-- cookie/Origin/CSRF/CSP;
-- token absent URLs/logs/argv;
+- Windows and maintained Unix cross-process exclusion;
+- lock file replacement does not lose ownership;
+- exclusive-create-only fixture fails reference requirements;
+- global order and same-level sorted multi-lock acquisition;
+- heartbeat counter, wall-clock jump, suspend and write failure;
+- live lock versus old metadata, owner death and PID reuse;
+- corrupt metadata and unknown identity;
+- two Sessions read distinct/same Runs;
+- mutation rejection for nonowner;
+- one active executing Run per Project across Sessions;
+- coordinator crash and safe ownership transfer/recovery;
+- unsupported network/cloud-sync filesystem blocked or read-only.
+
+## 12. Retention and storage tests
+
+- reference graph preserves every cited/protected/proof Artifact;
+- unknown reference fails closed;
+- dry-run categories and byte estimates;
+- Run and Project atomic trash moves with crash at each step;
+- seven-day grace, protection and nonretroactive policy;
+- restore ID/path/schema/source/integrity cases;
+- purge symlink/junction/open-handle/partial failure;
+- no source/external Export deletion and no secure-wipe claim;
+- selective Artifact amendment/delete recovery;
+- preserved Workspace exclusion;
+- storage admission includes temp, final, reserve, trash and uncertainty;
+- disk full at every canonical commit point;
+- app-closed cleanup does not occur or claim it did;
+- startup bounded reconciliation and idle cleanup cancellation;
+- logical versus allocated size reporting.
+
+## 13. Security and privacy tests
+
+- loopback and randomized Host only;
 - named-pipe/socket permissions and peer identity;
-- path traversal/symlink/junction/case collisions;
-- Artifact MIME/download handling;
-- malicious HTML/SVG in previews rendered safely;
-- evaluator prompt-injection output rejected when schema/citations break;
-- secrets absent structured logs/export/packet;
-- local evaluator trust warning;
-- archive import decompression/path limits;
-- branch/export destination conflicts;
-- unrelated PID/process never killed.
+- paths, symlinks, junctions, case and archive safety;
+- secret values absent structured logs, Operation records, evaluator packets, exports and test evidence;
+- screenshots/DOM/ARIA/network warn on potentially unrecognized sensitive content;
+- local evaluator trust warning and no sandbox overclaim;
+- unrelated PID/process never killed;
+- telemetry/crash off means zero network over extended use;
+- diagnostic Export requires review and preserves redaction/omission report.
 
-## 11. Accessibility tests
+## 14. Accessibility tests
 
 Automated:
 
-- axe on dashboard routes and fixture Candidate pages;
+- axe on pairing and authenticated routes plus fixture Candidates;
 - keyboard navigation and focus visibility;
 - dialogs/traps/return focus;
 - live-region throttling;
 - no color-only status;
 - reduced motion;
-- compact-mode labels.
+- compact-mode labels;
+- pairing route at 320 CSS pixels.
 
-Manual acceptance:
+Manual:
 
-- screen-reader route/heading/landmark flow;
-- side-by-side Candidate identification;
-- evidence citations and error recovery;
-- long logs/tables/drawers.
+- screen-reader route, heading and landmark flow;
+- current versus Contender identification;
+- evidence citations and recovery;
+- long logs, tables and drawers;
+- active-content download warnings.
 
-Automated checks do not claim full WCAG conformance.
+Automated checks do not claim complete WCAG conformance.
 
-## 12. Performance and resource budgets
+## 15. Flake policy
 
-Initial budgets are measured during scaffold and then pinned:
+- identical immutable inputs producing inconsistent outcome without declared variance is a product flake;
+- no blind retry hides a flake;
+- quarantine requires owner, issue, reproduction, expiry and nonrelease-blocking justification;
+- Capture, recovery, containment, lock and deletion flakes block reference release;
+- every failure records seed, versions, capability, Event/Artifact paths and timing.
 
-- bootstrap-to-dashboard-ready;
-- idle coordinator/dashboard memory;
-- supervisor overhead;
-- event append and snapshot replacement latency;
-- Artifact hashing throughput;
-- UI responsiveness with large event/log sets;
-- cancellation/cleanup latency;
+## 16. Performance and resource budgets
+
+Initial budgets are measured then pinned for:
+
+- bootstrap and pairing readiness;
+- idle supervisor/coordinator/dashboard memory;
+- Event/Operation append and snapshot replacement;
+- canonical JSON and Artifact hashing throughput;
+- Capture Artifact volume and processing;
+- UI large Event/log/Artifact virtualization;
+- cancellation and cleanup;
+- trash move, purge and restore;
+- lock acquisition and contention;
 - disk use per reference Run;
-- browser restart/Epoch recapture time.
+- browser restart and Epoch recapture.
 
-A budget breach is reported with environment and trend. Quality correctness takes priority over premature micro-optimization, but unbounded memory/disk/output is a failure.
+Unbounded memory, disk, output, DOM, preview decode, pagination or cleanup work is a failure.
 
-## 13. CI matrix
+## 17. CI and host matrix
 
 ### Every change
 
-- TypeScript typecheck/lint/unit;
-- schema fixtures;
-- pure store tests;
-- Rust format/lint/unit;
-- protocol goldens;
-- docs link/inventory checks;
-- no stale/deprecated token scan.
+- TypeScript typecheck, lint and pure tests;
+- schema/invariant/primitive/API/Operation fixtures;
+- canonical store tests;
+- Rust format, lint and unit tests;
+- protocol and canonical-byte goldens;
+- docs link/inventory/registry/route checks;
+- context-aware deprecated-token, raw-digest, floating-cost and illegal-control scan.
 
 ### Linux CI
 
-- most application/store/Git/browser/evaluator tests;
-- Linux managed/strong only when runner capability is explicitly proven;
-- no claim based solely on CI host name.
+- most domain/store/Git/browser/evaluator/API/security tests;
+- managed/strong containment only when capability proven;
+- no support claim from runner name alone.
 
-### Windows required CI/host
+### Windows required host
 
 - native package build;
 - exact Node/bootstrap;
-- Job Object/console/Ctrl+C;
+- Job, console and Ctrl+C;
 - browser descendant containment;
 - listener ownership;
-- candidate-local cleanup;
+- named-pipe and file-lock behavior;
+- randomized-host pairing in supported browser;
+- Candidate cleanup;
 - Git path/case/CRLF/worktree;
 - full reference E2E.
 
 ### macOS experimental
 
-- build/smoke/best-effort diagnostics;
+- build, smoke and best-effort diagnostics;
 - no strong parity gate.
 
-## 14. Documentation conformance automation
+## 18. Documentation conformance automation
 
-Create a repository script that fails when:
+Fail when:
 
-- README/manifest references missing files;
-- duplicate canonical type names are declared outside approved schema source;
-- deprecated persisted terms appear in active specs/code;
-- old `.visual-optimizer`, `VISOPT_`, or visual-optimizer package paths appear outside archive/tests documenting rejection;
-- MVP UI documents expose `Pause`, generation, rounds, or illegal post-seal mutations as enabled;
-- Promotion includes report/diagnostic kinds;
-- an `OPEN-*` marker lacks a Decision Register entry;
-- route inventory/wireframe differ;
-- schema registry list differs from generated schemas.
+- README or manifest references a missing file;
+- canonical specs/shared registries/manifests disagree;
+- duplicate primitive, type, ErrorCode, command, Operation state, Artifact class or reason registry appears;
+- deprecated persisted terms or Run `exporting` appear outside migration/history allowlist;
+- old storage/env/package names appear outside rejection tests/archive;
+- raw digest literal is presented as canonical JSON;
+- floating persisted cost or ambiguous units appear;
+- MVP UI exposes Pause, generation, rounds or illegal post-seal actions;
+- Promotion includes report/diagnostic or general Export changes Run state;
+- an `OPEN-*` lacks Decision Register entry;
+- pairing/route/API inventories differ;
+- an API collection is documented unbounded;
+- Capture required class is absent from schema/registry;
+- active Artifact preview is permitted contrary to spec21;
+- Operation status has no ledger state;
+- trash/lock layout or rules drift;
+- telemetry/public claims exceed implementation.
 
-Archive and historical ADR quotations are allowlisted explicitly.
+Archive, migration fixtures and historical ADR quotations use explicit allowlists.
 
-## 15. Release gates
+## 19. Release gates
 
 ### Scaffold complete
 
-- schemas/reducers/protocol/store foundational tests pass;
-- native Windows spike proves ownership/cleanup;
-- config/CLI/API shell works;
-- no unresolved unclassified open decisions.
+- primitive/schema/reducer/API/Operation/store foundations pass;
+- RFC 8785 cross-language goldens pass;
+- native Windows spike proves ownership, lock and cleanup;
+- pairing, CLI and API shell work;
+- Capture Artifact registry and safe preview foundations work;
+- no unresolved unclassified architecture decisions.
 
 ### MVP alpha
 
 - full reference golden path;
-- all P0 failure fixtures;
-- no known integrity/security critical defects;
-- no illegal UI commands;
-- cleanup verified;
+- all P0 failure and security fixtures;
+- no known integrity, security or active-content critical defect;
+- no illegal UI command;
+- Operation recovery, cleanup and retention verified;
 - install/package smoke test;
 - license status represented honestly.
 
-### OSS/public release
+### Public/OSS release
 
 Additionally:
 
-- real license selected;
-- contribution/security policies;
+- real license;
+- contribution and security policies;
 - signed/checksummed packages as required;
 - documented support matrix;
-- reproducible release notes/SBOM/third-party notices;
-- external-user fixture validation.
+- reproducible release notes, SBOM and third-party notices;
+- external-user install, security, recovery and deletion validation.
 
-## 16. Test evidence
+## 20. Test evidence
 
-Every E2E run retains:
+Every E2E retains:
 
-- component/tool versions;
-- capability report;
-- fixture/source hashes;
+- component/tool versions and capability report;
+- fixture/source/config/policy hashes;
 - test seed;
-- events and relevant Artifacts;
-- failure code/log ranges;
-- cleanup result;
+- Events, Operations and relevant Artifacts;
+- failure code and bounded log ranges;
+- cleanup, lock and storage result;
 - environment identifier;
 - CI/job link when available.
 
-Test evidence follows retention/redaction policy and never includes real secrets.
+Test evidence follows retention/redaction policy and contains no real secrets.
