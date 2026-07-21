@@ -4,9 +4,13 @@
 // Markdown specifications reference these types rather than redefining them.
 
 export type ProjectId = `prj_${string}`;
+export type ProjectTrustRecordId = `trt_${string}`;
+export type ProjectTemplateId = `tpl_${string}`;
 export type SourceSnapshotId = `src_${string}`;
+export type SessionId = `ses_${string}`;
 export type RunId = `run_${string}`;
 export type RunConfigurationId = `rcf_${string}`;
+export type PolicySnapshotId = `pol_${string}`;
 export type CandidateId = `can_${string}`;
 export type CandidateWorkspaceId = `wsp_${string}`;
 export type CaptureEpochId = `cep_${string}`;
@@ -23,9 +27,11 @@ export type UserDecisionId = `dec_${string}`;
 export type PromotionId = `pro_${string}`;
 export type ExportOperationId = `exp_${string}`;
 export type ArtifactId = `art_${string}`;
+export type ProcessGroupId = `grp_${string}`;
 export type ProcessRecordId = `pcs_${string}`;
+export type CleanupOperationId = `cln_${string}`;
 export type EventId = `evt_${string}`;
-export type DiagnosticBundleId = `dgn_${string}`;
+export type OperationId = `op_${string}`;
 
 export type CandidateRole = "current" | "contender";
 
@@ -131,7 +137,7 @@ export interface InferenceUsage {
   cachedInputTokens: number | null;
   reasoningTokens: number | null;
   costUsd: number | null;
-  policySnapshotId: string;
+  policySnapshotId: PolicySnapshotId;
 }
 
 export interface RecommendationRecord {
@@ -146,7 +152,7 @@ export interface RecommendationRecord {
   gateResultIds: GateResultId[];
   reasonCodes: string[];
   confidence: number | null;
-  policySnapshotId: string;
+  policySnapshotId: PolicySnapshotId;
   reproducibilityHash: string;
   createdAt: string;
 }
@@ -162,11 +168,11 @@ export interface UserDecisionRecord {
   recommendationHash: string;
   evidenceSetHash: string;
   sourceSetHash: string;
-  policySnapshotId: string;
+  policySnapshotId: PolicySnapshotId;
   createdAt: string;
 }
 
-// Promotion is an adoption handoff for a selected contender. It requires a
+// Promotion is an adoption handoff for a selected Contender. It requires a
 // nonstale authorizing User Decision and always identifies the Candidate.
 export interface PromotionRecord {
   id: PromotionId;
@@ -211,7 +217,7 @@ export interface ExportOperationRecord {
     | "cancelled";
   sourceEntityIds: string[];
   outputArtifactIds: ArtifactId[];
-  redactionPolicyId: string;
+  redactionPolicyId: PolicySnapshotId;
   omissionReportArtifactId: ArtifactId | null;
   createdAt: string;
   completedAt: string | null;
