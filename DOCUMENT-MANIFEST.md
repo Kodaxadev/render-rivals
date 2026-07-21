@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 3.5  
+**Inventory format:** 4.0  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -10,7 +10,7 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 
 - Architecture/MVP contracts: established.
 - Executable implementation: pre-scaffold.
-- License: placeholder only; no general reuse/contribution permission yet.
+- License: placeholder only; no general reuse or contribution permission yet.
 - Public packages: unavailable.
 
 ## Canonical specifications
@@ -33,8 +33,13 @@ This tracks the maintained repository surface. It is intentionally not a line-co
 16. [`spec/16-dashboard-session-authentication-and-pairing.md`](spec/16-dashboard-session-authentication-and-pairing.md)
 17. [`spec/17-local-api-envelopes-operations-and-pagination.md`](spec/17-local-api-envelopes-operations-and-pagination.md)
 18. [`spec/18-canonical-primitives-json-hashing-and-measurements.md`](spec/18-canonical-primitives-json-hashing-and-measurements.md)
+19. [`spec/19-operation-ledger-idempotency-and-reconciliation.md`](spec/19-operation-ledger-idempotency-and-reconciliation.md)
+20. [`spec/20-capture-artifact-formats-and-evidence-registry.md`](spec/20-capture-artifact-formats-and-evidence-registry.md)
+21. [`spec/21-artifact-serving-preview-and-active-content-security.md`](spec/21-artifact-serving-preview-and-active-content-security.md)
+22. [`spec/22-retention-trash-garbage-collection-and-storage-admission.md`](spec/22-retention-trash-garbage-collection-and-storage-admission.md)
+23. [`spec/23-locking-leases-concurrency-and-multi-session-ownership.md`](spec/23-locking-leases-concurrency-and-multi-session-ownership.md)
 
-Specs 12–18 normalize shared authority, lock configuration/CLI/API and Git behavior, prevent local observability from becoming implicit remote telemetry, define the first-browser pairing ceremony, bound local API operations/collections, and make Rust/TypeScript hashes and measurements byte-compatible.
+Specs 12–23 normalize shared authority, make Rust/TypeScript records byte-compatible, provide durable command reconciliation, register complete Capture evidence, prevent same-origin Artifact execution, and define recoverable deletion plus cross-Session ownership.
 
 ## Shared schema and invariant sources
 
@@ -42,10 +47,11 @@ Specs 12–18 normalize shared authority, lock configuration/CLI/API and Git beh
 - [`schemas/domain-types.ts`](schemas/domain-types.ts)
 - [`schemas/error-codes.ts`](schemas/error-codes.ts)
 - [`schemas/api-types.ts`](schemas/api-types.ts)
+- [`schemas/operation-types.ts`](schemas/operation-types.ts)
 - [`schemas/README.md`](schemas/README.md)
 - [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 
-These control canonical digest/timestamp/decimal/unit formats, shared IDs/enums/records/states, stable errors, API commands/envelopes, and cross-record cardinality/nullability. Full Zod/JSON Schema, canonicalization libraries/goldens, generated clients, fixtures, migrations, and compatibility tests remain scaffold work.
+These control canonical digest, timestamp, decimal and unit formats; shared IDs, records and states; stable errors; API commands and envelopes; Operation records and reconciliation states; and cross-record cardinality/nullability. Full executable schemas, generated clients, fixtures, migrations, and compatibility tests remain scaffold work.
 
 ## Accepted ADRs
 
@@ -60,8 +66,9 @@ These control canonical digest/timestamp/decimal/unit formats, shared IDs/enums/
 - [`adr/ADR-0009-experimental-controls.md`](adr/ADR-0009-experimental-controls.md)
 - [`adr/ADR-0010-quality-first-accounting.md`](adr/ADR-0010-quality-first-accounting.md)
 - [`adr/ADR-0011-selection-outcomes-and-user-decisions.md`](adr/ADR-0011-selection-outcomes-and-user-decisions.md)
+- [`adr/ADR-0012-run-promotion-phase-naming.md`](adr/ADR-0012-run-promotion-phase-naming.md)
 
-ADR-0011 is incorporated and now serves as history/rationale rather than active override.
+ADR-0011 is incorporated history. ADR-0012 makes `promoting` the Run adoption phase; general Export Operations remain separate.
 
 ## Development and release contracts
 
@@ -74,7 +81,7 @@ ADR-0011 is incorporated and now serves as history/rationale rather than active 
 - [`docs/DEVELOPMENT-GAP-REGISTER.md`](docs/DEVELOPMENT-GAP-REGISTER.md)
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md)
 
-The invariant matrix defines semantic record combinations; the gap register distinguishes remaining implementation evidence from architectural ambiguity.
+The invariant matrix defines semantic record combinations; the gap register distinguishes implementation proof from architecture; the test strategy turns those requirements into release gates.
 
 ## Product and public planning
 
@@ -84,13 +91,14 @@ The invariant matrix defines semantic record combinations; the gap register dist
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md)
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md)
 
-The pairing route is the only pre-authentication browser surface. Authenticated UI/route plans expose only legal MVP controls. Marketing pages are claim-gated by implementation, package, license, and proof.
+The pairing route is the only pre-authentication browser surface. Authenticated UI exposes only legal MVP commands. Marketing pages remain claim-gated by implementation, package, license, and proof.
 
-## Runtime source verification
+## Runtime and capture API verification
 
 - [`sources/official-runtime-verification.md`](sources/official-runtime-verification.md)
+- [`sources/playwright-capture-api-verification.md`](sources/playwright-capture-api-verification.md)
 
-Upstream documentation is separated from actual Render Rivals capability proof. Version-sensitive behavior is rechecked at scaffold and upgrades.
+Upstream documentation is separated from Render Rivals capability proof. Current Playwright ARIA/screenshot APIs are noted, but exact pinned package and fixture behavior remain authoritative.
 
 ## Brand exploration
 
@@ -103,7 +111,7 @@ Upstream documentation is separated from actual Render Rivals capability proof. 
 - `brand/concepts/05-minimal-r-monogram.webp`
 - `brand/concepts/06-twin-slash-lime.webp`
 
-Brand files are exploratory and not architecture inputs. Legacy terms in historical asset filenames are not schema vocabulary.
+Brand files are exploratory and not architecture inputs. Legacy words in historical asset filenames are not schema vocabulary.
 
 ## Historical archive
 
@@ -125,24 +133,25 @@ Archive never drives scaffolding.
 
 ## Pending scaffold artifacts
 
-- Zod/JSON Schema registry and generated API command/client registry;
-- RFC 8785 canonical JSON plus Rust/TypeScript digest/timestamp/decimal/unit goldens;
-- valid/invalid fixtures covering the Record Invariant Matrix;
-- migrations/compatibility tests;
-- Rust/TypeScript protocol goldens;
+- executable Zod and generated JSON Schema for primitives, entities, Operations, Capture classes, API payloads, locks and trash manifests;
+- RFC 8785 plus Rust/TypeScript digest, timestamp, decimal and unit goldens;
+- valid and invalid fixtures covering the Record Invariant Matrix;
+- Run-state fixture migration from pre-scaffold `exporting` to `promoting`;
+- Operation reconciliation, store crash-injection, Capture completeness, active-content preview, trash and lock suites;
+- generated API command/client registry;
 - documentation conformance script;
 - implementation monorepo;
-- randomized-host dashboard pairing proof;
-- Windows native/package/browser proof.
+- randomized-host pairing and Windows native/package/browser proof.
 
 ## Public release blockers
 
 - real license;
-- contribution/security policy;
-- package/native/browser distribution;
-- checksums/provenance/SBOM/notices;
-- tested support matrix and migration/rollback path.
+- contribution and security policy;
+- package, native and browser distribution;
+- checksums, provenance, SBOM and notices;
+- tested support matrix and migration/rollback path;
+- external-user validation of security, recovery and deletion behavior.
 
 ## Conformance note
 
-Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, and archive. Future stale-token/canonical-value automation must use explicit path/section allowlists rather than fail on every raw string occurrence.
+Intentional references to rejected old names, abbreviated digest placeholders, or migration values exist in normalization, tests, ADR history, and archive. Future automated checks must use explicit path and context allowlists rather than fail on every raw occurrence.
