@@ -167,19 +167,23 @@ State rules:
 |---|---|---|---|---|
 | `accepted` | null | null | null | null |
 | `running` | required | null | null or bounded progress-independent preliminary metadata | null |
+| `reconciling` | required because an execution or external side effect was observed | null | null until proof permits canonical adoption | null |
+| `interrupted` | optional when authority was lost before start, otherwise required | null | null; no unverified result adoption | required interruption detail with `recoveryDisposition` when safely derivable |
 | `completed` | required when execution phase exists | required | required command result or result-path reference | null |
 | `failed` | optional when failure occurred before start | required | null | required |
 | `cancelled` | optional | required | null or explicit partial-retention summary | null or cancellation detail according to command schema |
 
 Rules:
 
-- `terminalAt` never appears for active states;
+- `accepted`, `running`, `reconciling`, and `interrupted` are nonterminal API states;
+- `terminalAt` never appears for nonterminal states;
+- `interrupted` may transition to `reconciling`, `failed`, or `cancelled` under spec/19 and cannot expose an adopted success result;
 - a failed operation includes registered stable code;
 - operation status does not replace canonical Run/Promotion/Export/Cleanup records;
 - result references point to canonical entity/query paths;
 - progress percentages are derived elsewhere and cannot alter operation state;
 - status query for unknown/unauthorized ID returns `404` and does not reveal whether another Session/user owns it;
-- active operation status is invalidated/terminalized appropriately on Session loss while durable Run recovery remains separate.
+- active operation status is invalidated or moved to `interrupted` appropriately on Session loss while durable Run recovery remains separate.
 
 ## 9. Query response envelope
 
@@ -343,7 +347,8 @@ CLI may invoke the same application services directly inside coordinator or thro
 - operation ID exact replay is idempotent and changed replay conflicts;
 - expected revision required/null rules per command;
 - accepted command status path exists and contains no secret/full URL;
-- operation status state/timestamp/result/error combinations validate;
+- all seven Operation states and their timestamp/result/error combinations validate;
+- `interrupted` remains nonterminal and cannot expose an adopted success result;
 - operation status cannot replace or contradict canonical entity state;
 - query response labels canonical versus derived correctly;
 - every collection defaults/bounds limit and uses deterministic cursor;
