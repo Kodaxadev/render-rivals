@@ -8,6 +8,7 @@ Render Rivals is a local-first visual optimization harness for AI-assisted front
 
 **Architecture:** Canonical MVP contracts established  
 **Implementation:** Product/runtime remains pre-scaffold; dependency-free documentation conformance is executable  
+**Continuation gate:** Production Stage 1 requires a valid Stage 0.5 `proceed` decision  
 **Reference platform:** Windows 11 x64 strong-containment target  
 **License:** Not yet licensed for general reuse or contribution; see [`LICENSE-TBD.md`](LICENSE-TBD.md)  
 **Public packaging:** Not yet available
@@ -81,11 +82,12 @@ Shared sources and cross-record validation:
 - [`schemas/README.md`](schemas/README.md)
 - [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 
-Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-0012-run-promotion-phase-naming.md). Runtime and capture API verification notes are under [`sources/`](sources/). Historical drafts are under [`archive/`](archive/) and are not implementation inputs.
+Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-0012-run-promotion-phase-naming.md) and [`ADR-0013`](adr/ADR-0013-stage-0-5-evidence-gate.md). Runtime and capture API verification notes are under [`sources/`](sources/). Historical drafts are under [`archive/`](archive/) and are not implementation inputs.
 
 ## Product, development, and release contracts
 
-- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) — locked first usable path.
+- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) — locked first usable production path.
+- [`docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md`](docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md) — frozen non-production value experiment and continuation thresholds.
 - [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) — stable failures, retries, recovery, cleanup.
 - [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md) — cardinality, nullability, supersession, retry, and cross-field validation.
 - [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md) — fixtures, fault injection, CI, release gates.
@@ -128,7 +130,7 @@ When statements conflict:
 9. marketing, brand, and archive never override implementation;
 10. code deviations require matching specification and ADR changes where architectural.
 
-ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `exporting` to `promoting`; Promotion and Export Operation internal `exporting` statuses remain valid.
+ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `exporting` to `promoting`; Promotion and Export Operation internal `exporting` statuses remain valid. ADR-0013 inserts Stage 0.5 and blocks production Stage 1 until a valid `proceed` record exists.
 
 ## Locked ownership and safety decisions
 
@@ -151,10 +153,13 @@ ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `
 - Raw secret values remain Session-only; browser-layer routing is not represented as Project-process network isolation.
 - Upgrades verify component compatibility before mutation and use staged migration, protected backup, verification, atomic adoption, and explicit rollback rules.
 - Remote telemetry, automatic crash upload, third-party analytics, and hidden background services are absent or disabled by default.
+- Production implementation is evidence-gated; Stage 0.5 shortcuts carry no production containment, durability, recovery, security, or release claims.
 
 ## Scaffold gate
 
-Architecture decisions are classified, but foundational scaffold acceptance still requires:
+The documentation checker and experiment-only tools may exist before production scaffold. **Production Stage 1 remains blocked until Stage 0.5 ends with a valid `proceed` decision.**
+
+After that decision, foundational scaffold acceptance still requires:
 
 - exact Node, pnpm, Playwright, Chromium, Rust, and dependency pins;
 - Zod/JSON Schema, migrations, fixtures, invariant/API/Operation registries, and generated clients;
