@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import { validateExperimentManifest, validateTaskResult } from "./kit-core.mjs";
+import { validateExperimentManifest, validateTaskResult } from "./kit.mjs";
 
 function parseArgs(argv) {
   const options = { experiment: null, json: false };
