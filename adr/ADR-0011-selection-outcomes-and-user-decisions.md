@@ -1,31 +1,18 @@
 # ADR-0011 — Selection Outcomes and User Decision Vocabulary
 
-**Status:** Accepted  
+**Status:** Accepted and incorporated  
 **Date:** 2026-07-20  
-**Supersedes:** The three-outcome Recommendation vocabulary and narrower User Decision action lists currently stated in `spec/09-domain-model-and-identifiers.md` and `spec/10-run-and-candidate-state-machines.md`
+**Incorporated by:** `schemas/domain-types.ts`, specs 06, 09–13, failure/recovery and UI contracts
 
 ## Context
 
-The canonical domain and state-machine specifications currently define three recommendation outcomes:
+The earlier domain/state drafts defined only contender recommended, current retained, and human review. The MVP required explicit tie and invalid-Run outcomes plus unambiguous User Decision actions.
 
-- `contender_recommended`;
-- `current_retained`;
-- `human_review_required`.
-
-The locked MVP implementation contract requires two additional first-class outcomes:
-
-- an explicit tie where valid evidence does not distinguish the candidates;
-- an invalid run where no trustworthy recommendation may exist.
-
-The specifications also define a narrower set of user-decision actions than the MVP workflow. The product needs explicit actions for invalidating a run and, in future multi-contender modes, selecting another eligible candidate without pretending that selection was the automated recommendation.
-
-Encoding these conditions as reason strings under one of the old outcomes would make state handling, analytics, recovery, and UI behavior ambiguous.
+Encoding these as reason strings would make state handling, analytics, recovery, and UI behavior ambiguous.
 
 ## Decision
 
 ### Recommendation outcomes
-
-The canonical Recommendation outcome vocabulary is:
 
 ```ts
 type RecommendationOutcome =
@@ -38,17 +25,15 @@ type RecommendationOutcome =
 
 Meanings:
 
-- `contender_recommended`: one eligible contender demonstrated a material improvement under the frozen policy.
-- `current_retained`: evidence is valid, but improvement was not proven or a protected-regression veto applies.
-- `tie`: evidence is valid and sufficiently complete, but candidates remain materially indistinguishable after configured tie handling.
-- `human_review_required`: evidence exists but automation cannot resolve the choice safely because of low confidence, conflicting evidence, or a declared limitation.
-- `invalid_run`: the comparison, baseline, evidence set, source identity, fixture, or policy integrity is invalid; no selection recommendation exists.
+- `contender_recommended`: eligible Contender demonstrated material improvement under frozen policy;
+- `current_retained`: valid evidence did not prove improvement or a protected veto applies;
+- `tie`: valid complete evidence remains materially indistinguishable after tie policy;
+- `human_review_required`: valid evidence cannot be safely resolved automatically;
+- `invalid_run`: baseline/comparison/evidence/source/fixture/policy integrity is invalid and no selection Recommendation exists.
 
-`tie` is not an error and does not imply invalid evidence. `invalid_run` is not a preference result and cannot be accepted as a candidate recommendation.
+Tie is not error. Invalid Run is not a preference result and cannot authorize Candidate Promotion.
 
-### User decision actions
-
-The canonical User Decision action vocabulary is:
+### User Decision actions
 
 ```ts
 type UserDecisionAction =
@@ -62,48 +47,57 @@ type UserDecisionAction =
 
 Rules:
 
-- `accept_recommendation` requires `contender_recommended` and selects its recommended candidate.
-- `retain_current` may respond to any non-invalid recommendation and selects the current implementation.
-- `decline_recommendation` records rejection without implying a different candidate was selected.
-- `select_other_eligible_candidate` is valid only when the selected candidate is eligible and the product mode exposes multiple contenders. It is reserved in the one-contender MVP and must not appear as an enabled action there.
-- `defer` leaves the run in `awaiting_decision`.
-- `invalidate_run` records the user's determination that the run must not support adoption or export.
+- accept requires contender recommendation and selects its Candidate;
+- retain current selects current implementation for any applicable non-invalid outcome;
+- decline records rejection without implying an alternate selection;
+- select-other requires an eligible alternate and a mode exposing multiple Contenders; hidden in MVP;
+- defer leaves Run awaiting Decision;
+- invalidate records that Run cannot support Candidate adoption.
 
-The prior values `accepted`, `declined`, `kept_current`, and `deferred` map respectively to `accept_recommendation`, `decline_recommendation`, `retain_current`, and `defer` during schema migration.
+Former values map deterministically during migration:
 
-`exported_without_acceptance` is removed as a User Decision action. Report export may occur without adoption, but candidate patch or branch promotion requires an explicit decision authorizing that candidate.
+- `accepted` → `accept_recommendation`;
+- `declined` → `decline_recommendation`;
+- `kept_current` → `retain_current`;
+- `deferred` → `defer`.
 
-## State-machine consequences
+`exported_without_acceptance` is not a Decision. Candidate patch/branch/workspace Promotion requires authorizing Decision. General report/diagnostic/evidence Export Operation may occur without adoption subject to integrity/redaction policy.
 
-- A valid `tie` recommendation enters `awaiting_decision`.
-- A valid `human_review_required` recommendation enters `awaiting_decision`.
-- An `invalid_run` recommendation is a terminal analytical outcome. The run may enter `awaiting_decision` only to let the user acknowledge or explicitly invalidate it; candidate promotion remains blocked.
-- `defer` does not terminalize the run.
-- `invalidate_run` terminalizes the run after cleanup and prevents promotion.
-- The one-contender MVP does not enable `select_other_eligible_candidate`, although the schema reserves it.
+## State consequences
 
-## Storage and migration consequences
+- tie and human review enter awaiting Decision;
+- invalid Run may enter awaiting Decision for acknowledgement/invalidation but blocks Promotion;
+- defer does not terminalize;
+- invalidate terminalizes after cleanup and blocks Promotion;
+- one-Contender MVP hides select-other.
 
-- Recommendation and User Decision schemas receive a major-version amendment before implementation.
-- Existing pre-scaffold documents using the former enum values are migrated deterministically.
-- Historical records retain their raw original representation and migration provenance.
-- Recommendation reproducibility hashes include the exact outcome vocabulary and policy version.
+## Storage consequences
+
+- Recommendation/Decision schemas use canonical shared types;
+- migration preserves original bytes and provenance;
+- reproducibility hashes include outcome vocabulary/policy;
+- Promotion and Export Operation remain distinct entities.
 
 ## UI consequences
 
-- Tie, human review, invalid run, and no-material-improvement are distinct scenes.
-- The UI must not style `tie` as a failed run.
-- The UI must not style `invalid_run` as retention based on preference evidence.
-- `select_other_eligible_candidate` remains hidden or disabled in the one-contender MVP.
+- tie, human review, invalid Run, and current retained are distinct scenes;
+- tie is not styled as failure;
+- invalid Run is not styled as preference retention;
+- select-other hidden in MVP;
+- report/diagnostic export is not styled as Promotion.
 
-## Follow-up amendments
+## Incorporation status
 
-Amend:
+The follow-up amendments are complete in:
 
-1. `spec/09-domain-model-and-identifiers.md` Recommendation and User Decision sections;
-2. `spec/10-run-and-candidate-state-machines.md` Recommendation, Decision, and run-transition sections;
-3. `spec/11-artifact-event-and-schema-contracts.md` Recommendation and Decision schema registry examples;
-4. failure and recovery handling for invalid-run terminalization;
-5. route copy and action availability in the MVP dashboard.
+- `schemas/domain-types.ts`;
+- `spec/06-evaluation-and-experiments.md`;
+- `spec/09-domain-model-and-identifiers.md`;
+- `spec/10-run-and-candidate-state-machines.md`;
+- `spec/11-artifact-event-and-schema-contracts.md`;
+- `spec/12-cross-spec-normalization.md`;
+- `spec/13-configuration-cli-and-local-api-contracts.md`;
+- `docs/FAILURE-RECOVERY-MATRIX.md`;
+- product UI and wireframe plans.
 
-Until those textual amendments land, this accepted ADR is authoritative under the repository canonicality rule.
+This ADR now records the rationale and migration history rather than serving as a temporary textual override.
