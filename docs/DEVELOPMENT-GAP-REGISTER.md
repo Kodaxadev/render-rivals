@@ -5,11 +5,30 @@
 
 ## 1. Status values
 
+- **Evidence gate:** required before production Stage 1 may begin.
 - **P0 scaffold blocker:** required before the named foundational stage is accepted.
 - **P0 MVP blocker:** scaffold may proceed, but MVP alpha cannot be called complete.
 - **P1 release blocker:** local/private MVP may work, but public packaging or OSS claims are blocked.
 - **Deferred:** outside MVP and must not shape the first scaffold.
 - **Milestone decision:** architecture boundary is defined, exact dependency/version is selected during the named spike.
+
+## 1.5 Stage 0.5 — Hypothesis experiment
+
+Production Stage 1 remains blocked by ADR-0013 until this section ends with a valid `proceed` record under `docs/STAGE-0.5-HYPOTHESIS-EXPERIMENT.md`.
+
+| Gap | Status | Completion evidence |
+|---|---|---|
+| Frozen experiment manifest and thresholds | Evidence gate | Experiment ID, task IDs, evaluator/prompt hashes, environment, thresholds and selection rule committed before outcomes |
+| Frozen task sample | Evidence gate | Target 12 and minimum 8 valid comparisons selected without outcome-based removal; diversity requirements recorded |
+| Independent Contender preparation | Evidence gate | Current/Contender source identities and preparation method, time and known cost recorded per task |
+| Comparable paired evidence | Evidence gate | Three states, desktop/mobile and critical interaction captured for both Candidates with hashes and invalidation record |
+| Eligibility and protected-regression review | Evidence gate | Ineligible Contender retains current; broken current invalidates task; all veto observations retained |
+| Order-reversed pairwise evaluation | Evidence gate | Immutable A/B and B/A packets, outputs, citations, conflicts and selector result per eligible task |
+| Blinded human rating | Evidence gate | Rating committed before Recommendation reveal with randomized labels and explicit preference/adoption result |
+| Controls and metrics | Evidence gate | Opportunity, agreement, false recommendation, retain-current, random, conflict, time and cost counts committed |
+| Continuation decision | Evidence gate | `proceed`, `pivot`, `stop`, or `inconclusive` record cites raw metrics and deviations; only `proceed` opens Stage 1 |
+
+Experiment-only scripts do not satisfy production containment, durability, schema, security, recovery, packaging, or release gaps below.
 
 ## 2. Stage 1 — Primitives, schemas, and domain
 
@@ -28,7 +47,7 @@
 | State transition tables and reducers | P0 scaffold blocker | Allowed and forbidden transitions, including Run `promoting` |
 | Pre-scaffold `exporting` Run fixture migration | P0 scaffold blocker | Explicit migration to `promoting`; writer v1 rejects old literal |
 | Migration framework | P0 MVP blocker | Copy, validate, adopt, rollback and unknown-major read-only tests |
-| Documentation conformance script | P0 scaffold blocker | Missing-link/registry/route/old-name/digest/cost/telemetry/Artifact checks in CI |
+| Documentation conformance CI gate | P0 scaffold blocker | Existing clean-tree checker and ten mutation tests run automatically on architecture changes and remain green |
 
 ## 3. Stage 2 — Native bootstrap and supervisor
 
