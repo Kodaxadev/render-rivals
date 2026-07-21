@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "4.0.0",
+  "schemaVersion": "4.1.0",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -10,6 +10,7 @@
       "This is a maintained inventory, not a self-referential checksum list.",
       "Tagged release bundles may later include a CI-generated checksummed manifest.",
       "Archive files are historical and never implementation inputs.",
+      "Only archive files that actually exist in Git history are listed.",
       "Canonical primitive wire formats are defined in schemas/primitives.ts and spec/18.",
       "Shared persisted vocabulary is defined in schemas/domain-types.ts.",
       "Stable errors are defined in schemas/error-codes.ts.",
@@ -43,7 +44,9 @@
     "spec/20-capture-artifact-formats-and-evidence-registry.md",
     "spec/21-artifact-serving-preview-and-active-content-security.md",
     "spec/22-retention-trash-garbage-collection-and-storage-admission.md",
-    "spec/23-locking-leases-concurrency-and-multi-session-ownership.md"
+    "spec/23-locking-leases-concurrency-and-multi-session-ownership.md",
+    "spec/24-secrets-authentication-state-and-network-egress-policy.md",
+    "spec/25-component-upgrades-schema-migrations-backups-and-rollback.md"
   ],
   "canonicalSharedSources": [
     "schemas/primitives.ts",
@@ -92,9 +95,14 @@
     "schemas/operation-types.ts",
     "docs/RECORD-INVARIANT-MATRIX.md"
   ],
+  "conformance": [
+    "conformance/README.md",
+    "conformance/fixtures/documentation-drift-regression.json"
+  ],
   "sourceVerification": [
     "sources/official-runtime-verification.md",
-    "sources/playwright-capture-api-verification.md"
+    "sources/playwright-capture-api-verification.md",
+    "sources/playwright-network-api-verification.md"
   ],
   "brand": [
     "brand/README.md",
@@ -102,18 +110,13 @@
     "brand/concepts/01-arena-purple-orange.webp",
     "brand/concepts/02-evidence-editorial.webp",
     "brand/concepts/03-premium-champion.webp",
-    "brand/concepts/04-neon-creative-technology.webp",
+    "brand/concepts/04-neon-creative-tech.webp",
     "brand/concepts/05-minimal-r-monogram.webp",
     "brand/concepts/06-twin-slash-lime.webp"
   ],
   "historicalArchive": [
-    "archive/README.md",
     "archive/SUPERSEDED-RUNTIME-DECISIONS.md",
-    "archive/original-design-warden-part-01.md",
-    "archive/original-design-warden-part-02.md",
-    "archive/original-design-warden-part-03.md",
-    "archive/original-design-warden-part-04.md",
-    "archive/original-roadmap.md"
+    "archive/original-design-warden-part-01.md"
   ],
   "repositoryEntryDocuments": [
     "README.md",
@@ -128,14 +131,14 @@
     "valid and invalid fixtures covering the Record Invariant Matrix",
     "schema migrations and compatibility tests including Run exporting-to-promoting fixture migration",
     "Rust and TypeScript IPC and Operation protocol goldens",
-    "documentation conformance script",
+    "documentation conformance checker using the committed real-drift regression fixtures",
     "implementation monorepo scaffold",
     "randomized-host dashboard pairing proof",
     "durable Operation reconciliation proof",
     "complete Capture Artifact registry and current Playwright API proof",
     "Artifact active-content preview security proof",
     "trash, restore, purge, storage admission and filesystem-lock proof",
-    "Windows native containment and packaged-build proof"
+    "Windows 11 native containment and packaged-build proof"
   ],
   "publicReleaseBlockers": [
     "real software license",
