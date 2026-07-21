@@ -19,10 +19,11 @@
 | Generated JSON Schema | P0 scaffold blocker | Deterministic generation and CI drift check |
 | Exact ID/ULID validators | P0 scaffold blocker | TypeScript/JSON Schema/Rust fixtures agree |
 | Error-code registry integration | P0 scaffold blocker | Rust/TS/API/UI reject unregistered stable codes |
+| Record Invariant Matrix implementation | P0 scaffold blocker | Every outcome/status/nullability/supersession/retry rule has valid and invalid fixtures plus constructor/reducer enforcement |
 | State transition tables/reducers | P0 scaffold blocker | Allowed and forbidden transition coverage |
 | Canonical JSON/hash implementation | P0 scaffold blocker | Golden bytes and cross-platform tests |
 | Migration framework | P0 MVP blocker | Copy/validate/adopt tests and unknown-major read-only |
-| Documentation conformance script | P0 scaffold blocker | Missing-link/type/error/route/old-name/telemetry checks in CI |
+| Documentation conformance script | P0 scaffold blocker | Missing-link/type/error/invariant/route/old-name/telemetry checks in CI |
 
 ## 3. Stage 2 — Native bootstrap and supervisor
 
@@ -34,7 +35,7 @@
 | Windows Job assignment | P0 scaffold blocker | Atomic root assignment and containment proof |
 | Browser descendant containment | P0 MVP blocker | Chromium browser/renderer/GPU/utility membership fixture |
 | Console/Ctrl+C policy | P0 scaffold blocker | First/second interrupt and terminal restoration |
-| Output drain/backpressure/limits | P0 scaffold blocker | Binary, flood, disk-pressure fixtures |
+| Output drain/backpressure/limits | P0 scaffold blocker | Binary, flood, exact 64 MiB default termination, opt-in tail, and disk-pressure fixtures |
 | TCP listener owner lookup | P0 MVP blocker | IPv4/IPv6 descendant and PID-reuse fixtures |
 | Supervisor crash cleanup | P0 MVP blocker | Job close/remaining endpoint verification |
 
@@ -44,10 +45,11 @@
 |---|---|---|
 | JSONC discovery/precedence/provenance | P0 scaffold blocker | Layer/merge/security-conflict tests |
 | CLI command shell | P0 scaffold blocker | `init`, `doctor`, `inspect` and JSON/exit contracts |
-| Loopback authentication/CSRF/CSP | P0 scaffold blocker | Browser security tests |
+| Randomized dashboard origin and pairing | P0 scaffold blocker | `spec/16` host isolation, terminal code, one-time pairing, cookie, expiry/lockout, Session invalidation, and no auto-browser-spawn tests |
+| Loopback authentication/CSRF/CSP | P0 scaffold blocker | Exact Host/Origin/custom-header/CORS/SSE/Artifact browser security tests |
 | Operation idempotency/revision conflicts | P0 scaffold blocker | API and supervisor replay fixtures |
 | SSE replay/gap handling | P0 MVP blocker | `Last-Event-ID`, gap/refetch, slow client tests |
-| Safe mode | P0 MVP blocker | Read-only/recovery/cleanup and prohibited-command tests |
+| Safe mode | P0 MVP blocker | Paired read-only/recovery/cleanup and prohibited-command tests |
 | Dashboard client-error local logging | P0 MVP blocker | Bounded/redacted schema tests |
 
 ## 5. Stage 4 — Canonical store and recovery
@@ -100,8 +102,9 @@
 | Local evaluator trust flow | P0 MVP blocker | executable identity and warning/acknowledgement |
 | Human-only rating path | P0 MVP blocker | same packet/citations and typed Decision |
 | Order reversal | P0 MVP blocker | identity/order fixtures and conflict outcome |
-| Deterministic Recommendation policy | P0 MVP blocker | five outcomes and veto/staleness coverage |
+| Deterministic Recommendation policy | P0 MVP blocker | five outcomes/reason codes and veto/staleness coverage |
 | Inference accounting | P0 MVP blocker | null/known token/cost/process usage tests |
+| Recommendation/Decision supersession | P0 MVP blocker | acyclic lineage and stale authorization replacement tests |
 | Decision binding/staleness | P0 MVP blocker | changed evidence/source/policy blocks Promotion |
 
 ## 9. Stage 9 — Promotion, Export, and UI
@@ -109,10 +112,11 @@
 | Gap | Status | Completion evidence |
 |---|---|---|
 | Promotion versus Export Operation services | P0 MVP blocker | report without Candidate; patch/branch requires Decision |
+| Promotion/Export retry and terminal records | P0 MVP blocker | retry lineage, terminal timestamps, failure codes, and idempotent destination verification |
 | Redaction/omission reports | P0 MVP blocker | diagnostics/export fixture suite |
 | Side-by-side UI | P0 MVP blocker | all states/viewports/steps and validity |
 | Recovery/cleanup UI | P0 MVP blocker | only legal commands exposed |
-| Route/API inventory conformance | P0 scaffold blocker | generated route comparison test |
+| Route/API inventory conformance | P0 scaffold blocker | generated route comparison test, including pairing-only unauthenticated route |
 | Keyboard/screen-reader behavior | P0 MVP blocker | automated/manual accessibility acceptance |
 | Large Event/Artifact UI performance | P0 MVP blocker | bounded reference data tests |
 | Final double-R/vector brand assets | Deferred from runtime | Required before polished public identity, not MVP engine |
@@ -158,7 +162,8 @@ Not MVP blockers:
 - Figma;
 - automatic updater/background daemon;
 - preference learning;
-- platform parity claims.
+- platform parity claims;
+- automatic default-browser launching and multi-client dashboard pairing.
 
 ## 13. Exit condition
 
