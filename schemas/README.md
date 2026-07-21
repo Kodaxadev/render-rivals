@@ -2,7 +2,8 @@
 
 **Status:** Shared types and stable error registry established; executable validation scaffold pending  
 **Storage contract:** [`spec/11-artifact-event-and-schema-contracts.md`](../spec/11-artifact-event-and-schema-contracts.md)  
-**Configuration/API:** [`spec/13-configuration-cli-and-local-api-contracts.md`](../spec/13-configuration-cli-and-local-api-contracts.md)
+**Configuration/API:** [`spec/13-configuration-cli-and-local-api-contracts.md`](../spec/13-configuration-cli-and-local-api-contracts.md)  
+**Cross-record invariants:** [`docs/RECORD-INVARIANT-MATRIX.md`](../docs/RECORD-INVARIANT-MATRIX.md)
 
 ## 1. Canonical shared sources
 
@@ -26,7 +27,11 @@ Sole stable error-identifier registry for Rust/TypeScript protocol fixtures, can
 
 Human wording may change. The stable code does not change meaning silently.
 
-Markdown specifications reference these files rather than define incompatible local unions/registries.
+### [`docs/RECORD-INVARIANT-MATRIX.md`](../docs/RECORD-INVARIANT-MATRIX.md)
+
+Authoritative cross-record requirements that interfaces cannot express alone, including outcome-dependent cardinality, nullability, ownership, completion timestamps, allowed empty arrays, and valid relationships between Recommendation, Decision, Promotion, Export, Evaluation, Gate, Capture, Process, Event, and Artifact records.
+
+Markdown specifications reference these sources rather than define incompatible local unions, registries, or cross-field meanings.
 
 ## 2. Required executable contents
 
@@ -41,7 +46,8 @@ Before scaffold Stage 1 is accepted:
 - schema writer/reader support declarations;
 - duplicate enum/error-code drift checks;
 - Rust/TypeScript protocol fixture generation;
-- documentation/schema registry conformance script.
+- documentation/schema/invariant registry conformance script;
+- one valid fixture and targeted invalid fixtures for every applicable Record Invariant Matrix rule.
 
 ## 3. Initial schema registry
 
@@ -106,8 +112,9 @@ Zod/source declarations
 - output schemas distinguish raw bytes from parsed JSON;
 - Promotion requires Candidate/Decision;
 - Export Operation permits non-adoption output without Candidate;
-- error code must exist in `error-codes.ts` unless classified as provider/project raw diagnostic only.
+- error code must exist in `error-codes.ts` unless classified as provider/project raw diagnostic only;
+- cross-field validation must match the Record Invariant Matrix rather than accept structurally valid but semantically impossible records.
 
 ## 7. Current limitation
 
-The shared vocabulary and error registry exist, but executable Zod/JSON Schema, fixtures, migrations, and compatibility tests do not. This is a visible scaffold prerequisite, not evidence that persistence validation is implemented.
+The shared vocabulary, error registry, and cross-record invariant contract exist, but executable Zod/JSON Schema, fixtures, migrations, and compatibility tests do not. This is a visible scaffold prerequisite, not evidence that persistence validation is implemented.
