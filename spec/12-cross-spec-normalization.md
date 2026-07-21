@@ -1,7 +1,7 @@
 # 12 — Cross-Spec Normalization and Shared Contracts
 
 **Status:** Canonical implementation contract  
-**Purpose:** Remove duplicate authorities for vocabulary, shared types, stable errors, API commands/envelopes, canonical primitives, record invariants, storage paths, process launch, durable operations, Capture evidence, Artifact serving, retention, locks, Session/Run ownership, dashboard authentication, Promotion, Export Operation, and command semantics.
+**Purpose:** Remove duplicate authorities for vocabulary, shared types, stable errors, API commands/envelopes, canonical primitives, record invariants, storage paths, process launch, durable operations, Capture evidence, Artifact serving, retention, locks, secrets/network, upgrades, Session/Run ownership, Promotion, Export Operation, and command semantics.
 
 ## 1. Authority
 
@@ -19,13 +19,15 @@ When older text conflicts:
 10. `spec/14` controls Git/source/workspace/branch behavior;
 11. `spec/15` controls observability, diagnostics, telemetry, and crash reporting;
 12. `spec/16` controls dashboard origin isolation, pairing, cookies, Host/Origin/CSRF, and browser-opening policy;
-13. `spec/17` controls API envelopes, operation status projection, revision requirements, pagination, error detail, and Artifact content transport;
-14. `spec/20` controls Capture Artifact classes/formats/completeness/evaluator roles;
-15. `spec/21` controls Artifact download/preview/active-content security;
-16. `spec/22` controls retention/trash/restore/purge/GC/storage admission and no-daemon scheduling;
-17. `spec/23` controls OS lock handles, leases, lock order, multi-Session/Project execution ownership, and stale assessment;
-18. this file controls equivalence mappings and relative-path interpretation;
-19. older local examples are explanatory only and must not be implemented literally.
+13. `spec/17` controls API envelopes, Operation status projection, revision requirements, pagination, error detail, and Artifact content transport;
+14. `spec/20` controls Capture Artifact classes, formats, completeness and evaluator roles;
+15. `spec/21` controls Artifact download, preview and active-content security;
+16. `spec/22` controls retention, trash, restore, purge, GC, storage admission and no-daemon scheduling;
+17. `spec/23` controls OS lock handles, leases, lock order, multi-Session and Project execution ownership;
+18. `spec/24` controls secret references/bindings, browser authentication state, external transmission and truthful network-egress capability;
+19. `spec/25` controls component compatibility, schema migration, backup, adoption, rollback and downgrade;
+20. this file controls equivalence mappings and relative-path interpretation;
+21. older local examples are explanatory only and must not be implemented literally.
 
 ## 2. Vocabulary
 
@@ -43,7 +45,7 @@ Canonical persisted/API terms:
 - `tie`;
 - `human_review_required`;
 - `invalid_run`;
-- Run state `promoting` for the candidate-adoption phase.
+- Run state `promoting` for candidate adoption.
 
 Explanatory mappings:
 
@@ -59,110 +61,90 @@ Explanatory mappings:
 
 Aliases never appear as persisted enum values or stable API names. Promotion entity internal substate `exporting` remains valid because it is scoped to Promotion byte/ref creation.
 
-## 3. Shared primitives, types, errors, API, operations, and invariants
+## 3. Shared registries and invariants
 
-`schemas/primitives.ts` and `spec/18` define:
-
-- full lowercase `sha256:` digests;
-- RFC 8785 canonical JSON hash bytes;
-- millisecond UTC timestamps;
-- canonical decimal strings and `MonetaryAmount`;
-- safe integers, revisions, sequences, counts, durations, confidence, units, and canonical paths.
-
-`schemas/domain-types.ts` is sole canonical definition for IDs/prefixes, domain enums/states/purposes, Inference usage, and Recommendation/Decision/Promotion/Export records.
-
-`schemas/error-codes.ts` is sole stable error-code registry.
-
-`schemas/api-types.ts` is sole shared registry for API command names, command/accepted/status/query/page/error envelopes, and API operation projection states.
-
-`schemas/operation-types.ts` is sole shared registry for canonical Operation scope/state/record/result vocabulary.
-
-`docs/RECORD-INVARIANT-MATRIX.md` defines outcome/status-dependent required, nullable, empty, supersession, retry, and terminal-field combinations.
+- `schemas/primitives.ts`/spec18: digests, JCS canonical JSON, timestamps, decimals, money, safe counts, durations, confidence, units, paths.
+- `schemas/domain-types.ts`: IDs, domain enums/states/purposes and Recommendation, Decision, Promotion, Export records.
+- `schemas/error-codes.ts`: stable errors.
+- `schemas/api-types.ts`: closed API commands and envelopes.
+- `schemas/operation-types.ts`: durable Operation scope/state/record/result.
+- Record Invariant Matrix: outcome/status-dependent required, nullable, empty, supersession, retry and terminal combinations.
 
 Markdown examples reference rather than redefine these authorities.
 
 ## 4. Recommendation, Decision, Promotion, and Export
 
-Recommendation outcomes:
+Recommendation outcomes are the canonical five. Decision actions are the canonical six. Export is not a Decision action.
 
-- contender recommended;
-- current retained;
-- tie;
-- human review required;
-- invalid Run.
+Promotion is candidate adoption through patch, local branch, or preserved Workspace. It requires selected Candidate and nonstale authorizing Decision. Run enters `promoting` only for this path.
 
-Decision actions:
-
-- accept Recommendation;
-- retain current;
-- decline Recommendation;
-- select another eligible Candidate;
-- defer;
-- invalidate Run.
-
-Promotion is candidate adoption:
-
-- patch;
-- local branch;
-- preserved Workspace.
-
-It requires selected Candidate and nonstale authorizing Decision. Run enters `promoting` only for this path.
-
-Export Operation is non-adoption output:
-
-- report;
-- diagnostics;
-- Run/evidence bundle;
-- screenshots;
-- configuration template;
-- selected logs.
-
-It need not identify Candidate/Decision and does not alter/reopen Run state.
+Export Operation produces report, diagnostics, bundles, screenshots, configuration or logs. It need not identify Candidate/Decision and does not alter or reopen Run state.
 
 ## 5. Inference accounting
 
-Canonical `InferenceUsage` uses canonical timestamps, nonnegative safe-integer token categories or null, `MonetaryAmount | null` rather than floating dollars, and policy snapshot identity. Computed/estimated cost uses exact decimal arithmetic and pricing snapshot hash under `spec/18`.
+Canonical `InferenceUsage` uses canonical timestamps, nonnegative safe-integer token categories or null, `MonetaryAmount | null` rather than floating dollars, and Policy Snapshot identity. Computed or estimated cost uses exact decimal arithmetic and pricing snapshot hash.
 
-## 6. Process launch authority
+## 6. Process launch and browser ownership
 
-Rust owns authorization, managed root-process creation, containment, observation, resource enforcement, and termination.
+Rust owns authorization, managed root-process creation, containment, observation, resource enforcement and termination. Approved contained processes may create descendants only when inheritance is expected and doctor-verified.
 
-Approved contained processes may create descendants only when inheritance is expected and doctor-verified. Playwright-launched Chromium follows this contained-descendant policy.
-
-The MVP does not auto-spawn the user's ordinary dashboard browser. `spec/16` prints randomized dashboard origin and pairing code for manual opening.
+The ordinary dashboard browser is manually opened and not contained/terminated by Render Rivals in MVP. Spec16 prints the randomized Session origin and pairing code.
 
 ## 7. Durable Operation authority
 
-Every accepted side-effecting command has a canonical or Session-scoped Operation under `spec/19`.
+Every accepted side-effecting command has a canonical or Session-scoped Operation under spec19.
 
-- request/payload hashes bind command/target/revision/policy;
-- same-ID exact transport replay is idempotent;
-- semantic retry creates a new Operation and entity Attempt lineage;
+- request/payload hashes bind command, target, revision and policy;
+- exact transport replay is idempotent;
+- semantic retry creates new Operation and entity Attempt lineage;
 - ambiguous crash state becomes `interrupted` then `reconciling` before proof-based terminalization;
-- Operation never replaces Run Events, Decision, Promotion, Export, Process, Cleanup, or side-effect proof;
-- spec19 amends spec11 with installation/Project/Run `operations/` directories and `render-rivals/operation` schema.
+- Operation never replaces Events, Decision, Promotion, Export, Process, Cleanup or side-effect proof;
+- installation, Project and Run `operations/` directories and `render-rivals/operation` schema amend spec11.
 
 ## 8. Storage, retention, and locks
 
-`spec/11` owns canonical store/write/recovery ordering as amended by later specs. `spec/18` owns value encoding/hashing.
+Spec11 owns canonical store/write/recovery ordering as amended by later specs. Spec18 owns encoding and hashing.
 
-`spec/22` amends data root with trash/maintenance structures and requires:
+Spec22 requires reference-aware two-phase trash, seven-day default grace, restore/purge Operations, no cleanup while the app is closed, storage admission including temporary/final/reserve/trash bytes, no source/external-output deletion, and no secure-wipe claim.
 
-- reference-aware deletion;
-- two-phase Run/Project trash;
-- seven-day default grace before purge;
-- explicit restore/purge Operations;
-- no hidden cleanup daemon or claim of cleanup while app is closed;
-- storage admission including temporary/final/reserve/trash bytes;
-- no source/external-output deletion or secure-wipe claim.
+Spec23 interprets lock metadata as diagnostic/coordination data, not sole ownership. Reference mutation requires a tested OS-held lock/handle plus metadata, identity, revision, global lock order and stale assessment. MVP permits at most one active executing Run per Project across Sessions.
 
-`spec/23` interprets `lock.json` as metadata, not sole ownership. Reference mutation uses tested OS-held lock/handle plus metadata/identity/revision, global lock order, stale assessment, and one active executing Run per Project across Sessions.
+Old cache-as-canonical layouts, heartbeat/PID/file-existence-only lock ownership, and immediate permanent deletion are superseded.
 
-Old `.visual-optimizer`, cache-as-canonical layout, heartbeat-only/PID-only lock ownership, and immediate permanent deletion are superseded.
+## 9. Capture evidence and Artifact preview
 
-Any raw `...` digest in older prose is an abbreviated placeholder; executable values use full `sha256:<64 lowercase hex>`.
+Spec20 registers canonical PNG screenshot plus DOM, raw YAML ARIA snapshot, axe findings, geometry, selected styles, console, network, interaction, metadata, volatile-region and diagnostic classes. Screenshot alone is never complete; ARIA snapshot is not an accessibility audit; derived images never replace evidence.
 
-## 9. Run layout mappings
+Spec21 requires Artifact-ID-only access, attachment/no-sniff raw download, passive image allowlist, escaped text/JSON/YAML renderers, and blocks same-origin inline HTML, SVG, PDF, Markdown, trace and archives. Valid digest does not imply preview safety.
+
+## 10. Secrets and network
+
+Spec24 supersedes any implication that a secret reference contains a value or that browser routing makes Project processes network-isolated.
+
+- raw secret values are Session bindings only and never canonical, logged, hashed, exported, placed in URLs/argv or returned by API;
+- per-process environment is explicit allowlist, not wholesale inheritance;
+- browser cookies/storage/auth state are ephemeral Session material and not canonical Artifacts;
+- Capture/evaluator transmission of potentially sensitive Artifacts requires declared policy and acknowledgement;
+- strict browser HTTP enforcement blocks Service Workers by default and uses separate WebSocket capability;
+- Project server/build/test/fixture/local-evaluator process egress is uncontrolled or observed-only in native MVP, never called sandboxed;
+- external provider client can enforce its approved endpoint/TLS/redirect/body policy;
+- authentication fixture failure is not Product error-state evidence.
+
+## 11. Upgrades and migrations
+
+Spec25 supersedes any assumption that package install or first launch may mutate canonical data automatically.
+
+- component compatibility is verified before data mutation;
+- unsupported/newer data opens read-only or refuses safely;
+- migration uses durable Operation, locks, storage admission, source inventory, protected backup and separate staging;
+- transformed aggregate reconstructs and verifies before atomic adoption;
+- original remains rollback backup, default at least fourteen days for public alpha;
+- rollback never silently discards post-migration data;
+- downgrade does not rewrite unknown newer schemas;
+- browser upgrade never rewrites historical Capture;
+- no Project-supplied migration code or hidden network migration.
+
+## 12. Run layout mappings
 
 Canonical Run root:
 
@@ -170,106 +152,75 @@ Canonical Run root:
 <data-root>/projects/<project-id>/runs/<run-id>/
 ```
 
-Later amendments add Operation directories, trash, and maintenance structures.
+Later specs add Operation, trash, maintenance and migration structures.
 
 | Older | Canonical |
 |---|---|
 | top-level `manifest.json` | `run.json`, `run-config.json`, Artifact manifest |
 | top-level `decision.json` | `decisions/<id>.json` |
-| `metrics.json` | typed Artifacts/derived projections |
+| `metrics.json` | typed Artifacts or derived projections |
 | `accounting.json` | Evaluation/Process usage and derived reports |
-| `cleanup.json` | cleanup operation records |
-| `raw-output.json` | `raw-output.bin` plus `validation.json` |
+| `cleanup.json` | cleanup Operation/records |
+| `raw-output.json` | `raw-output.bin` plus validation record |
 | report under Promotion | Export Operation |
-| in-memory API operation map | Operation ledger |
-| `lock.json` timestamp/PID proves owner | OS lock handle + verified metadata/Session identity |
+| in-memory API Operation map | durable Operation ledger |
+| `lock.json` timestamp/PID proves owner | OS lock handle plus verified metadata/Session identity |
+| persisted browser storage state | ephemeral Session authentication state |
+| install-time/automatic migration | explicit staged migration Operation and backup |
 
-## 10. Capture evidence and preview
+Any raw `...` digest in older prose is an abbreviated placeholder; executable values use full `sha256:<64 lowercase hex>`.
 
-`spec/20` registers complete MVP Capture classes:
+## 13. Gates and failure scope
 
-- canonical PNG screenshot;
-- DOM summary;
-- raw YAML ARIA snapshot;
-- accessibility findings;
-- geometry;
-- selected styles;
-- console/network summaries;
-- interaction trace;
-- metadata/volatile-region manifest;
-- diagnostic failure screenshot/Playwright trace.
+Gate phases are pre-capture, runtime/capture and post-capture evidence.
 
-Screenshot alone is never complete. ARIA snapshot is not an accessibility audit. Derived WebP/thumbnails/diffs are rebuildable and cannot replace canonical PNG/evidence.
+Candidate-local failure does not invalidate the full Epoch unless browser/environment comparability is compromised. Browser crash/disconnect/identity loss, isolation leak, fixture/environment drift, source mutation during Capture or unscoped required Artifact corruption invalidate full Epoch.
 
-`spec/21` requires Artifact-ID-only download/preview, attachment/no-sniff for raw content, passive image allowlist, escaped text/structured renderers, and blocks same-origin inline HTML/SVG/PDF/Markdown/trace/archives. Valid bytes do not imply preview safety.
-
-## 11. Gates and failure scope
-
-Gate phases:
-
-- pre-capture;
-- runtime/capture;
-- post-capture evidence.
-
-Candidate-local failures do not invalidate full Epoch unless browser/environment comparability is compromised. Browser crash/disconnect/identity loss, isolation leak, fixture/environment drift, source mutation during capture, or unscoped required Artifact corruption invalidate full Epoch.
-
-## 12. Session and Run
+## 14. Session, Operation, and Run
 
 ```text
 Supervisor Session
   starting -> authenticating_coordinator -> ready/running -> draining -> completed/crashed
-       └── hosts sequential Run operations
+       └── hosts sequential Operations and Run work
              draft -> validating -> ready -> preparing -> capturing
              -> gating -> evaluating -> awaiting_decision -> promoting/terminal
 ```
 
-Session describes native availability. Run describes durable product work. Run may survive Session. Session end does not automatically make Run terminal.
+Session describes native availability, Operation describes one side effect, and Run describes durable analytical work. Browser authentication is a Session capability, never Run state.
 
-Dashboard browser authentication is a Session capability and never a Run state.
+## 15. Dashboard authentication and API
 
-## 13. Dashboard authentication
+Spec16 requires randomized `.localhost` origin, pairing-only unauthenticated surface, one-time terminal code in request body, host-only HttpOnly SameSite cookie, exact Host/Origin/CSRF, Session-bounded credential, safe-mode pairing and no automatic browser spawn.
 
-`spec/16` supersedes any implication that loopback bind alone authenticates a browser.
+Spec17 requires closed commands, Operation/revision, resolvable status backed by spec19, canonical/derived envelopes, bounded opaque pagination, registered/redacted errors and safe Artifact transport narrowed by spec21.
 
-- randomized `.localhost` Session origin;
-- pairing-only unauthenticated surface;
-- one-time terminal code in JSON body, never URL/argv/log;
-- host-only HttpOnly SameSite cookie;
-- exact Host/Origin/CSRF;
-- credential ends with Session;
-- safe mode still pairs;
-- default browser not auto-spawned.
+No MVP Pause state exists. Re-evaluation or sealed source, fixture, Gate, factor or policy change creates superseding Run and new Epoch.
 
-## 14. CLI/API and re-evaluation
-
-`spec/13` owns filenames, merge rules, CLI commands, route inventory, exit codes, SSE, safe mode, and service-level command semantics.
-
-`spec/17` narrows HTTP shape: closed commands, Operation/revision, resolvable status, canonical/derived envelopes, bounded pagination, registered/redacted errors, and Artifact content transport. Spec19 backs Operation status durably; spec21 narrows safe Artifact rendering.
-
-There is no MVP pause state. Re-evaluation and sealed source/fixture/gate/factor/policy change create superseding Run and new Epoch.
-
-## 15. Database
+## 16. Database
 
 No canonical database initially. SQLite may later be rebuildable. Deleting it leaves full reconstruction.
 
-## 16. Conformance
+## 17. Conformance
 
 Nonconforming behavior includes:
 
 - duplicate shared primitive/type/error/command/Operation registries;
-- raw/uppercase/base64 SHA, noncanonical timestamps, unsafe counts, floating persisted currency, cross-language hash drift;
-- structurally valid records violating invariant matrix;
+- raw/uppercase/base64 SHA, noncanonical timestamps, unsafe counts, floating persisted currency or cross-language hash drift;
+- structurally valid records violating the invariant matrix;
 - persisted deprecated aliases or Run state `exporting` outside migration/history;
 - report Export represented as Promotion or changing Run state;
-- invalidating full Epoch for isolated contender failure;
 - incomplete/unregistered Capture evidence or ARIA snapshot treated as accessibility audit;
 - active Project Artifact rendered same-origin with dashboard privileges;
 - in-memory-only durable idempotency or blind external side-effect retry;
-- unbounded APIs or dead/secret-bearing operation paths;
-- hidden cleanup daemon, silent purge, source deletion, secure-wipe claim;
-- heartbeat/PID/file-existence-only lock ownership, out-of-order locks, two active executing Runs for one Project in MVP;
+- unbounded APIs or dead/secret-bearing Operation paths;
+- hidden cleanup daemon, silent purge, source deletion or secure-wipe claim;
+- heartbeat/PID/file-existence-only lock ownership, out-of-order locks, or two active executing Runs for one Project in MVP;
+- plaintext secret/auth state in canonical/log/export or wholesale environment inheritance;
+- claiming browser routing controls server/process egress;
+- Service Worker/WebSocket traffic silently outside strict policy;
+- automatic/in-place/only-copy migration, downgrade rewrite or rollback that discards new data;
 - mutation of sealed Run Configuration;
 - Session state trusted as Run state;
-- dashboard data before pairing/shared loopback bearer cookie;
+- dashboard data before pairing or shared loopback bearer cookie;
 - auto-spawn/contain ordinary browser without later decision;
 - database required for recovery.
