@@ -1,7 +1,7 @@
 # 12 — Cross-Spec Normalization and Shared Contracts
 
 **Status:** Canonical implementation contract  
-**Purpose:** Remove duplicate authorities for vocabulary, shared types, storage paths, process launch, Session/Run ownership, Promotion, Export Operation, and command semantics.
+**Purpose:** Remove duplicate authorities for vocabulary, shared types, stable errors, record invariants, storage paths, process launch, Session/Run ownership, dashboard authentication, Promotion, Export Operation, and command semantics.
 
 ## 1. Authority
 
@@ -9,10 +9,15 @@ When older text conflicts:
 
 1. accepted ADRs control architecture decisions;
 2. `schemas/domain-types.ts` controls shared persisted unions/interfaces;
-3. `spec/11` controls canonical filesystem and commit protocols;
-4. `spec/13` controls configuration, CLI, local API, and safe mode;
-5. this file controls equivalence mappings and relative-path interpretation;
-6. older local examples are explanatory only and must not be implemented literally.
+3. `schemas/error-codes.ts` controls stable error identifiers;
+4. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where structure alone is insufficient;
+5. `spec/11` controls canonical filesystem and commit protocols;
+6. `spec/13` controls configuration, CLI, local API, safe mode, and general command semantics;
+7. `spec/14` controls Git/source/workspace/branch behavior;
+8. `spec/15` controls observability, diagnostics, telemetry, and crash reporting;
+9. `spec/16` controls dashboard origin isolation, pairing, cookies, Host/Origin/CSRF, and browser-opening policy;
+10. this file controls equivalence mappings and relative-path interpretation;
+11. older local examples are explanatory only and must not be implemented literally.
 
 ## 2. Vocabulary
 
@@ -44,13 +49,13 @@ Explanatory mappings:
 
 Aliases never appear as persisted enum values or stable API names.
 
-## 3. Shared types
+## 3. Shared types, errors, and invariants
 
 `schemas/domain-types.ts` is sole canonical definition for:
 
 - IDs and prefixes;
 - Candidate role;
-- Recommendation outcome;
+- Recommendation outcome/reason;
 - User Decision action;
 - Pairwise verdict;
 - Evaluation/Process purpose;
@@ -59,7 +64,11 @@ Aliases never appear as persisted enum values or stable API names.
 - Inference usage;
 - Recommendation, Decision, Promotion, and Export Operation records.
 
-Markdown examples reference rather than redefine these.
+`schemas/error-codes.ts` is sole stable error-code registry.
+
+`docs/RECORD-INVARIANT-MATRIX.md` defines outcome/status-dependent required, nullable, empty, supersession, retry, and terminal-field combinations.
+
+Markdown examples reference rather than redefine these authorities.
 
 ## 4. Recommendation and Decision
 
@@ -117,6 +126,8 @@ Approved contained processes may create descendants only when inheritance is exp
 
 “Rust owns process creation” means managed roots and launch authority; it does not forbid verified contained descendant creation.
 
+The MVP does not auto-spawn the user's ordinary dashboard browser. `spec/16` requires the terminal to display the randomized dashboard origin and pairing code for manual opening.
+
 ## 8. Storage roots
 
 `spec/11` owns live paths.
@@ -171,7 +182,7 @@ Candidate-local failures do not invalidate full Epoch unless browser/environment
 
 ```text
 Supervisor Session
-  starting -> authenticating -> ready/running -> draining -> completed/crashed
+  starting -> authenticating_coordinator -> ready/running -> draining -> completed/crashed
        └── hosts sequential Run operations
              draft -> validating -> ready -> preparing -> capturing
              -> gating -> evaluating -> awaiting_decision -> exporting/terminal
@@ -179,23 +190,40 @@ Supervisor Session
 
 Session describes native availability. Run describes durable product work. Run may survive Session. Session end does not automatically make Run terminal.
 
-## 13. CLI/API and re-evaluation
+Dashboard browser authentication is a Session capability and never a Run state.
 
-`spec/13` owns filenames, merge rules, commands, exit codes, local routes, SSE, safe mode, and operation idempotency.
+## 13. Dashboard authentication
+
+`spec/16` supersedes any implication that binding `127.0.0.1` alone authenticates a browser.
+
+- socket binds loopback;
+- browser uses a randomized `.localhost` Session origin;
+- unauthenticated surface is pairing-only;
+- one-time pairing code is entered in the browser body, never URL/argv/log;
+- browser credential is an HttpOnly host-only SameSite cookie;
+- exact Host/Origin/CSRF rules apply;
+- credential expires with supervisor Session;
+- safe mode still requires pairing;
+- default browser is not auto-spawned in MVP.
+
+## 14. CLI/API and re-evaluation
+
+`spec/13` owns filenames, merge rules, commands, exit codes, local routes, SSE, safe mode, and operation idempotency except where `spec/16` narrows browser authentication.
 
 There is no MVP pause command/state.
 
 Re-evaluation and any sealed source/fixture/gate/factor/policy change create a superseding Run and new Capture Epoch.
 
-## 14. Database
+## 15. Database
 
 No canonical database initially. SQLite may later be rebuildable. Specs 07/11 express the same rule; spec11 owns persistence detail.
 
-## 15. Conformance
+## 16. Conformance
 
 An implementation is nonconforming if it:
 
-- defines duplicate shared unions;
+- defines duplicate shared unions/error registries/recommendation reason registries;
+- accepts a structurally valid record that violates the Record Invariant Matrix;
 - persists deprecated aliases;
 - uses old storage/endpoint/env names;
 - treats report export as Promotion;
@@ -204,4 +232,6 @@ An implementation is nonconforming if it:
 - exposes UI command without legal domain command;
 - mutates sealed Run Configuration;
 - trusts Session state as Run state;
+- serves dashboard data before pairing or uses a shared loopback bearer cookie without randomized host isolation;
+- auto-spawns/contains the user's ordinary browser without a later ownership decision;
 - requires database for recovery.
