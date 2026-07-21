@@ -3,6 +3,8 @@
 // timestamp format, finite numeric values, and all record-level invariants.
 // Markdown specifications reference these types rather than redefining them.
 
+import type { ErrorCode } from "./error-codes.js";
+
 export type ProjectId = `prj_${string}`;
 export type ProjectTrustRecordId = `trt_${string}`;
 export type ProjectTemplateId = `tpl_${string}`;
@@ -41,6 +43,19 @@ export type RecommendationOutcome =
   | "tie"
   | "human_review_required"
   | "invalid_run";
+
+export type RecommendationReasonCode =
+  | "material_improvement"
+  | "no_material_improvement"
+  | "protected_regression_veto"
+  | "contender_ineligible"
+  | "baseline_invalid"
+  | "comparison_invalid"
+  | "evidence_incomplete"
+  | "confidence_below_threshold"
+  | "order_reversal_conflict"
+  | "source_or_policy_stale"
+  | "human_review_unresolved";
 
 export type UserDecisionAction =
   | "accept_recommendation"
@@ -125,6 +140,25 @@ export type CaptureEpochState =
   | "invalid"
   | "failed";
 
+export type PromotionStatus =
+  | "requested"
+  | "validating_preconditions"
+  | "exporting"
+  | "verifying"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "stale";
+
+export type ExportOperationStatus =
+  | "requested"
+  | "validating_preconditions"
+  | "exporting"
+  | "verifying"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
 export interface InferenceUsage {
   provider: string;
   adapter: string;
@@ -143,6 +177,7 @@ export interface InferenceUsage {
 export interface RecommendationRecord {
   id: RecommendationId;
   runId: RunId;
+  supersedesRecommendationId: RecommendationId | null;
   comparisonIds: ComparisonId[];
   evaluationIds: EvaluationId[];
   outcome: RecommendationOutcome;
@@ -150,7 +185,7 @@ export interface RecommendationRecord {
   consideredCandidateIds: CandidateId[];
   evidenceRecordIds: EvidenceRecordId[];
   gateResultIds: GateResultId[];
-  reasonCodes: string[];
+  reasonCodes: RecommendationReasonCode[];
   confidence: number | null;
   policySnapshotId: PolicySnapshotId;
   reproducibilityHash: string;
@@ -161,10 +196,11 @@ export interface UserDecisionRecord {
   id: UserDecisionId;
   runId: RunId;
   recommendationId: RecommendationId;
+  supersedesDecisionId: UserDecisionId | null;
   action: UserDecisionAction;
   selectedCandidateId: CandidateId | null;
   rationale: string | null;
-  acknowledgedWarningCodes: string[];
+  acknowledgedWarningCodes: ErrorCode[];
   recommendationHash: string;
   evidenceSetHash: string;
   sourceSetHash: string;
@@ -179,18 +215,13 @@ export interface PromotionRecord {
   runId: RunId;
   userDecisionId: UserDecisionId;
   candidateId: CandidateId;
+  retryOfPromotionId: PromotionId | null;
   kind: "patch_export" | "branch_create" | "workspace_preserve";
-  status:
-    | "requested"
-    | "validating_preconditions"
-    | "exporting"
-    | "verifying"
-    | "completed"
-    | "failed"
-    | "cancelled"
-    | "stale";
+  status: PromotionStatus;
+  failureCode: ErrorCode | null;
   outputArtifactIds: ArtifactId[];
   createdAt: string;
+  terminalAt: string | null;
   completedAt: string | null;
 }
 
@@ -198,7 +229,9 @@ export interface PromotionRecord {
 // portable Run bundles. It does not imply a Candidate was selected.
 export interface ExportOperationRecord {
   id: ExportOperationId;
+  projectId: ProjectId | null;
   runId: RunId | null;
+  retryOfExportOperationId: ExportOperationId | null;
   kind:
     | "report"
     | "diagnostics"
@@ -207,18 +240,13 @@ export interface ExportOperationRecord {
     | "screenshots"
     | "configuration_template"
     | "logs";
-  status:
-    | "requested"
-    | "validating_preconditions"
-    | "exporting"
-    | "verifying"
-    | "completed"
-    | "failed"
-    | "cancelled";
+  status: ExportOperationStatus;
+  failureCode: ErrorCode | null;
   sourceEntityIds: string[];
   outputArtifactIds: ArtifactId[];
   redactionPolicyId: PolicySnapshotId;
   omissionReportArtifactId: ArtifactId | null;
   createdAt: string;
+  terminalAt: string | null;
   completedAt: string | null;
 }
