@@ -1,6 +1,6 @@
 {
   "schema": "render-rivals/repository-document-inventory",
-  "schemaVersion": "4.2.1",
+  "schemaVersion": "4.2.2",
   "project": "Render Rivals",
   "generatedAt": "2026-07-20",
   "inventoryPolicy": {
@@ -8,6 +8,7 @@
     "contentIdentity": "Git blob SHA and commit history",
     "notes": [
       "This is a maintained inventory, not a self-referential checksum list.",
+      "Each managed path appears in exactly one machine inventory section; human documents may cross-reference it in multiple reading lists.",
       "Tagged release bundles may later include a CI-generated checksummed manifest.",
       "Archive files are historical and never implementation inputs.",
       "Only archive files that actually exist in Git history are listed.",
@@ -88,13 +89,7 @@
     "docs/MARKETING-AND-DOCS-SITE-PLAN.md"
   ],
   "schemaSurface": [
-    "schemas/README.md",
-    "schemas/primitives.ts",
-    "schemas/domain-types.ts",
-    "schemas/error-codes.ts",
-    "schemas/api-types.ts",
-    "schemas/operation-types.ts",
-    "docs/RECORD-INVARIANT-MATRIX.md"
+    "schemas/README.md"
   ],
   "conformance": [
     "conformance/README.md",
