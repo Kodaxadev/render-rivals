@@ -1,1040 +1,438 @@
 # Render Rivals Marketing and Documentation Site Plan
 
-**Status:** Product-marketing planning baseline  
-**Surfaces:** Public marketing website and documentation website  
-**Purpose:** Define every public-facing page, its role, content hierarchy, proof requirements, and relationship to the desktop product.
+**Status:** Public-surface planning with claim gates  
+**Purpose:** Define pages that may be published only when the corresponding capability and proof exist  
+**Product scope:** `docs/MVP-VERTICAL-SLICE.md` and `docs/PLANNING-SCOPE-STATUS.md`  
+**Packaging/license:** `docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`
 
-## Positioning rule
+## 1. Publication principle
 
-Render Rivals is not an AI website generator and not a subjective design assistant. It is a local-first visual optimization harness that compares implementations under controlled conditions, blocks functional regressions, and recommends promotion only when a contender demonstrates a material improvement.
+The website must describe the product that exists, not the complete-product roadmap.
 
-Preferred public-language pattern:
+Every public capability claim requires:
 
-- Compare implementations.
-- Capture them fairly.
-- Inspect the evidence.
-- Promote only what proves better.
+- implemented feature;
+- acceptance test or real product evidence;
+- documented limitations;
+- current support matrix;
+- matching product screenshot or verified report where visual;
+- no contradiction with license/package status.
 
-Avoid positioning that implies:
+Pages may exist as private drafts before their claim gate passes, but are not linked in public navigation as available product features.
 
-- fully autonomous design judgment;
-- gambling, tournaments, or esports;
-- hidden source upload;
-- automatic merging;
-- one unexplained quality score;
-- guaranteed subjective correctness.
+## 2. Positioning
 
----
+Current MVP direction:
 
-# 1. Shared public-site system
+> Compare a current implementation with an independently prepared Contender. Capture equivalent states. Block regressions. Inspect cited evidence. Decide explicitly.
 
-The marketing and documentation sites may share a domain and design system but should preserve distinct information architectures.
+Render Rivals is not:
 
-## Shared global header
+- an AI website generator in the MVP;
+- a hostile-code sandbox;
+- an automatic merge/deployment system;
+- a universal design oracle;
+- a single opaque score;
+- a production traffic A/B platform;
+- cross-platform containment parity.
 
-- Product
-- How it works
-- Examples
-- Security
-- Documentation
-- GitHub
-- Download
+Do not say Render Rivals creates/generates Contenders until in-Run generation is implemented and released.
 
-## Shared global footer
+## 3. Canonical public language
 
-- Product pages
-- Documentation
-- Releases
-- GitHub repository
-- Contributing
-- Security policy
-- Privacy
-- Terms
-- License and third-party notices
+Use:
 
-## Shared visual rules
+- current implementation;
+- Contender;
+- Candidate;
+- Capture Epoch;
+- Gate;
+- Evidence;
+- Recommendation;
+- User Decision;
+- Promotion for patch/branch/workspace adoption handoff;
+- Export Operation for report/diagnostics/bundles.
 
-- Product screenshots must show real information hierarchy, not decorative fake dashboards.
-- Comparison examples must use matched viewport, state, and framing.
-- Marketing may use stronger opposition and progression cues than the desktop application.
-- Avoid crowns, lightning, crossed weapons, arena lighting, betting language, and generic mirrored `R` marks.
-- Evidence, provenance, and local control should be visible throughout the site.
-- Light and dark layouts should both be supported; the brand must not depend on neon-on-black presentation.
+Avoid winner/champion/challenger/battle, “AI judged best,” automatic promotion, or report-as-Promotion language.
 
----
+## 4. Navigation by maturity
 
-# 2. Marketing website
+### Before packaged alpha
 
-## 2.1 Homepage
+- Product status;
+- Architecture;
+- Security model;
+- Documentation/specifications;
+- GitHub source;
+- Roadmap;
+- License status.
 
-### Purpose
+No prominent Download, Install, Contributing, Releases, Pricing, or Open Source CTA until their gates pass.
 
-Explain the product within one screen, then prove the workflow and local-first claim.
+### Packaged alpha
 
-### Hero
+May add:
 
-Recommended message direction:
+- Download/Installation;
+- How it works;
+- Product screenshots;
+- Example reports;
+- Changelog/Releases;
+- Troubleshooting.
 
-> Compare implementations. Promote only what proves better.
+### Licensed public OSS release
 
-Supporting copy should explain that Render Rivals creates or imports contenders, captures them under equal conditions, applies regression gates, and produces reviewable evidence.
+May add:
+
+- Contributing;
+- Open Source page;
+- governance/issue labels;
+- contributor setup;
+- security reporting.
+
+## 5. Homepage
+
+### Pre-alpha hero
+
+> Build contenders elsewhere. Compare them fairly. Keep the evidence local.
 
 Primary actions:
 
-- Download
-- View on GitHub
+- Read the architecture;
+- View source/status.
 
-Secondary action:
+Do not show a Download CTA until a tested package exists.
 
-- See how it works
+### Alpha hero
 
-### Hero visual
+> Compare implementations. Adopt only what proves better.
 
-Use a real comparison interface or a simplified evidence sequence:
+Supporting copy must state:
 
-`Current -> Contenders -> Captures -> Evidence -> Decision`
+- one current + one existing Contender MVP;
+- local commands run with user authority and are not sandboxed;
+- optional external evaluator receives a disclosed packet;
+- no automatic merge/push;
+- Windows is reference platform;
+- no-winner/tie/invalid outcomes are normal.
 
-Do not use a glowing `VS` composition or generic AI-generated dashboard competition.
+### Required homepage proof before alpha
 
-### Homepage sections
+- real side-by-side state/viewport/interaction view;
+- factor Evidence with citations and limitations;
+- Contender Gate failure/current retained case;
+- browser Epoch invalidation/recovery example;
+- exact local/external data-flow table;
+- real package/install command and support matrix.
 
-1. Product definition
-2. Controlled comparison workflow
-3. Functional regression gates
-4. Evidence and confidence
-5. Local-first architecture
-6. No-winner outcomes
-7. Product interface preview
-8. Example case study
-9. Installation/download
-10. Open-source contribution
+## 6. How it works
 
-### Required proof
+MVP sequence:
 
-- matched capture conditions;
-- visible factor-level evidence;
-- no-winner example;
-- explicit local-storage explanation;
-- exact automatic-action boundaries.
+1. register/trust Project;
+2. select current and existing Contender Source Snapshots;
+3. seal route/states/viewports/interaction/Gates;
+4. prepare isolated Workspaces;
+5. recapture current and Contender under one valid Epoch;
+6. resolve deterministic Gates;
+7. evaluate eligible Candidates pairwise or human-only;
+8. create Recommendation;
+9. record User Decision;
+10. create Promotion or ordinary Export Operation;
+11. preserve canonical history and cleanup results.
 
----
+Required disclaimer: no silent merge, push, checkout over active tree, or deployment.
 
-## 2.2 How it works
+## 7. Product pages and gates
 
-### Purpose
+### Available with MVP
 
-Explain the full product loop without relying on implementation jargon.
+#### Capture
 
-### Sections
+- three states;
+- desktop/mobile;
+- one critical interaction;
+- current stability samples;
+- Epoch validity;
+- candidate-local versus browser-wide failures;
+- evidence Artifacts.
 
-1. Preserve the current implementation
-2. Create or import contenders
-3. Build and capture under equal conditions
-4. Apply required functional gates
-5. Compare factor-level evidence
-6. Resolve uncertainty or ties
-7. Export or promote deliberately
+#### Side-by-side comparison
 
-### Supporting diagrams
+- matched state/viewport/step;
+- visible current/Contender labels;
+- validity and limitations;
+- cited Evidence.
 
-- capture epoch diagram;
-- contender eligibility flow;
-- evidence-to-decision flow;
-- promotion output options.
+Overlay is optional/P1. Difference/flicker/annotations/responsive sequences are not marketed as available until implemented.
 
-### Required disclaimer
+#### Gates and Evidence
 
-Render Rivals recommends and packages output; it does not silently merge source changes.
+- phased Gates;
+- Factor verdict/confidence/citations;
+- protected regressions;
+- conflicts/missing Evidence;
+- order reversal/human-only mode;
+- no-winner/tie/invalid outcomes.
 
----
+#### Local runtime and diagnostics
 
-## 2.3 Product overview
+- bootstrap/supervisor/coordinator;
+- measured containment levels;
+- process/output/resource handling;
+- safe mode and cleanup;
+- canonical files/events;
+- explicit security non-guarantees.
 
-### Purpose
+#### Decision and output
 
-Provide a concise complete view for visitors who do not want to read individual feature pages.
+Separate pages/sections:
 
-### Sections
+- Recommendation/User Decision;
+- Promotion: patch, local branch, preserved Workspace;
+- Export Operation: report, diagnostics, Run/evidence bundle, screenshots, config, selected logs.
 
-- Projects and runs
-- Contender sources
-- Capture modes
-- Functional gates
-- Comparison views
-- Evidence and confidence
-- Rule sets
-- Artifacts and history
-- Diagnostics
-- Promotion outputs
+### Post-MVP pages
 
----
+Do not publish as current capability:
 
-## 2.4 Capture product page
-
-### Purpose
-
-Explain comparable capture rather than generic screenshot generation.
-
-### Content
-
-- baseline recapture requirement;
-- viewport and environment matrix;
-- interaction scripts;
-- animation and font settling;
-- browser lifecycle;
-- capture epoch invalidation;
-- generated artifacts;
-- incomplete-capture handling.
-
-### Demonstrations
-
-- same route at multiple viewports;
-- synchronized interaction state;
-- invalid versus valid capture set;
-- capture metadata panel.
-
----
-
-## 2.5 Comparison product page
-
-### Purpose
-
-Show how differences are inspected without assuming every change is beneficial.
-
-### Modes
-
-- side by side;
-- overlay;
-- difference;
-- flicker;
-- responsive sequence;
-- interaction replay;
-- region focus;
-- annotations.
-
-### Required message
-
-A visual difference is not automatically an improvement or regression.
-
----
-
-## 2.6 Evidence product page
-
-### Purpose
-
-Differentiate Render Rivals from screenshot-diff tools and subjective AI review.
-
-### Content
-
-- factor-level results;
-- confidence;
-- citations and linked artifacts;
-- gate effects;
-- provenance;
-- conflicting evidence;
-- missing evidence;
-- human-review prompts;
-- no-winner outcomes.
-
-### Demonstration
-
-A complete factor detail with supporting captures, counter-evidence, confidence, and known limitations.
-
----
-
-## 2.7 Rule sets product page
-
-### Purpose
-
-Explain repeatable project-specific evaluation policy.
-
-### Content
-
-- required and advisory gates;
-- weighted factors;
-- evidence inputs;
-- confidence thresholds;
-- tie behavior;
-- missing-data behavior;
-- versioning;
-- project templates;
-- validation.
-
----
-
-## 2.8 Local execution product page
-
-### Purpose
-
-Explain the runtime architecture in user terms.
-
-### Content
-
-- local source access;
-- native process supervisor;
-- browser automation;
-- artifact storage;
-- optional external evaluators;
-- network boundaries;
-- containment levels;
-- operating-system differences;
-- diagnostic exports.
-
-Do not claim cross-platform containment parity.
-
----
-
-## 2.9 Promotion workflow page
-
-### Purpose
-
-Clarify what happens after a contender wins.
-
-### Content
-
-- recommendation review;
-- source-change inspection;
-- stale-source detection;
-- export patch;
-- create branch;
-- copy worktree path;
-- generate report;
-- validation run;
-- blocked-promotion states.
-
-### Required message
-
-Promotion is explicit and reversible. Automatic merging is outside the initial product scope.
-
----
-
-## 2.10 Security and privacy
-
-### Purpose
-
-Provide a precise, auditable description of data handling.
-
-### Sections
-
-- what runs locally;
-- project-directory access;
-- artifact location;
-- process isolation;
-- local ports;
-- optional network access;
-- external evaluator behavior;
-- telemetry defaults;
-- crash-reporting defaults;
-- environment-variable handling;
-- log redaction;
-- diagnostic-bundle contents;
-- deletion and retention.
-
-### Required tables
-
-1. Data type / default location / external transmission behavior
-2. Capability / platform support / limitation
-3. Integration / requested permission / revocation path
-
----
-
-## 2.11 Downloads and installation
-
-### Tabs
-
-- Windows
-- macOS
-- Linux
-- npm bootstrap
-- Build from source
-
-### Content
-
-- supported versions;
-- prerequisites;
-- download artifacts;
-- checksums/signatures;
-- installation steps;
-- first launch;
-- containment limitations;
-- release notes;
+- generated Contenders;
+- multiple Contenders/rounds;
+- Rule Sets editor/product;
+- annotation collaboration;
+- historical comparison product;
+- CI/PR automation;
+- team/cloud/remote workers;
+- plugin/evaluator marketplace;
+- Figma;
+- automatic updates.
+
+Roadmap may list them as uncommitted future exploration.
+
+## 8. Security and privacy page
+
+Must reflect `security/THREAT-MODEL.md`.
+
+Required sections:
+
+- Project/local evaluator commands run with user authority;
+- containment is lifecycle/resource control, not filesystem sandbox;
+- dashboard authentication/CSRF/Origin/CSP;
+- Project/source/storage paths;
+- browser navigation/network policy;
+- remote evaluator packet/redaction/provider retention;
+- raw logs/screenshots may contain undeclared secrets;
+- canonical integrity/recovery;
+- import/export protections;
+- platform capability/non-parity;
+- telemetry/crash reporting defaults;
+- deletion/retention;
+- responsible disclosure when established.
+
+Required tables:
+
+1. data type / local location / external transmission;
+2. capability / platform / guarantee / limitation;
+3. command/integration / permission / revocation;
+4. Export kind / default included/excluded data.
+
+Do not say “your code never leaves the machine” when an external evaluator is enabled.
+
+## 9. Download and installation page
+
+Publication gate:
+
+- public package name finalized;
+- tested package/native/browser path;
+- checksums/provenance;
+- license status clear;
+- support matrix;
+- install/uninstall/data-retention instructions;
 - known issues;
-- uninstall and local-data removal.
+- migration/rollback policy;
+- no self-updater implication.
 
----
+Tabs appear only for tested distributions. Experimental macOS/Linux source builds are labeled experimental, not equal downloads.
 
-## 2.12 Examples index
+## 10. Source/status page before licensing
 
-### Purpose
+Title: Project Status or Source Repository—not Open Source.
 
-Provide credible complete cases rather than disconnected design mockups.
+Include:
 
-Example categories:
-
-- pricing page;
-- dashboard;
-- checkout;
-- mobile navigation;
-- enterprise table;
-- form flow;
-- documentation layout;
-- no-winner result.
-
-Each card shows scope, contenders, required gates, decision, and evidence completeness.
-
----
-
-## 2.13 Example case-study template
-
-Every case study includes:
-
-1. Problem and target task
-2. Current implementation
-3. Contender sources
-4. Controlled capture conditions
-5. Required gates
-6. Comparison views
-7. Factor-level evidence
-8. Regressions and tradeoffs
-9. Confidence and limitations
-10. Decision
-11. Promotion or no-winner result
-12. Downloadable evidence report
-
-Avoid retroactively framing every selected contender as flawless.
-
----
-
-## 2.14 Comparison with adjacent tools
-
-### Categories
-
-- AI website generators
-- coding agents
-- screenshot diff tools
-- visual regression testing
-- design-review tools
-- A/B testing platforms
-- design benchmarks
-
-### Comparison dimensions
-
-- source generation;
-- local execution;
-- functional gates;
-- matched capture conditions;
-- factor evidence;
-- human review;
-- production traffic requirement;
-- automatic merging;
-- artifact ownership.
-
-Use factual capability comparisons rather than dismissive competitor copy.
-
----
-
-## 2.15 Open-source page
-
-### Content
-
-- repository;
-- project status;
 - architecture reading order;
-- roadmap;
-- contributor paths;
-- governance;
-- issue labels;
-- security reporting;
-- release process;
-- license status.
+- implementation maturity;
+- support status;
+- license placeholder meaning;
+- no permission for reuse/contribution until license selected;
+- roadmap without dates;
+- security-contact status;
+- build-from-source only when scaffold exists.
 
-The page must clearly state when the repository is not yet licensed for general reuse.
+After real license, it may become Open Source/Contributing page.
 
----
+## 11. Examples and case studies
 
-## 2.16 Roadmap
+Publish only real complete cases.
 
-Group by outcome rather than arbitrary dates:
+Each includes:
 
-### Architecture and prototype
+1. task/constraints;
+2. current/Contender source provenance;
+3. controlled environment;
+4. three states and interaction;
+5. Gates and eligibility;
+6. comparison;
+7. cited Evidence/limitations;
+8. Recommendation;
+9. User Decision;
+10. Promotion or no-adoption result;
+11. downloadable redacted report via Export Operation;
+12. exact versions/capabilities.
 
-- implementation scaffold;
-- reference runtime;
-- initial capture flow;
-- first evidence report.
+Include no-improvement, Contender ineligible, tie/human review, and invalid Run examples—not only successful adoption.
 
-### Reliable local runner
+## 12. Adjacent-tool comparison
 
-- recovery;
-- artifact validation;
-- diagnostics;
-- platform support declarations.
+Categories:
 
-### Extensible evaluation
+- coding agents;
+- website generators;
+- screenshot/visual regression;
+- design review;
+- A/B testing;
+- benchmarks.
 
-- rule schemas;
-- evaluator adapters;
-- confidence handling;
-- historical comparison.
+Compare factual capabilities at publication date. Do not imply competitors lack features without current verification. Distinguish source generation, local execution, Gates, same-Epoch evidence, cited judgment, human Decision, traffic requirement, automatic merge, and Artifact ownership.
 
-### Team and CI workflows
+## 13. Documentation information architecture
 
-- review collaboration;
-- pull-request integration;
-- remote execution;
-- shared artifacts.
+### Status/getting started
 
-Avoid promising unsupported release dates.
+- maturity/support/license panel;
+- installation only after package gate;
+- first Project;
+- first existing-Contender Run;
+- reading comparison/evidence;
+- Decision;
+- Promotion versus Export Operation;
+- failure/recovery;
+- uninstall/data retention.
 
----
+### Concepts
 
-## 2.17 Changelog
+- current/Contender/Candidate;
+- Project/Run/Session;
+- Source Snapshot/Workspace;
+- Capture Plan/Epoch/Capture;
+- phased Gates;
+- Evidence/Confidence/limitations;
+- Recommendation/User Decision;
+- Promotion/Export Operation;
+- containment and security non-guarantees;
+- canonical storage/recovery.
 
-Filters:
+Rounds, Rule Sets, generated Contenders, and integrations remain roadmap concepts until implemented.
 
-- Desktop app
-- Native supervisor
-- Capture
-- Evaluators
-- Rule sets
-- Documentation
-- Security
+### Configuration
 
-Every release entry links to migration notes and known limitations when applicable.
+Must match `spec/13` exactly:
 
----
+- `user.jsonc`;
+- `.render-rivals/project.json`;
+- `.render-rivals/config.jsonc`;
+- template location;
+- precedence/merge;
+- commands/env/secrets;
+- route/states/viewports/interaction;
+- Gates/Factors;
+- limits/storage/retention;
+- CLI/API.
 
-## 2.18 Pricing or sustainability page
+No whole-app/component/selector scope docs as current MVP capability.
 
-Only add when a real model exists.
+### Evaluator adapter
 
-Potential sections:
+Use exact command request/result from spec06, trust boundary, timeouts, output validation, packet allowlist, remote data flow, fixtures, and rejection behavior.
 
-- open-source core;
-- optional paid services;
-- hosted or team capabilities;
-- support;
-- explicit local-core guarantees.
+### Git/source
 
-Do not publish placeholder pricing or imply that core local operation requires a cloud subscription unless that becomes true.
+Use spec14 for dirty trees, LFS, submodules, line endings, symlinks, case collisions, patches, branches, and cleanup.
 
----
+### Platform guides
 
-## 2.19 Legal and trust pages
+Windows reference; Linux/macOS experimental according to measured capabilities. Do not document parity.
 
-- Privacy policy
-- Terms
-- Security policy
-- Third-party notices
-- Trademark guidance
-- Responsible disclosure
-- Data-processing details for optional hosted services
+### Troubleshooting
 
----
+Use canonical stable error codes and exact permitted actions. Avoid fixes that mutate active source or canonical files manually.
 
-# 3. Documentation website
+### Development/contributing
 
-## 3.1 Documentation home
+Publish contribution workflow only after license and scaffold exist. Include schema/protocol/store/native/browser/security test requirements.
 
-### Entry paths
+## 14. Changelog and roadmap
 
-- Install Render Rivals
-- Run the first comparison
-- Understand the architecture
-- Configure a project
-- Write a rule set
-- Troubleshoot a failure
-- Contribute
+Changelog categories reflect actual components:
 
-### Status panel
+- Bootstrap/CLI;
+- Native supervisor;
+- Coordinator/API/UI;
+- Git/Workspace;
+- Capture/Gates;
+- Evaluation;
+- Storage/Recovery;
+- Promotion/Export;
+- Security;
+- Documentation.
 
-Show current product maturity, supported platforms, and documentation version.
+Roadmap groups outcomes, marks speculative items, and avoids release dates/commitments.
 
----
+## 15. Pricing/sustainability
 
-# 4. Getting started documentation
+Do not publish until a real model exists. Do not call a core open-source product or promise cloud/hosted services before license and implementation decisions.
 
-## 4.1 Introduction
+## 16. Legal/trust prerequisites
 
-Explain the core loop, terminology, intended use, current limitations, and non-goals.
+Before broad public launch:
 
-## 4.2 Installation
+- real license;
+- privacy/terms appropriate to actual product;
+- security policy/responsible disclosure;
+- third-party notices/SBOM;
+- trademark guidance;
+- provider data-processing explanations;
+- accurate telemetry/crash-reporting defaults.
 
-Platform-specific installation and verification.
+## 17. Asset inventory
 
-## 4.3 First project
+Create only from real implementation:
 
-- open a project;
-- review detected commands;
-- run project health;
-- configure route;
-- verify capture readiness.
+- product wordmark/logo;
+- real dashboard screenshots;
+- workflow/Epoch/containment/data-flow diagrams;
+- matched comparison sets;
+- Evidence detail;
+- no-winner/invalid/recovery scenes;
+- installation images from tested package;
+- architecture/runtime diagrams;
+- redacted example reports.
 
-## 4.4 First run
+Brand concept boards are exploration and must not be presented as shipped UI.
 
-- choose intent;
-- define scope;
-- select current implementation;
-- add contender;
-- configure viewport;
-- choose gates;
-- start and monitor.
+## 18. Public claim checklist
 
-## 4.5 Reading a comparison
+A page fails publication review when it:
 
-Explain side-by-side, overlay, difference, synchronized state, and validity labels.
-
-## 4.6 Reading evidence
-
-Explain factors, confidence, provenance, counter-evidence, missing evidence, and gate effects.
-
-## 4.7 Making a decision
-
-Explain recommendation, no-winner, tie, human review, and stale evidence.
-
-## 4.8 Promoting output
-
-Explain patch, branch, worktree, report, and validation run.
-
----
-
-# 5. Concept documentation
-
-## 5.1 Current implementation
-
-Definition and baseline-recapture requirement.
-
-## 5.2 Contenders and candidates
-
-Stable identity, source types, eligibility, and invalidation.
-
-## 5.3 Runs and rounds
-
-Lifecycle, sequential scheduling, pairwise progression, and retry behavior.
-
-## 5.4 Capture epochs
-
-Browser continuity, comparable conditions, invalidation, and recapture.
-
-## 5.5 Gates
-
-Required versus advisory gates and their effect on eligibility.
-
-## 5.6 Evidence
-
-Artifacts, factor results, citations, provenance, and limitations.
-
-## 5.7 Confidence
-
-What confidence means, how it is calculated, and what it does not prove.
-
-## 5.8 No-winner decisions
-
-Why retaining the current implementation is a valid successful result.
-
-## 5.9 Promotion
-
-Selection versus merge, output types, and stale-source protection.
-
-## 5.10 Containment
-
-Strong, limited, and best-effort capability modes.
-
-## 5.11 Canonical artifacts
-
-Files, append-only events, hashes, rebuildable indexes, and retention.
-
----
-
-# 6. Project configuration documentation
-
-## 6.1 Configuration file overview
-
-Location, format, schema version, inheritance, and validation.
-
-## 6.2 Commands
-
-Install, build, development, readiness, and working directory.
-
-## 6.3 Routes and scopes
-
-Whole app, route, component, selector, region, and interaction flow.
-
-## 6.4 Environment
-
-Variables, environment files, secrets, locale, time zone, and authentication state.
-
-## 6.5 Viewports
-
-Widths, heights, pixel ratio, color scheme, and reduced motion.
-
-## 6.6 Interaction scripts
-
-Actions, assertions, deterministic state, retries, and failure artifacts.
-
-## 6.7 Runtime limits
-
-Memory, timeouts, ports, artifact size, and retry limits.
-
-## 6.8 Storage and retention
-
-Directories, cleanup, protected runs, and exports.
-
----
-
-# 7. Rule-set documentation
-
-## 7.1 Rule-set schema
-
-Top-level fields, schema version, compatibility, and examples.
-
-## 7.2 Required gates
-
-Built-in gate types, thresholds, evidence, and failure behavior.
-
-## 7.3 Advisory gates
-
-Non-blocking findings and decision influence.
-
-## 7.4 Evaluation factors
-
-Definitions, weights, evidence inputs, and explanation requirements.
-
-## 7.5 Confidence policy
-
-Thresholds, missing data, conflicting evidence, and ties.
-
-## 7.6 Custom rules
-
-Extension interface, validation, testing, and safety boundaries.
-
-## 7.7 Versioning
-
-Rule-set changes, migration, historical reproducibility, and evaluator pinning.
-
----
-
-# 8. Evaluator documentation
-
-## 8.1 Evaluator model
-
-Deterministic rules, local models, external models, and combined evaluation.
-
-## 8.2 Inputs and outputs
-
-Artifact references, factor result, confidence, explanation, citations, and errors.
-
-## 8.3 Provenance
-
-Version, prompt hash, criteria hash, timestamp, retries, and provider metadata.
-
-## 8.4 External-provider security
-
-Exactly what may leave the machine, redaction, opt-in behavior, credentials, and logs.
-
-## 8.5 Writing an evaluator adapter
-
-Interface, lifecycle, timeouts, testing, fixtures, and registration.
-
----
-
-# 9. Platform guides
-
-## 9.1 Windows
-
-- reference strong-containment mode;
-- Job Objects;
-- console isolation;
-- process-tree cleanup;
-- ports;
-- browser runtime;
-- troubleshooting.
-
-## 9.2 Linux
-
-- systemd user scopes;
-- delegation;
-- owned cgroup subtree;
-- `cgroup.kill` verification;
-- distribution differences;
-- fallback behavior.
-
-## 9.3 macOS
-
-- best-effort containment statement;
-- process cleanup;
-- browser permissions;
-- filesystem access;
-- known limitations.
-
-## 9.4 Containers
-
-Supported and unsupported scenarios, nested containment, browser sandboxing, mounted source, and artifact paths.
-
-## 9.5 CI environments
-
-Headless operation, artifacts, credentials, pull-request behavior, timeouts, and current limitations.
-
----
-
-# 10. Artifact documentation
-
-## 10.1 Artifact directory structure
-
-Run, contender, epoch, route, viewport, evidence, logs, and reports.
-
-## 10.2 Event stream
-
-Event schema, ordering, append-only behavior, and recovery.
-
-## 10.3 Capture metadata
-
-Browser, viewport, environment, source snapshot, state, and hashes.
-
-## 10.4 Evidence report format
-
-Factor results, citations, confidence, gates, and decision.
-
-## 10.5 Export bundles
-
-Full bundle, evidence-only, report, screenshots, patch, and diagnostic bundle.
-
-## 10.6 Retention and cleanup
-
-Protected artifacts, automatic cleanup, incomplete runs, and manual deletion.
-
----
-
-# 11. Troubleshooting
-
-## 11.1 Project detection failure
-
-## 11.2 Install or build failure
-
-## 11.3 Application never becomes ready
-
-## 11.4 Port conflict
-
-## 11.5 Browser connection failure
-
-## 11.6 Capture instability
-
-## 11.7 Interaction script failure
-
-## 11.8 Capture epoch invalidated
-
-## 11.9 Missing evidence
-
-## 11.10 Evaluator timeout
-
-## 11.11 Disk pressure
-
-## 11.12 Artifact hash failure
-
-## 11.13 Containment unavailable
-
-## 11.14 Interrupted run recovery
-
-## 11.15 Stale-source promotion block
-
-Every troubleshooting page should include symptoms, likely causes, diagnostic steps, safe recovery, destructive recovery, and support-bundle guidance.
-
----
-
-# 12. Developer and contributor documentation
-
-## 12.1 Repository structure
-
-## 12.2 JavaScript bootstrap
-
-## 12.3 Rust supervisor
-
-## 12.4 TypeScript coordinator
-
-## 12.5 Native IPC
-
-## 12.6 Process I/O and logging
-
-## 12.7 Scheduler
-
-## 12.8 Browser orchestration
-
-## 12.9 Capture pipeline
-
-## 12.10 Evidence pipeline
-
-## 12.11 Artifact schemas
-
-## 12.12 Rule-set API
-
-## 12.13 Evaluator adapter API
-
-## 12.14 Testing strategy
-
-## 12.15 Platform verification
-
-## 12.16 ADR process
-
-## 12.17 Release process
-
-## 12.18 Security reporting
-
-## 12.19 Contributing
-
-## 12.20 Code of conduct
-
----
-
-# 13. Documentation interaction requirements
-
-## Search
-
-Search should distinguish product pages, concepts, configuration, troubleshooting, and contributor docs.
-
-## Version selector
-
-Documentation is tied to released product versions. Clearly label unreleased `main` documentation.
-
-## Page metadata
-
-Every technical page includes:
-
-- product version;
-- last verified date;
-- applicable platforms;
-- related configuration keys;
-- linked ADRs when architecture-sensitive.
-
-## Code examples
-
-Examples must be copyable, complete enough to run, version-pinned where relevant, and accompanied by expected output.
-
-## Warnings
-
-Use explicit categories:
-
-- Limitation
-- Security
-- Data loss risk
-- Platform difference
-- Experimental behavior
-- Version-sensitive behavior
-
-## Accessibility
-
-- keyboard-accessible navigation;
-- visible focus;
-- meaningful heading hierarchy;
-- alt text for screenshots;
-- text explanation for diagrams;
-- no color-only state distinction;
-- reduced-motion support.
-
----
-
-# 14. Marketing asset inventory
-
-Required assets:
-
-- product wordmark;
-- monochrome mark;
-- app icon;
-- favicon;
-- GitHub social preview;
-- homepage hero image;
-- workflow diagram;
-- capture-epoch diagram;
-- evidence-detail screenshot;
-- no-winner screenshot;
-- security architecture diagram;
-- platform-support matrix;
-- case-study images;
-- release announcement template;
-- social card template;
-- documentation callout illustrations.
-
-All product screenshots should be generated from a coherent sample project and consistent data set.
-
----
-
-# 15. Public-site route model
-
-```text
-/
-/product
-/product/capture
-/product/comparison
-/product/evidence
-/product/rule-sets
-/product/local-execution
-/product/promotion
-/how-it-works
-/examples
-/examples/:caseStudy
-/security
-/download
-/compare
-/open-source
-/roadmap
-/changelog
-/privacy
-/terms
-/security-policy
-/trademarks
-/docs
-/docs/getting-started/*
-/docs/concepts/*
-/docs/configuration/*
-/docs/rule-sets/*
-/docs/evaluators/*
-/docs/platforms/*
-/docs/artifacts/*
-/docs/troubleshooting/*
-/docs/development/*
-```
-
----
-
-# 16. Delivery priority
-
-## P0: repository and prototype stage
-
-- concise homepage;
-- how-it-works page;
-- security/local-first page;
-- GitHub/open-source page;
-- documentation home;
-- architecture reading path;
-- installation placeholder clearly marked unreleased;
-- concepts pages for current, contender, capture epoch, gates, evidence, and promotion.
-
-## P1: first downloadable public build
-
-- downloads;
-- complete getting started;
-- platform guides;
-- project configuration;
-- run workflow;
-- troubleshooting;
-- first case study;
-- changelog;
-- legal pages.
-
-## P2: broader adoption
-
-- multiple case studies;
-- adjacent-tool comparison;
-- evaluator developer guides;
-- CI guides;
-- versioned docs;
-- integration pages;
-- sustainability or pricing page when factual.
-
----
-
-# 17. Next design deliverable
-
-Create two wireframe packages:
-
-1. Marketing homepage and how-it-works page, including content hierarchy, proof placement, responsive behavior, and asset requirements.
-2. Documentation shell and first-run guide, including navigation tree, search behavior, version handling, callout styles, and mobile behavior.
+- says generate/create Contenders in MVP;
+- says report is Promotion;
+- calls project open source before license;
+- shows Download before package exists;
+- shows Contributing before license/process;
+- claims code never leaves machine without evaluator caveat;
+- claims sandbox or platform parity;
+- markets post-MVP comparison modes/Rule Sets/rounds as current;
+- promises automatic update/background service;
+- uses fake product screenshots or unverifiable examples;
+- omits no-winner/invalid/limitations;
+- describes active source merge/push/deployment.
