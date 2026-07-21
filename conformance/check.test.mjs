@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { runConformance } from "./check.mjs";
+import { runConformance } from "./check-all.mjs";
 
 const conformanceDir = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(conformanceDir, "..");
@@ -67,6 +67,14 @@ async function mutate(caseId, root) {
         "spec/13-configuration-cli-and-local-api-contracts.md",
         "statusPath:",
         "statusUrl:",
+      );
+      break;
+    case "DOC-OPERATION-STATE-TABLE-DRIFT":
+      await replaceInFile(
+        root,
+        "spec/17-local-api-envelopes-operations-and-pagination.md",
+        "| `reconciling` | required because an execution or external side effect was observed | null | null until proof permits canonical adoption | null |\n",
+        "",
       );
       break;
     case "DOC-CLI-PROMOTE-OMITTED":
