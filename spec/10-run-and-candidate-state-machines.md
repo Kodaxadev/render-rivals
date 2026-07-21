@@ -52,7 +52,7 @@ Same operation ID plus same payload is idempotent. Changed payload is rejected. 
 - `gating`;
 - `evaluating`;
 - `awaiting_decision`;
-- `exporting`;
+- `promoting`;
 - `completed`;
 - `failed`;
 - `cancelled`;
@@ -66,14 +66,14 @@ preparing -> capturing | failed | cancelled | interrupted
 capturing -> capturing | gating | failed | cancelled | interrupted
 gating -> evaluating | awaiting_decision | failed | cancelled | interrupted
 evaluating -> awaiting_decision | failed | cancelled | interrupted
-awaiting_decision -> exporting | completed | cancelled | interrupted
-exporting -> completed | awaiting_decision | failed | cancelled | interrupted
-interrupted -> validating | preparing | capturing | gating | evaluating | awaiting_decision | failed | cancelled
+awaiting_decision -> promoting | completed | cancelled | interrupted
+promoting -> completed | awaiting_decision | failed | cancelled | interrupted
+interrupted -> validating | preparing | capturing | gating | evaluating | awaiting_decision | promoting | failed | cancelled
 ```
 
 Terminal Runs never reopen. Changed terminal work creates a superseding Run.
 
-A general Export Operation may also run against a completed Run without reopening that Run. Its own lifecycle is separate and does not mutate the Run state unless the export was requested as part of the active decision flow.
+A general Export Operation may run against a Run in any state allowed by its own policy, including a completed Run, without reopening or changing that Run. Its lifecycle is separate from the Run lifecycle.
 
 ## 6. Draft and validation
 
@@ -138,33 +138,21 @@ Allowed actions:
 
 Ordinary report or diagnostic export does not require acceptance and is represented by Export Operation, not User Decision or Promotion.
 
-## 12. Exporting active decision output
+## 12. Promoting the selected contender
 
-The Run enters `exporting` only when the active decision flow launches a Promotion or explicitly blocking Run export.
+The Run enters `promoting` only when a nonstale User Decision authorizes a Promotion for an eligible selected Candidate.
 
-### Promotion
-
-Kinds:
+Promotion kinds:
 
 - patch export;
 - local branch creation;
 - workspace preservation.
 
-Requires nonstale authorizing Decision, selected eligible Candidate, bound hashes, safe destination, no working-tree overwrite, and idempotent verification.
+Promotion requires a nonstale authorizing Decision, selected eligible Candidate, bound hashes, safe destination, no working-tree overwrite, and idempotent verification.
 
-### Export Operation
+Destination conflict returns the Run to `awaiting_decision` when the Promotion cannot complete safely. A verified matching prior result may complete the same durable Operation idempotently.
 
-Kinds include report, diagnostic bundle, Run/evidence bundle, screenshots, configuration template, and selected logs.
-
-A general Export Operation:
-
-- need not identify a Candidate;
-- does not imply adoption;
-- enforces redaction/omission policy;
-- may run after Run completion without changing Run state;
-- may be blocked in safe mode when required integrity cannot be verified.
-
-Destination conflict returns to decision/previous state when active, or fails the independent Export Operation when post-completion.
+General Export Operations remain independent. They may produce reports, diagnostic bundles, Run/evidence bundles, screenshots, configuration templates, and selected logs without changing the Run state or implying adoption.
 
 ## 13. Terminal states
 
@@ -300,6 +288,7 @@ Typical targets:
 - resolved gates → evaluating/decision;
 - Recommendation → decision;
 - Decision → Promotion/completion;
+- interrupted Promotion with verified resumable proof → promoting;
 - terminal result with cleanup failure → cleanup only.
 
 ## 23. Retry and cancellation
