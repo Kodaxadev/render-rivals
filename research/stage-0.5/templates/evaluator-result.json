@@ -1,0 +1,23 @@
+{
+  "schema": "render-rivals/stage-0.5-evaluator-result",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "presentationOrder": "A_B",
+  "packetHash": "sha256:<64 lowercase hexadecimal characters>",
+  "completedAt": "<UTC timestamp>",
+  "factors": [
+    {
+      "factor": "task_product_fit",
+      "verdict": "unable_to_judge",
+      "confidence": null,
+      "rationale": "",
+      "citations": [],
+      "limitations": [],
+      "protectedRegressionConcern": false
+    }
+  ],
+  "overallLimitations": [],
+  "rawOutputHash": "sha256:<64 lowercase hexadecimal characters>",
+  "valid": false
+}
