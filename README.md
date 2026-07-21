@@ -52,11 +52,12 @@ Project and local evaluator commands run with the user's operating-system author
 14. [`spec/14-git-source-snapshot-and-workspace-contracts.md`](spec/14-git-source-snapshot-and-workspace-contracts.md)
 15. [`spec/15-observability-diagnostics-and-telemetry-contracts.md`](spec/15-observability-diagnostics-and-telemetry-contracts.md)
 
-Shared serialized vocabulary and stable errors:
+Shared serialized vocabulary, stable errors, and cross-record validation:
 
 - [`schemas/domain-types.ts`](schemas/domain-types.ts)
 - [`schemas/error-codes.ts`](schemas/error-codes.ts)
 - [`schemas/README.md`](schemas/README.md)
+- [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md)
 
 Architecture decisions are under [`adr/`](adr/). Runtime-source verification is under [`sources/`](sources/). Historical drafts are under [`archive/`](archive/) and are not implementation inputs.
 
@@ -64,9 +65,11 @@ Architecture decisions are under [`adr/`](adr/). Runtime-source verification is 
 
 - [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) — locked first usable path.
 - [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) — stable failures, retries, recovery, cleanup.
+- [`docs/RECORD-INVARIANT-MATRIX.md`](docs/RECORD-INVARIANT-MATRIX.md) — record cardinality, nullability, and cross-field validation.
 - [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md) — fixtures, fault injection, CI, release gates.
 - [`security/THREAT-MODEL.md`](security/THREAT-MODEL.md) — trust boundaries, controls, residual risk.
 - [`docs/SCAFFOLD-DECISION-REGISTER.md`](docs/SCAFFOLD-DECISION-REGISTER.md) — resolved, deferred, and milestone decisions.
+- [`docs/DEVELOPMENT-GAP-REGISTER.md`](docs/DEVELOPMENT-GAP-REGISTER.md) — remaining proof, implementation, and release gaps with blocking effects.
 - [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) — enabled UI scenes and exact MVP route inventory.
 - [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) — route geometry, guards, state behavior.
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) — MVP versus post-MVP authority.
@@ -82,15 +85,16 @@ When statements conflict:
 1. accepted ADRs control deliberate architecture decisions;
 2. `schemas/domain-types.ts` and `schemas/error-codes.ts` control shared persisted/API vocabulary they define;
 3. canonical specs control implementation behavior;
-4. `spec/11` controls live filesystem/commit semantics;
-5. `spec/13` controls configuration, CLI, local API, safe mode, and commands;
-6. `spec/14` controls Git/source/workspace/branch semantics;
-7. `spec/15` controls logs, metrics, diagnostics, telemetry, and crash reporting;
-8. MVP contract narrows first release without weakening runtime invariants;
-9. failure/security/test contracts control required negative behavior and proof;
-10. UI/wireframe documents expose only legal enabled commands;
-11. marketing/brand/archive never override implementation contracts;
-12. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
+4. `docs/RECORD-INVARIANT-MATRIX.md` controls cross-record cardinality/nullability where interfaces and prose are otherwise underspecified;
+5. `spec/11` controls live filesystem/commit semantics;
+6. `spec/13` controls configuration, CLI, local API, safe mode, and commands;
+7. `spec/14` controls Git/source/workspace/branch semantics;
+8. `spec/15` controls logs, metrics, diagnostics, telemetry, and crash reporting;
+9. MVP contract narrows first release without weakening runtime invariants;
+10. failure/security/test contracts control required negative behavior and proof;
+11. UI/wireframe documents expose only legal enabled commands;
+12. marketing/brand/archive never override implementation contracts;
+13. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
 
 ADR-0011 is fully incorporated and now records rationale/history rather than acting as a temporary override.
 
@@ -126,7 +130,7 @@ Architecture/document decisions are sufficiently classified to begin scaffolding
 Before foundational scaffold acceptance:
 
 - pin Node/pnpm/Playwright/Chromium/Rust/dependencies;
-- implement Zod/JSON Schema, fixtures, migrations, and compatibility tests;
+- implement Zod/JSON Schema, fixtures, migrations, compatibility tests, and every Record Invariant Matrix row;
 - generate Rust/TypeScript protocol goldens;
 - implement canonical ID/error validators;
 - run Windows console/Job/browser-descendant spike;
@@ -160,14 +164,14 @@ Milestone-dependent library/version decisions are listed in the Scaffold Decisio
 Architecture changes update:
 
 1. affected canonical spec;
-2. shared schemas/error registry when vocabulary changes;
+2. shared schemas/error registry and Record Invariant Matrix when vocabulary or cross-field meaning changes;
 3. ADR for deliberate architecture decision;
 4. failure/security/test/observability contracts;
 5. UI/API contracts when commands/routes change;
 6. package/public-claim contracts when release behavior changes;
 7. [`MANIFEST.json`](MANIFEST.json) and [`DOCUMENT-MANIFEST.md`](DOCUMENT-MANIFEST.md).
 
-Automated documentation conformance should fail on missing links, duplicate shared unions, unregistered error codes, deprecated active names, old storage/env/package names, route drift, illegal MVP controls, schema-registry mismatch, or unapproved telemetry/public claims.
+Automated documentation conformance should fail on missing links, duplicate shared unions, unregistered error codes, deprecated active names, old storage/env/package names, route drift, illegal MVP controls, schema/invariant registry mismatch, or unapproved telemetry/public claims.
 
 ## Source freshness
 
