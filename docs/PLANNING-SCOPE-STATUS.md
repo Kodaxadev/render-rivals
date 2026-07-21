@@ -6,15 +6,15 @@
 ## 1. Authority order
 
 1. accepted ADRs;
-2. canonical specs 01–14;
-3. shared schema/error registries;
+2. canonical specifications in the maintained reading order from `README.md` and `DOCUMENT-MANIFEST.md`;
+3. shared schema, error, API, Operation, and invariant registries;
 4. locked MVP vertical slice;
-5. failure/recovery, threat model, and test strategy;
+5. failure/recovery, threat model, test strategy, observability, retention, lock, secret/network, and migration contracts;
 6. Product UI and Route Wireframe contracts for enabled MVP surfaces;
 7. marketing/brand planning;
 8. archive/history only.
 
-Configuration, CLI, local API, safe mode, command idempotency, Promotion, and Export Operation follow `spec/13` even when older planning prose differs.
+Configuration, CLI, local API, safe mode, command idempotency, Promotion, and Export Operation follow specs 13, 16, 17, and 19 even when older planning prose differs.
 
 ## 2. MVP-only implementation rule
 
@@ -60,7 +60,7 @@ Re-evaluate previous creates a new draft Run and new Capture Epoch. It is not an
 
 ## 5. Route authority
 
-The Product UI plan owns exact MVP route inventory and availability. The Route Wireframe specification owns route geometry, guards, and state behavior. They must be updated together and checked mechanically.
+The Product UI plan owns exact authenticated MVP route inventory and availability. The pre-authentication pairing route is governed separately by `docs/DASHBOARD-PAIRING-ROUTE.md` and spec16. The Route Wireframe specification owns authenticated route geometry, guards, and state behavior. These inventories must be updated together and checked mechanically.
 
 Preparation/Capture and wizard subroutes are intentional MVP decompositions.
 
