@@ -2,21 +2,36 @@
 
 > Build contenders. Keep the best.
 
-Render Rivals is a local-first visual optimization harness for AI-assisted frontend work. It compares a current implementation with contenders under controlled conditions, blocks functional and protected regressions, preserves evidence, and recommends adoption only when a contender demonstrates a material improvement.
+Render Rivals is a local-first visual optimization harness for AI-assisted frontend work. It compares a qualified current implementation with independently prepared Contenders under controlled conditions, blocks functional and protected regressions, preserves cited evidence, and requires an explicit human Decision before candidate adoption.
 
-## Canonical architecture
+## Repository status
 
-**Status:** Architecture and MVP implementation contracts established  
-**Working name:** Render Rivals  
-**Canonical set:** This repository  
-**Supersedes:** Earlier Design Warden and runtime drafts  
-**Implementation status:** Scaffold only against the canonical specifications, shared schema vocabulary, accepted ADRs, and locked MVP contract
+**Architecture:** Canonical MVP contracts established  
+**Implementation:** Pre-scaffold; executable schemas/runtime/product code not yet present  
+**Reference platform:** Windows 10/11 x64 strong-containment target  
+**License:** Not yet licensed for general reuse or contribution; see [`LICENSE-TBD.md`](LICENSE-TBD.md)  
+**Public packaging:** Not yet available
 
-## Purpose
+This repository is an architecture and product implementation baseline, not a shipped product or open-source release yet.
 
-Render Rivals preserves a current implementation, accepts independently prepared contenders, builds and renders eligible candidates under comparable conditions, applies hard regression gates, evaluates candidates pairwise using cited evidence, and requires an explicit human decision before non-destructive export.
+## Product boundary
 
-The first implementation is an experimental reference tool, not a universal autonomous design system.
+MVP:
+
+- one local Git Project;
+- one current implementation and one existing Contender;
+- populated, empty, and unavailable/error states;
+- desktop/mobile and one critical interaction;
+- sequential Workspaces/servers and one contained Chromium per Capture Epoch;
+- phased deterministic Gates;
+- pairwise evaluator with order reversal or human-only mode;
+- deterministic Recommendation and explicit User Decision;
+- Promotion as patch/local branch/preserved Workspace;
+- ordinary Export Operation as report/diagnostics/bundles;
+- files/events as canonical history;
+- no automatic merge, push, deployment, generation, Pause, or cloud service.
+
+Project and local evaluator commands run with the user's operating-system authority. Process containment controls lifecycle/resources where measured; it is not a filesystem/network sandbox.
 
 ## Canonical reading order
 
@@ -32,117 +47,130 @@ The first implementation is an experimental reference tool, not a universal auto
 10. [`spec/10-run-and-candidate-state-machines.md`](spec/10-run-and-candidate-state-machines.md)
 11. [`spec/11-artifact-event-and-schema-contracts.md`](spec/11-artifact-event-and-schema-contracts.md)
 12. [`spec/12-cross-spec-normalization.md`](spec/12-cross-spec-normalization.md)
-13. [`schemas/domain-types.ts`](schemas/domain-types.ts)
+13. [`spec/13-configuration-cli-and-local-api-contracts.md`](spec/13-configuration-cli-and-local-api-contracts.md)
+14. [`spec/14-git-source-snapshot-and-workspace-contracts.md`](spec/14-git-source-snapshot-and-workspace-contracts.md)
 
-Architecture decisions are under [`adr/`](adr/). Official-source verification notes are under [`sources/`](sources/). Earlier drafts are preserved under [`archive/`](archive/) for history only.
+Shared serialized vocabulary and stable errors:
 
-## Product and implementation planning
+- [`schemas/domain-types.ts`](schemas/domain-types.ts)
+- [`schemas/error-codes.ts`](schemas/error-codes.ts)
+- [`schemas/README.md`](schemas/README.md)
 
-- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) locks the first complete product path, required evidence coverage, gates, canonical evaluation outcomes, exclusions, acceptance fixtures, and implementation sequence.
-- [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) defines failure classification, evidence impact, retries, recovery targets, idempotency, cleanup, and user-facing behavior.
-- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) defines the complete desktop product surface and includes explicitly deferred post-MVP concepts.
-- [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) defines the marketing and documentation sites.
-- [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) is the implementation route authority for page contracts, geometry, route guards, state handling, and responsive behavior.
-- [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) distinguishes enabled MVP routes and features from deferred complete-product planning.
-- [`schemas/README.md`](schemas/README.md) describes the shared type vocabulary and remaining executable schema-registry work.
+Architecture decisions are under [`adr/`](adr/). Runtime-source verification is under [`sources/`](sources/). Historical drafts are under [`archive/`](archive/) and are not implementation inputs.
 
-Brand exploration and visual-direction work are under [`brand/`](brand/).
+## Product, development, and release contracts
+
+- [`docs/MVP-VERTICAL-SLICE.md`](docs/MVP-VERTICAL-SLICE.md) — locked first usable path.
+- [`docs/FAILURE-RECOVERY-MATRIX.md`](docs/FAILURE-RECOVERY-MATRIX.md) — stable failures, retries, recovery, cleanup.
+- [`docs/TEST-AND-VALIDATION-STRATEGY.md`](docs/TEST-AND-VALIDATION-STRATEGY.md) — fixtures, fault injection, CI, release gates.
+- [`security/THREAT-MODEL.md`](security/THREAT-MODEL.md) — trust boundaries, controls, residual risk.
+- [`docs/SCAFFOLD-DECISION-REGISTER.md`](docs/SCAFFOLD-DECISION-REGISTER.md) — resolved, deferred, and milestone decisions.
+- [`docs/PRODUCT-UI-SCENE-PLAN.md`](docs/PRODUCT-UI-SCENE-PLAN.md) — enabled UI scenes and exact MVP route inventory.
+- [`docs/ROUTE-LEVEL-WIREFRAME-SPEC.md`](docs/ROUTE-LEVEL-WIREFRAME-SPEC.md) — route geometry, guards, state behavior.
+- [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) — MVP versus post-MVP authority.
+- [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) — public claim gates.
+- [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md) — packages, native binaries, releases, updates, license blockers.
+
+Brand exploration is under [`brand/`](brand/) and is not an architecture input.
 
 ## Canonicality rule
 
 When statements conflict:
 
-1. An accepted ADR overrides general specification text.
-2. A later ADR overrides an earlier ADR only when it explicitly supersedes it.
-3. `schemas/domain-types.ts` controls the shared persisted enums and record names it defines.
-4. Canonical specifications override planning documents and archived material.
-5. `spec/11` controls live canonical filesystem layout.
-6. `spec/12` controls cross-spec vocabulary mapping, relative-path interpretation, and session/run separation.
-7. MVP implementation contracts narrow the first release but do not override canonical runtime invariants.
-8. Code does not silently override the specification. A deliberate deviation requires an ADR amendment or replacement.
+1. accepted ADRs control deliberate architecture decisions;
+2. `schemas/domain-types.ts` and `schemas/error-codes.ts` control shared persisted/API vocabulary they define;
+3. canonical specs control implementation behavior;
+4. `spec/11` controls live filesystem/commit semantics;
+5. `spec/13` controls configuration, CLI, local API, safe mode, and commands;
+6. `spec/14` controls Git/source/workspace/branch semantics;
+7. MVP contract narrows first release without weakening runtime invariants;
+8. failure/security/test contracts control required negative behavior and proof;
+9. UI/wireframe documents expose only legal enabled commands;
+10. marketing/brand/archive never override implementation contracts;
+11. code does not silently override architecture—deliberate deviation requires updated spec and ADR where architectural.
 
-ADR-0011 has been incorporated into specifications 06, 09, 10, the MVP contract, and `schemas/domain-types.ts`. The ADR remains the historical decision record rather than an active textual override.
+ADR-0011 is fully incorporated and now records rationale/history rather than acting as a temporary override.
 
 ## Locked ownership boundary
 
-This summary intentionally mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-boundary.md).
+This mirrors [`ADR-0001`](adr/ADR-0001-typescript-rust-boundary.md) as clarified by specs 02–04.
 
-- TypeScript owns policy, domain state, Git and workspaces, Playwright/browser orchestration, evidence, evaluation, accounting, experiments, configuration, adapters, the local server, and UI.
-- Rust owns session supervision, process containment, process creation and I/O, process-tree termination, native resource accounting and enforcement, listener ownership, secure IPC, and terminal signals.
-- Rust does not own promotion policy, visual judgment, Git strategy, provider parsing, evidence interpretation, or dashboard behavior.
-- TypeScript does not emulate Job Objects, delegated cgroup termination, native peer credentials, or native listener ownership.
+- TypeScript owns policy, domain state, Git/workspace strategy, Playwright orchestration, fixtures/Gates/Evidence/evaluation/accounting, configuration/adapters, local API/CLI semantics, and UI.
+- Rust owns Session supervision, launch authorization and managed root-process creation, containment, process I/O, resource enforcement, listener ownership, native IPC, terminal signals, and verified termination.
+- Approved contained roots may spawn descendants only when containment inheritance is expected and doctor-verified; this is how Playwright-managed Chromium operates on the Windows reference path.
 - The boundary is a sidecar protocol, not N-API.
 
 ## Other locked decisions
 
-- The npm entry process is a minimal JavaScript bootstrap outside containment.
-- Rust launches the coordinator using the bootstrap's exact `process.execPath`.
-- Endpoint identifiers and session nonces are passed through environment, never argv.
-- Rust is the terminal and Ctrl+C authority.
-- Coordinator and supervised children do not inherit the user's interactive console.
-- Windows is the first strong-containment reference platform.
-- Linux strong mode requires an explicitly delegated systemd user scope, an owned subtree, and a usable `cgroup.kill`.
-- macOS native containment is best effort and is never described as equivalent to Windows or Linux strong mode.
-- The first scheduler is sequential.
-- Every comparison recaptures the current implementation in the same capture epoch as the contender.
-- A Chromium disconnect invalidates the complete capture epoch.
-- Files and append-only event streams are canonical. A database may later be a rebuildable index.
-- `RecommendationOutcome`, `UserDecisionAction`, `InferenceUsage`, and shared record shapes are defined once under `schemas/`.
-- Token consumption is telemetry during the maximum-quality proof, not an early optimization target.
-- Automatic merging is out of scope for exploratory phases.
+- Minimal JavaScript npm bootstrap remains outside containment.
+- Rust launches coordinator with bootstrap's exact `process.execPath`.
+- Session endpoint/nonce use environment, never argv/URL/logs.
+- Rust owns user Ctrl+C and terminal restoration.
+- Coordinator/project/evaluator roots do not inherit the user's interactive console.
+- Windows is first strong reference; Linux/macOS claims are capability-measured and explicit.
+- MVP scheduler is sequential.
+- Current implementation is recaptured in each selection Run.
+- Browser continuity failures invalidate full Capture Epoch; Candidate-local failures do not unless comparability is compromised.
+- Files and append-only streams are canonical; database may be rebuildable index only.
+- Recommendation, User Decision, Promotion, and Export Operation are distinct.
+- No automatic merge/push/deployment or self-updater.
 
 ## Scaffold gate
 
-Scaffolding may begin only after:
+Architecture/document decisions are sufficiently classified to begin scaffolding, but Stage 1 is not complete.
 
-- accepted ADR review;
-- all scaffold-level `OPEN-*` items are resolved or explicitly deferred;
-- Windows console-isolation spike is planned;
-- Linux delegated-scope acquisition has a live verification task;
-- Playwright Clock behavior is checked against the exact pinned release;
-- the reference-platform support declaration is accepted;
-- the MVP, state-machine, schema, and failure-recovery contracts are treated as implementation inputs;
-- executable Zod schemas, generated JSON Schemas, fixtures, migrations, and compatibility tests are created under the implementation schema package.
+Before foundational scaffold acceptance:
 
-## Non-goals for the first scaffold
+- pin Node/pnpm/Playwright/Chromium/Rust/dependencies;
+- implement Zod/JSON Schema, fixtures, migrations, and compatibility tests;
+- generate Rust/TypeScript protocol goldens;
+- implement canonical ID/error validators;
+- run Windows console/Job/browser-descendant spike;
+- verify exact Playwright Clock behavior;
+- implement documentation drift check;
+- establish data-root filesystem tests;
+- keep license/public packaging claims blocked.
 
-- hosted service;
-- MCP as orchestration core;
-- public interchange standard;
-- plugin marketplace;
-- preference-model training;
-- parallel candidate execution;
-- SQLite as source of truth;
-- Tauri or Electron packaging;
-- three production agent adapters;
-- contender generation inside the MVP run;
-- automatic promotion or merging;
-- cross-platform containment parity claims.
+Milestone-dependent library/version decisions are listed in the Scaffold Decision Register and must be recorded when selected.
+
+## First scaffold non-goals
+
+- hosted service/cloud sync;
+- MCP orchestration core;
+- public interchange/plugin standard;
+- preference training;
+- parallel Candidates;
+- SQLite source of truth;
+- Electron/Tauri;
+- in-Run Contender generation;
+- multiple Contenders/rounds;
+- Pause/suspend;
+- automatic Promotion/merge;
+- cross-platform parity;
+- automatic updater/background service.
 
 ## Maintenance
 
-Canonical specification files should remain below about 600 lines where practical. Split them before review becomes difficult. ADRs may be shorter.
-
 Architecture changes update:
 
-1. the affected canonical specification;
-2. the shared schema/type source when serialized vocabulary changes;
-3. a new or superseding ADR;
-4. this locked-decision summary when relevant;
-5. the affected implementation checklist;
-6. repository manifests when the document inventory changes.
+1. affected canonical spec;
+2. shared schemas/error registry when vocabulary changes;
+3. ADR for deliberate architecture decision;
+4. failure/security/test contracts;
+5. UI/API contracts when commands/routes change;
+6. package/public-claim contracts when release behavior changes;
+7. [`MANIFEST.json`](MANIFEST.json) and [`DOCUMENT-MANIFEST.md`](DOCUMENT-MANIFEST.md).
 
-Duplicate shared TypeScript unions in Markdown are prohibited. Specs reference `schemas/domain-types.ts` instead.
+Automated documentation conformance should fail on missing links, duplicate shared unions, unregistered error codes, deprecated active names, old storage/env/package names, route drift, illegal MVP controls, or schema-registry mismatch.
 
 ## Source freshness
 
-Stable operating-system behavior is cited for traceability. Version-sensitive behavior is reverified when scaffolding and whenever dependencies are upgraded.
+Version-sensitive claims are reverified at scaffold and dependency upgrades, especially:
 
-Highest-risk version-sensitive checks:
-
-- Playwright Clock and browser lifecycle;
-- systemd transient-scope and delegation signatures;
-- Windows process creation and ConPTY behavior;
-- agent CLI stream formats;
-- vendor authentication and subscription terms;
-- Node and TypeScript support ranges.
+- Playwright Clock/browser lifecycle;
+- Windows Job/console/process APIs;
+- systemd delegated scopes/cgroup kill;
+- Git worktree/LFS/submodule behavior;
+- evaluator command/provider formats;
+- package/native signing/distribution;
+- Node/TypeScript/Rust support ranges.
