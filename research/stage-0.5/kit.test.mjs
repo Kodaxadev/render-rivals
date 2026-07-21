@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  validateDecision,
   calculateMetrics,
   validateExperimentManifest,
   validateTaskResult,
@@ -154,4 +155,83 @@ test("an ineligible Contender cannot be recommended", () => {
     selectorOutcome: "recommend_contender",
   });
   assert.ok(validateTaskResult(bad, manifest()).some((issue) => issue.code === "INELIGIBLE_CONTENDER_RECOMMENDED"));
+});
+
+function decision(overrides = {}) {
+  return {
+    schema: "render-rivals/stage-0.5-decision",
+    schemaVersion: "1.0.0",
+    experimentId: "exp05_test",
+    decision: "proceed",
+    decidedAt: "2026-07-21T08:00:00.000Z",
+    decidedBy: "owner",
+    metricArtifact: "analysis/metrics.json",
+    thresholdsMet: [],
+    thresholdsMissed: [],
+    protocolLimitations: [],
+    ownerValueJudgment: "Worth the production cost.",
+    rationale: "Four of four opportunities were correctly recommended.",
+    nextAction: "Begin Stage 1.",
+    ...overrides,
+  };
+}
+
+test("a frozen manifest may not be weaker than the contract defaults", () => {
+  const value = manifest();
+  value.minimumValidTasks = 2;
+  value.selectorAgreementThreshold = 0.1;
+  value.maximumOrdinaryFalseRecommendations = 99;
+  const issues = validateExperimentManifest(value);
+  assert.equal(
+    issues.filter((issue) => issue.code === "THRESHOLD_WEAKER_THAN_DEFAULT").length,
+    3,
+  );
+});
+
+test("a stricter-than-default manifest is allowed", () => {
+  // The pool must still be large enough to satisfy its own minimum, so this
+  // uses a 10-task pool rather than tightening the floor past the frozen tasks.
+  const value = manifest(10);
+  value.minimumValidTasks = 10;
+  value.selectorAgreementThreshold = 0.9;
+  value.maximumOrdinaryFalseRecommendations = 0;
+  assert.deepEqual(validateExperimentManifest(value), []);
+});
+
+test("thresholds frozen after an observation are rejected", () => {
+  const late = manifest();
+  late.createdAt = "2026-07-21T09:00:00.000Z";
+  const report = calculateMetrics(late, passingResults());
+  assert.notEqual(report.quantitativeGate, "eligible_for_owner_decision");
+  assert.ok(
+    report.metrics.validation.taskResultIssues.some(
+      (issue) => issue.code === "EXPERIMENT_FROZEN_AFTER_OBSERVATION",
+    ),
+  );
+});
+
+test("proceed requires the quantitative gate to be eligible", () => {
+  const failing = Array.from({ length: 8 }, (_, index) => result(`task-${index + 1}`));
+  const report = calculateMetrics(manifest(), failing);
+  const issues = validateDecision(decision(), manifest(), report);
+  assert.ok(issues.some((issue) => issue.code === "DECISION_PROCEED_WITHOUT_GATE"));
+});
+
+test("a conservative decision is allowed on a failing gate", () => {
+  const failing = Array.from({ length: 8 }, (_, index) => result(`task-${index + 1}`));
+  const report = calculateMetrics(manifest(), failing);
+  assert.deepEqual(validateDecision(decision({ decision: "stop" }), manifest(), report), []);
+});
+
+test("decision records reject unknown values, placeholders, and foreign experiments", () => {
+  const report = calculateMetrics(manifest(), passingResults());
+  const codes = (value) => validateDecision(value, manifest(), report).map((issue) => issue.code);
+  assert.ok(codes(decision({ decision: "yes" })).includes("DECISION_VALUE_INVALID"));
+  assert.ok(codes(decision({ experimentId: "exp05_other" })).includes("DECISION_EXPERIMENT_MISMATCH"));
+  assert.ok(
+    codes(decision({ rationale: "<explicit rationale citing raw counts>" })).includes(
+      "DECISION_PLACEHOLDER",
+    ),
+  );
+  assert.ok(codes(decision({ schema: "nope" })).includes("DECISION_SCHEMA_INVALID"));
 });

@@ -4,7 +4,12 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import { validateExperimentManifest, validateTaskResult } from "./kit.mjs";
+import {
+  calculateMetrics,
+  validateDecision,
+  validateExperimentManifest,
+  validateTaskResult,
+} from "./kit.mjs";
 
 function parseArgs(argv) {
   const options = { experiment: null, json: false };
@@ -36,15 +41,29 @@ async function main() {
   const manifest = await readJson(path.join(root, "experiment.json"));
   const issues = validateExperimentManifest(manifest).map((issue) => ({ file: "experiment.json", ...issue }));
 
+  const taskResults = [];
   for (const taskId of manifest.taskIds ?? []) {
     const relative = path.join("tasks", taskId, "task-result.json");
     try {
       const result = await readJson(path.join(root, relative));
+      taskResults.push(result);
       validateTaskResult(result, manifest).forEach((issue) => issues.push({ file: relative, ...issue }));
     } catch (error) {
       if (error?.code === "ENOENT") continue;
       throw error;
     }
+  }
+
+  // decision.json is the artifact ADR-0013 makes the Stage 1 gate, so it is
+  // validated against the computed report rather than trusted as written.
+  try {
+    const decision = await readJson(path.join(root, "decision.json"));
+    const report = calculateMetrics(manifest, taskResults);
+    validateDecision(decision, manifest, report).forEach((issue) =>
+      issues.push({ file: "decision.json", ...issue }),
+    );
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
   }
 
   if (options.json) {
