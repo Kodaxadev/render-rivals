@@ -1,28 +1,31 @@
 # 01 — Scope, Vocabulary, Requirements, and Invariants
 
-## 1. Status
+**Status:** Canonical implementation contract  
+**Shared vocabulary:** `schemas/domain-types.ts` and `spec/12-cross-spec-normalization.md`  
+**Resolved scaffold decisions:** `docs/SCAFFOLD-DECISION-REGISTER.md`
 
-This file defines the product boundary and the rules every implementation must preserve.
+## 1. Purpose
 
-It separates the quality hypothesis from runtime machinery.
+This specification defines the product boundary and the rules every implementation must preserve. It separates the quality hypothesis from runtime machinery.
 
 ## 2. Product hypothesis
 
-Given a renderable champion and multiple challengers:
+Given a qualified current implementation and one or more independently prepared contenders:
 
 1. hard-gate every candidate;
 2. collect comparable evidence;
-3. evaluate surviving candidates pairwise;
-4. preserve the champion when improvement is ambiguous;
-5. recommend a challenger only when evidence indicates a material improvement.
+3. evaluate eligible candidates pairwise;
+4. retain the current implementation when improvement is ambiguous;
+5. recommend a contender only when evidence indicates a material improvement;
+6. require an explicit user decision before any non-destructive export.
 
-The first question is whether this process works. Token efficiency, runtime, and integration breadth are secondary until the quality mechanism demonstrates value.
+The first question is whether this process produces better decisions. Token efficiency, runtime, and integration breadth are secondary until the quality mechanism demonstrates value.
 
 ## 3. Product statement
 
-The Visual Optimization Harness is a local-first acceptance and search layer for frontend changes produced by coding agents.
+Render Rivals is a local-first acceptance and comparison layer for frontend changes produced manually or by coding agents.
 
-It does not claim to be a universal designer. It coordinates design strategies, agents, builds, browsers, tests, evidence, judges, and human decisions.
+It does not claim to be a universal designer. It coordinates source snapshots, isolated workspaces, builds, browsers, tests, evidence, evaluators, policy, and human decisions.
 
 ## 4. Primary user
 
@@ -30,93 +33,90 @@ The initial user:
 
 - already has a frontend repository;
 - can run it locally;
-- uses coding agents;
-- wants stronger visual outcomes;
-- does not want to manually manage branches, screenshots, comparisons, and rollbacks;
-- accepts substantial model usage while proving the method.
+- may use coding agents outside Render Rivals;
+- wants stronger visual and interaction outcomes;
+- does not want to coordinate worktrees, screenshots, comparisons, and rollback manually;
+- accepts substantial evaluator usage while proving the method.
 
-## 5. First experiment
+## 5. Experiment scope
 
-The first personal preference-fit experiment is scoped to Justin’s repositories and preferences.
+The first personal preference-fit experiment is scoped to Justin's repositories and preferences. A successful personal experiment does not establish general OSS efficacy.
 
-A successful personal experiment does not establish general OSS efficacy.
+The packaged scaffold fixture is defined in `docs/SCAFFOLD-DECISION-REGISTER.md` and exists to validate the product mechanism, not to prove general design quality.
 
-## 6. Vocabulary
+## 6. Canonical vocabulary
 
-### Champion
+### Current implementation
 
-The current accepted implementation used as baseline. It is tied to a Git commit or immutable snapshot, buildable, renderable, captured in the current epoch, and eligible for retention.
+The accepted reference implementation. It is tied to an immutable Source Snapshot, buildable, renderable, recaptured in the current valid Capture Epoch, and eligible for retention.
 
-### Challenger
+### Contender
 
-An alternative implementation derived from the same task and baseline evidence.
+An alternate implementation evaluated against the current implementation.
 
 ### Candidate
 
-Champion or challenger.
+The current implementation or a contender.
 
 ### Hard gate
 
-A deterministic or policy condition that can disqualify a candidate before aesthetic selection.
+A deterministic or policy condition that can make a candidate ineligible before aesthetic recommendation.
 
 Examples:
 
-- build failure;
-- required test failure;
+- source or workspace mismatch;
+- dependency-policy violation;
+- build or required test failure;
 - serious accessibility regression;
-- route unavailable;
-- required content removed;
-- protected file modified;
-- repeated candidate page crash;
-- listener not owned by candidate group.
+- route or required state unavailable;
+- protected path modified;
+- repeated candidate-local page crash;
+- listener not owned by the candidate group where ownership is required;
+- incomplete or invalid evidence.
 
 ### Protected regression
 
-A material loss a visual improvement cannot offset.
-
-Examples:
-
-- primary workflow becomes harder;
-- required state disappears;
-- content becomes obscured;
-- keyboard access regresses;
-- fabricated information appears;
-- functional tests fail;
-- responsive behavior breaks.
+A material loss that visual improvement cannot offset, including harder primary workflow, missing required state, obscured content, keyboard-access regression, fabricated information, failed functional behavior, or broken responsive behavior.
 
 ### Evidence bundle
 
-Canonical files collected for one candidate in one run.
+Registered canonical artifacts and cited Evidence Records for one Candidate in one Run.
 
-### Capture epoch
+### Capture Epoch
 
-Captures produced by one browser process under one fixture hash and browser version.
+One browser-process and environment boundary within which selectable captures are produced.
+
+### Recommendation
+
+The deterministic policy conclusion using `RecommendationOutcome`. It does not modify source.
+
+### User Decision
+
+The explicit human response using `UserDecisionAction`.
 
 ### Promotion
 
-A selector recommendation that a challenger replace the champion. During exploratory phases it is a recommendation only.
+A non-destructive export operation authorized by a nonstale User Decision. Promotion may create a patch, local branch, preserved workspace, or report. Promotion never means automatic merge.
 
-### Retention
+### Recovery disposition
 
-The champion remains preferred.
-
-### Escalation
-
-Human judgment is required because automated evidence is insufficient or unstable.
+A classification describing whether and how a durable Run can resume. Recovery is not a special mutable Run state.
 
 ### Opportunity rate
 
-Proportion of candidate sets containing a human-preferred challenger.
+The proportion of candidate sets containing a human-preferred contender.
 
 ### Selector uplift
 
 Quality advantage over random eligible selection using the same artifacts.
 
+Explanatory aliases such as champion and challenger are mapped in `spec/12` and are forbidden in persisted schemas and stable APIs.
+
 ## 7. Product modes
 
 ### Exploratory personal
 
-Determine whether the approach helps the owner’s projects and expose obvious selector failure. No safety claim.
+Determine whether the approach helps the owner's projects and exposes obvious selector failure. No universal safety claim.
 
 ### External exploratory
 
@@ -128,294 +128,109 @@ Freeze protocol and thresholds, then use new tasks and raters in a reproducible 
 
 ### Product mode
 
-Ordinary repository use. Not part of the first scaffold.
+Ordinary repository use. Broader generation, multi-contender rounds, CI integration, and teams are outside the first MVP.
 
 ## 8. Functional requirements
 
-### FR-001 — Baseline qualification
-
-Refuse visual optimization until a buildable, renderable baseline exists.
-
-### FR-002 — Baseline recovery
-
-Broken baseline enters a separate recovery state. Recovery uses a separate patch, avoids visual redesign, preserves failure evidence, and requires acceptance before champion status.
-
-### FR-003 — Candidate isolation
-
-Each challenger has an isolated worktree or equivalent immutable workspace.
-
-### FR-004 — Workspace materialization
-
-Required ignored or untracked state is declared and materialized explicitly.
-
-### FR-005 — Exact runtime
-
-Coordinator runs under the exact Node executable used by the npm bootstrap.
-
-### FR-006 — Session containment
-
-Record containment capability for every session.
-
-### FR-007 — Sequential default
-
-First scheduler executes one candidate workload at a time.
-
-### FR-008 — Same-run recapture
-
-Champion is recaptured in every selection run.
-
-### FR-009 — Same-epoch evidence
-
-One comparison cannot mix capture epochs.
-
-### FR-010 — State matrix
-
-First meaningful route includes multiple data states and at least one interaction sequence.
-
-### FR-011 — Hard gates first
-
-Do not run aesthetic selection on mandatory hard-gate failures.
-
-### FR-012 — Pairwise evaluation
-
-Compare candidates pairwise rather than use one universal design score.
-
-### FR-013 — Order reversal
-
-Support reversed candidate ordering for model judges.
-
-### FR-014 — Ties
-
-Support tie and insufficient-evidence outcomes.
-
-### FR-015 — Random control
-
-Compute expected random eligible-selection result from the same candidates.
-
-### FR-016 — Retention control
-
-Include an always-retain-champion control.
-
-### FR-017 — Oracle ceiling
-
-Calculate human-preferred best eligible candidate after ratings.
-
-### FR-018 — Usage accounting
-
-Record generation, critique, selection, tie-break, human, runtime, and local resources separately.
-
-### FR-019 — Canonical files
-
-Artifacts remain readable without a database.
-
-### FR-020 — Crash recovery
-
-Coordinator crash leaves enough evidence to classify the run and clean contained processes.
-
-### FR-021 — Explicit cleanup result
-
-Cleanup lists remaining processes, ports, worktrees, and temp paths.
-
-### FR-022 — Secure IPC
-
-Only the expected coordinator may connect to the supervisor endpoint.
-
-### FR-023 — Console isolation
-
-Third-party supervised processes do not receive user Ctrl+C directly.
-
-### FR-024 — Exact executable arguments
-
-Supervisor accepts executable plus argument array, not shell command strings.
-
-### FR-025 — Port ownership
-
-Verify candidate listener belongs to candidate containment group when supported.
-
-### FR-026 — Browser invalidation
-
-Browser disconnect invalidates complete capture epoch.
-
-### FR-027 — Stability probe
-
-Capture champion more than once to detect gross uncontrolled variation.
-
-### FR-028 — Stability honesty
-
-Passing probe is not proof of determinism.
-
-### FR-029 — Project secrets
-
-Secrets do not enter judge packets, patches, exported evidence, or normal logs.
-
-### FR-030 — No automatic merge
-
-Exploratory implementation never modifies accepted branch automatically.
+- `FR-001` Refuse optimization until a qualified current implementation exists.
+- `FR-002` Baseline repair occurs in a separate recovery workflow or superseding Run; it is not a contender design pass and must be accepted before becoming the current implementation.
+- `FR-003` Every contender uses an isolated workspace or equivalent immutable materialization.
+- `FR-004` Required ignored or untracked state is declared and materialized explicitly.
+- `FR-005` The coordinator runs under the exact Node executable used by the npm bootstrap.
+- `FR-006` Every Session records actual containment capability.
+- `FR-007` The first scheduler executes one candidate workload at a time.
+- `FR-008` The current implementation is recaptured in every selection Run.
+- `FR-009` A comparison cannot mix Capture Epochs.
+- `FR-010` The first meaningful route includes populated/default, empty, and unavailable/error states plus one critical interaction.
+- `FR-011` Mandatory gate failures never reach aesthetic recommendation.
+- `FR-012` Candidate quality is judged pairwise rather than through one unexplained universal score.
+- `FR-013` Model-backed pairwise evaluation supports reversed candidate order.
+- `FR-014` `tie`, `human_review_required`, and `invalid_run` are ordinary canonical outcomes.
+- `FR-015` Experimental analysis can compute random eligible-selection control from the same candidate set.
+- `FR-016` Experimental analysis includes an always-retain-current control.
+- `FR-017` Experimental analysis may calculate a human-preferred eligible oracle after ratings.
+- `FR-018` Generation, critique, selection, tie-break, runtime, local resources, and human time are accounted separately where observed.
+- `FR-019` Canonical artifacts remain readable without a database.
+- `FR-020` Coordinator interruption leaves enough evidence to classify the Run and clean verified owned resources.
+- `FR-021` Cleanup explicitly lists remaining processes, endpoints, workspaces, temporary paths, and verification limitations.
+- `FR-022` Only the expected coordinator may authenticate to a supervisor Session.
+- `FR-023` Supervised project and evaluator processes do not receive user Ctrl+C directly.
+- `FR-024` Process requests use executable plus argument array, never implicit shell strings.
+- `FR-025` Candidate listener ownership is verified where supported and required by frozen policy.
+- `FR-026` Browser crash, disconnect, or browser identity loss invalidates the complete active Capture Epoch.
+- `FR-027` The current implementation is sampled more than once to detect gross uncontrolled variation.
+- `FR-028` Passing the stability probe is explicitly not proof of determinism.
+- `FR-029` Secrets do not enter evaluator packets, patches, standard exports, or structured logs.
+- `FR-030` Exploratory implementation never modifies or merges into the accepted branch automatically.
+- `FR-031` Candidate-local failures do not invalidate an otherwise continuous browser epoch unless comparison integrity was compromised.
+- `FR-032` Re-evaluation and changes to sealed source, fixture, gates, factors, or policy create a new or superseding Run.
+- `FR-033` CLI and dashboard commands call the same domain services and state transitions.
 
 ## 9. Nonfunctional requirements
 
-### NFR-001 — Local-first storage
-
-Code, worktrees, screenshots, logs, preferences, and reports remain local unless a configured cloud model receives a declared payload.
-
-### NFR-002 — Auditable decisions
-
-Each recommendation identifies candidates, gates, judge evidence, order result, human override, and usage.
-
-### NFR-003 — Failure transparency
-
-Unsupported repository classes and unavailable capabilities fail explicitly.
-
-### NFR-004 — Small-core maintainability
-
-Avoid distributed infrastructure and generic workflow frameworks.
-
-### NFR-005 — Reproducible benchmark
-
-Published benchmarks pin runtime, browser, fonts, locale, timezone, fixtures, and dependencies.
-
-### NFR-006 — Native usability
-
-Ordinary experiments do not require Docker.
-
-### NFR-007 — Platform honesty
-
-UI and manifests expose actual containment level.
-
-### NFR-008 — Vendor uncertainty
-
-Vendor usage assumptions include dated policy snapshot.
-
-### NFR-009 — Output durability
-
-Drain process output continuously and preserve per process.
-
-### NFR-010 — Resource admission
-
-Do not start workloads when local admission fails.
+- `NFR-001` Code, workspaces, captures, logs, preferences, and reports remain local unless a declared external evaluator receives an allowlisted packet.
+- `NFR-002` Every Recommendation identifies candidates, gates, evidence, order-reversal result, limitations, policy version, and usage where known.
+- `NFR-003` Unsupported repository classes and unavailable capabilities fail explicitly.
+- `NFR-004` Avoid distributed infrastructure and generic workflow frameworks.
+- `NFR-005` Published benchmarks pin runtime, browser, fonts, locale, time zone, fixture, and dependencies.
+- `NFR-006` Ordinary experiments do not require Docker.
+- `NFR-007` UI and manifests expose actual containment level.
+- `NFR-008` Vendor assumptions include a dated policy snapshot.
+- `NFR-009` Process output is drained continuously and retained per process under explicit limits.
+- `NFR-010` Workloads do not start when resource admission fails.
+- `NFR-011` Configuration, CLI, and local API behavior follow `spec/13`.
 
 ## 10. Core invariants
 
-### INV-001 — Rust terminal authority
-
-Rust alone interprets user terminal interrupt as session shutdown.
-
-### INV-002 — Exact Node executable
-
-Rust launches coordinator using canonical Node path supplied by bootstrap.
-
-### INV-003 — No secret argv
-
-Endpoint and nonce never appear in coordinator argv.
-
-### INV-004 — Coordinator isolation
-
-Coordinator does not share user interactive console on Windows.
-
-### INV-005 — Child console isolation
-
-Build tools, servers, agents, and judges do not share user interactive console.
-
-### INV-006 — Candidate group ownership
-
-Every supervised candidate process belongs to a declared containment group.
-
-### INV-007 — Same-epoch comparison
-
-Selector packet cannot contain mixed epoch evidence.
-
-### INV-008 — Same fixture
-
-Compared candidates share fixture hash.
-
-### INV-009 — Champion recapture
-
-Cached champion screenshots from another run are forbidden for selection.
-
-### INV-010 — Hard-gate veto
-
-Mandatory gate failure cannot be promoted.
-
-### INV-011 — Ambiguity retains
-
-Ambiguous automation retains or escalates.
-
-### INV-012 — Human decisions explicit
-
-Human decision stores rationale or structured dimensions.
-
-### INV-013 — Files canonical
-
-Deleting an index cannot delete canonical history.
-
-### INV-014 — Raw provider preservation
-
-Normalized events never replace raw provider events.
-
-### INV-015 — Unknown usage remains unknown
-
-Missing token/cost data is `null`, never silently estimated.
-
-### INV-016 — Sequential first
-
-At most one active candidate server and capture browser initially.
-
-### INV-017 — Browser crash restarts epoch
-
-No pre-disconnect capture is reused.
-
-### INV-018 — Measured containment
-
-Do not infer strong containment from platform name.
-
-### INV-019 — Linux strong probe
-
-Strong mode requires delegated subtree and usable `cgroup.kill`.
-
-### INV-020 — Stability sampled
-
-Stability probe is evidence, not guarantee.
+- `INV-001` Rust alone interprets user terminal interrupt as Session shutdown intent.
+- `INV-002` Rust launches the coordinator using the canonical Node path supplied by bootstrap.
+- `INV-003` Supervisor endpoint and nonce never appear in coordinator argv.
+- `INV-004` Coordinator does not share the user's interactive console on Windows.
+- `INV-005` Managed project/evaluator roots do not share the user's interactive console.
+- `INV-006` Every managed root process belongs to a declared containment group; approved descendants must inherit and verify membership according to `docs/SCAFFOLD-DECISION-REGISTER.md`.
+- `INV-007` A selector packet cannot contain mixed-epoch evidence.
+- `INV-008` Compared candidates share fixture and environment identity.
+- `INV-009` Prior-run current captures are forbidden for selection.
+- `INV-010` Mandatory gate failure cannot produce `contender_recommended`.
+- `INV-011` Ambiguous automation produces `current_retained`, `tie`, or `human_review_required` according to policy.
+- `INV-012` User Decisions are explicit, typed, append-only, and bound to nonstale hashes.
+- `INV-013` Deleting an index cannot delete canonical history.
+- `INV-014` Normalized provider records never replace raw provider output.
+- `INV-015` Missing token or cost data remains `null`.
+- `INV-016` At most one candidate workload and one browser process are active in the MVP.
+- `INV-017` No pre-disconnect capture is reused after epoch invalidation.
+- `INV-018` Strong containment is measured, not inferred from platform name.
+- `INV-019` Linux strong mode requires delegated ownership and a verified kill boundary.
+- `INV-020` Stability samples are evidence, not guarantees.
+- `INV-021` Recommendation is not Promotion, and User Decision is not export.
+- `INV-022` Terminal business outcome never hides cleanup status.
+- `INV-023` A candidate-local failure cannot silently alter or invalidate evidence belonging to another candidate.
 
 ## 11. Quality-first policy
 
-Token use is not an early kill criterion. The system may use multiple strategies, critics, order reversals, tie breaks, refinement, and human review. Usage is recorded from the first run.
+Token use is not an early kill criterion. The system may use critique, order reversal, bounded tie-breaks, refinement outside the sealed Run, and human review. Usage is recorded from the first Run.
 
-## 12. Experiment conditions
+## 12. Experimental conditions
 
-- A: base agent.
-- B: Impeccable or another strong design skill.
+- A: base agent or manually prepared contender.
+- B: strong design-skill contender.
 - C: linear rendered critique and repair.
-- D: champion–challenger selection.
+- D: current-versus-contender selection.
 - E1: expected random eligible selection.
-- E2: always retain champion.
+- E2: always retain current.
 - Oracle: human-preferred best eligible candidate.
 
-## 13. Existential metrics
+These labels are research conditions, not persisted Candidate roles.
 
-- opportunity rate;
-- automatic promotion rate;
-- correct-promotion count;
-- false-promotion count;
-- promotion recall;
-- correct-retention count;
-- escalation rate;
-- human ambiguity;
-- order-reversal stability;
-- uplift over random;
-- uplift over retention;
-- oracle gap;
-- D versus C;
-- functional preservation.
+## 13. Interpretation limits
 
-## 14. Interpretation limits
+A small study can expose false recommendation, inertia, excessive escalation, failure against linear refinement, or operational instability. It cannot certify a production false-recommendation rate.
 
-A small study can expose frequent false promotion, inertia, escalation, failure against linear refinement, or operational instability. It cannot certify a production false-promotion rate.
-
-## 15. First platform and scope
+## 14. First platform and scope
 
 Reference platform:
 
-- Windows 10/11 strong Job Object mode.
+- Windows 10/11 x64 strong Job Object mode.
 
 First repository scope:
 
@@ -423,33 +238,29 @@ First repository scope:
 - one meaningful route;
 - three states;
 - mobile and desktop;
-- one interaction;
-- manually prepared candidate branches permitted;
-- one agent adapter optional.
-
-Execution scope:
-
+- one critical interaction;
+- one independently prepared contender;
+- one evaluator or human-only mode;
 - one workload at a time;
 - one Chromium per valid epoch;
-- recommendation only;
+- recommendation plus explicit decision;
 - filesystem artifacts only.
 
-## 16. Explicitly unsupported in v0
+## 15. Explicitly unsupported in MVP
 
 - automatic merging;
+- in-run contender generation;
 - unknown untracked state;
 - nonisolatable machine-global services;
-- Windows process breakaway requirements;
+- required Windows Job breakaway;
 - strong native macOS claims;
 - unbounded parallelism;
-- cross-run champion evidence;
-- judge claims without cited evidence.
+- cross-run capture evidence used for selection;
+- evaluator claims without cited evidence;
+- run pause/suspend;
+- multi-contender tournament rounds;
+- cloud collaboration or hosted storage.
 
-## 17. Open items
+## 16. Scaffold decisions
 
-- `OPEN-001`: choose first experiment route.
-- `OPEN-002`: define protected-file policy.
-- `OPEN-003`: define human comparison UI.
-- `OPEN-004`: choose challenger strategies.
-- `OPEN-005`: choose judge ensemble.
-- `OPEN-006`: define first fixed-time/server fixture.
+Historical `OPEN-*` questions are resolved, deferred, or assigned to milestones in `docs/SCAFFOLD-DECISION-REGISTER.md`. Implementers must not invent alternative answers without updating that register and, where architectural, an ADR.
