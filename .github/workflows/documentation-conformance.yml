@@ -42,7 +42,15 @@ permissions:
 
 jobs:
   conformance:
-    runs-on: ubuntu-latest
+    # Windows is the declared reference host in docs/TEST-AND-VALIDATION-STRATEGY.md,
+    # so conformance tooling is proven on it rather than on Linux alone.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
     timeout-minutes: 10
     steps:
       - name: Check out repository

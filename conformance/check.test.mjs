@@ -15,14 +15,27 @@ const fixturePath = path.join(
   "documentation-drift-regression.json",
 );
 
+function toLf(value) {
+  return value.replace(/\r\n/g, "\n");
+}
+
+// Mutation search strings are written with LF. A working tree checked out with
+// CRLF (the Git for Windows default before `.gitattributes` pinned eol=lf)
+// would otherwise fail the precondition assert for any multi-line search.
+// Matching is newline-agnostic, while the file's original style is preserved so
+// the checker itself stays exercised against CRLF input.
 async function replaceInFile(root, relativePath, search, replacement) {
   const file = path.join(root, relativePath);
-  const text = await readFile(file, "utf8");
+  const original = await readFile(file, "utf8");
+  const usesCrlf = original.includes("\r\n");
+  const text = toLf(original);
+  const normalizedSearch = toLf(search);
   assert.ok(
-    text.includes(search),
+    text.includes(normalizedSearch),
     `Mutation precondition missing in ${relativePath}: ${search}`,
   );
-  await writeFile(file, text.replace(search, replacement), "utf8");
+  const mutated = text.replace(normalizedSearch, toLf(replacement));
+  await writeFile(file, usesCrlf ? mutated.replace(/\n/g, "\r\n") : mutated, "utf8");
 }
 
 async function mutate(caseId, root) {
