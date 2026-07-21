@@ -21,6 +21,7 @@ export type ComparisonId = `cmp_${string}`;
 export type RecommendationId = `rec_${string}`;
 export type UserDecisionId = `dec_${string}`;
 export type PromotionId = `pro_${string}`;
+export type ExportOperationId = `exp_${string}`;
 export type ArtifactId = `art_${string}`;
 export type ProcessRecordId = `pcs_${string}`;
 export type EventId = `evt_${string}`;
@@ -165,12 +166,14 @@ export interface UserDecisionRecord {
   createdAt: string;
 }
 
+// Promotion is an adoption handoff for a selected contender. It requires a
+// nonstale authorizing User Decision and always identifies the Candidate.
 export interface PromotionRecord {
   id: PromotionId;
   runId: RunId;
   userDecisionId: UserDecisionId;
   candidateId: CandidateId;
-  kind: "patch_export" | "branch_create" | "workspace_preserve" | "report_export";
+  kind: "patch_export" | "branch_create" | "workspace_preserve";
   status:
     | "requested"
     | "validating_preconditions"
@@ -181,6 +184,35 @@ export interface PromotionRecord {
     | "cancelled"
     | "stale";
   outputArtifactIds: ArtifactId[];
+  createdAt: string;
+  completedAt: string | null;
+}
+
+// ExportOperation covers non-adoption output such as reports, diagnostics, or
+// portable Run bundles. It does not imply a Candidate was selected.
+export interface ExportOperationRecord {
+  id: ExportOperationId;
+  runId: RunId | null;
+  kind:
+    | "report"
+    | "diagnostics"
+    | "run_bundle"
+    | "evidence_bundle"
+    | "screenshots"
+    | "configuration_template"
+    | "logs";
+  status:
+    | "requested"
+    | "validating_preconditions"
+    | "exporting"
+    | "verifying"
+    | "completed"
+    | "failed"
+    | "cancelled";
+  sourceEntityIds: string[];
+  outputArtifactIds: ArtifactId[];
+  redactionPolicyId: string;
+  omissionReportArtifactId: ArtifactId | null;
   createdAt: string;
   completedAt: string | null;
 }
