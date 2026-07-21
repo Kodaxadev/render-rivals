@@ -6,11 +6,13 @@ It is deliberately small, dependency-free, and research-only. It does not provid
 
 ## Files
 
-- `kit-core.mjs` — validates frozen experiment/task summaries and calculates metrics.
+- `kit.mjs` — strict public validation and metric authority used by the CLIs and tests.
+- `kit-core.mjs` — lower-level implementation helper; experiment tooling must import `kit.mjs`, not this file directly.
 - `validate.mjs` — validates one experiment directory.
 - `analyze.mjs` — calculates frozen metrics and optionally writes `analysis/metrics.json` and `analysis/metrics.md`.
-- `kit.test.mjs` — verifies thresholds, false-recommendation vetoes, order conflict, blinding chronology, and ineligible-Contender behavior.
+- `kit.test.mjs` — verifies thresholds, experiment binding, completeness, false-recommendation vetoes, order conflict, blinding chronology, and eligibility behavior.
 - `templates/` — copy-only starting records. Templates contain placeholders and are intentionally invalid until completed and frozen.
+- `runs/.gitignore` — keeps private local experiment records out of Git unless a sanitized record is deliberately reviewed and admitted later.
 
 ## Start an experiment
 
@@ -47,13 +49,13 @@ unblinding.json
 task-result.json
 ```
 
-The summary `task-result.json` is written only after the selector result, blinded human rating, and unblinding records exist. Its timestamps must satisfy:
+The summary `task-result.json` is written only after the selector result, blinded human rating, and unblinding records exist. It must identify the same frozen `experimentId`, and its timestamps must satisfy:
 
 ```text
 selectorCompletedAt <= humanRatingCommittedAt <= unblindedAt
 ```
 
-A task marked valid must be protocol-trustworthy. An ineligible Contender cannot be recommended or sent to the model evaluator.
+A task marked valid must be protocol-trustworthy and have a qualified current implementation. When both implementations are eligible, the A/B and B/A evaluator passes are required. An ineligible Contender cannot be recommended or sent to the model evaluator.
 
 ## Analyze
 
@@ -63,9 +65,9 @@ node research/stage-0.5/analyze.mjs \
   --write
 ```
 
-The analyzer reports raw counts, rates, utility, validation defects, and every frozen threshold. It never writes `decision.json` and never emits `proceed` automatically.
+The analyzer reports raw counts, rates, utility, validation defects, task-record completeness, and every frozen threshold. It never writes `decision.json` and never emits `proceed` automatically.
 
-`eligible_for_owner_decision` means only that quantitative thresholds passed. The owner must still judge whether the workflow produced enough value to justify the production cost and record one of:
+`eligible_for_owner_decision` means only that all frozen tasks have records and the quantitative thresholds passed. The owner must still judge whether the workflow produced enough value to justify the production cost and record one of:
 
 - `proceed`;
 - `pivot`;
@@ -82,6 +84,8 @@ correct Contender recommendations
 - protected-regression Contender recommendations
 ```
 
+A protected-regression recommendation is never counted as selector agreement, even when the human otherwise preferred the Contender visually.
+
 The missed-opportunity penalty is frozen at zero. Introducing another penalty changes the metric protocol and requires a new experiment ID or a contract amendment before outcomes are observed.
 
 ## Tests
@@ -94,11 +98,12 @@ The tests cover:
 
 - placeholder rejection;
 - a quantitatively passing sample;
-- insufficient valid sample;
+- missing frozen-task records;
 - excessive ordinary false recommendations;
 - zero-tolerance protected-regression recommendation;
 - excessive order conflict;
 - blinding chronology;
+- cross-experiment task-result rejection;
 - ineligible-Contender recommendation rejection.
 
 ## First-run checklist
@@ -117,10 +122,11 @@ Before freezing:
 
 Before deciding:
 
-- every invalidated task retained with reason;
-- no selector result shown before human rating commit;
-- A/B and B/A results retained;
-- raw counts reviewed rather than only rates;
-- protocol deviations reviewed;
-- owner-value judgment written separately from threshold math;
+- every frozen task has exactly one `task-result.json`;
+- every invalidated task is retained with a reason;
+- no selector result was shown before human rating commit;
+- A/B and B/A results are retained;
+- raw counts are reviewed rather than only rates;
+- protocol deviations are reviewed;
+- owner-value judgment is written separately from threshold math;
 - `decision.json` cites `analysis/metrics.json` and names a bounded next action.
