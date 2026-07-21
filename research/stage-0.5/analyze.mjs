@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import { calculateMetrics } from "./kit-core.mjs";
+import { calculateMetrics } from "./kit.mjs";
 
 function parseArgs(argv) {
   const options = { experiment: null, write: false };
