@@ -1,6 +1,7 @@
 {
   "schema": "render-rivals/stage-0.5-task-result",
   "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
   "taskId": "<task-id>",
   "status": "invalid",
   "invalidReason": "<reason or null when valid>",
