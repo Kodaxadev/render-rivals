@@ -1,7 +1,7 @@
 // Canonical local dashboard/CLI-adjacent API vocabulary for Render Rivals.
 // Runtime Zod/JSON Schema validators must enforce command-specific payloads,
 // size limits, revision rules, relative paths, pagination cursors, and the
-// status/error invariants defined by spec/17.
+// status/error invariants defined by specs 17 and 19.
 
 import type {
   OperationId,
@@ -31,9 +31,11 @@ export type ApiCommandName =
 export type ApiOperationState =
   | "accepted"
   | "running"
+  | "reconciling"
   | "completed"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "interrupted";
 
 export type ApiProjectionKind = "canonical" | "derived";
 
