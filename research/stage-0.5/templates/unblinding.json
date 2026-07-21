@@ -1,0 +1,14 @@
+{
+  "schema": "render-rivals/stage-0.5-unblinding",
+  "schemaVersion": "1.0.0",
+  "experimentId": "exp05_<opaque-id>",
+  "taskId": "<task-id>",
+  "humanRatingHash": "sha256:<64 lowercase hexadecimal characters>",
+  "selectorResultHash": "sha256:<64 lowercase hexadecimal characters>",
+  "candidateMapping": {
+    "A": "current_or_contender",
+    "B": "current_or_contender"
+  },
+  "unblindedAt": "<UTC timestamp>",
+  "unblindedBy": "<actor>"
+}
