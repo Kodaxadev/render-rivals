@@ -8,7 +8,7 @@ Render Rivals is a local-first visual optimization harness for AI-assisted front
 
 **Architecture:** Canonical MVP contracts established  
 **Implementation:** Pre-scaffold; executable schemas/runtime/product code not yet present  
-**Reference platform:** Windows 10/11 x64 strong-containment target  
+**Reference platform:** Windows 11 x64 strong-containment target  
 **License:** Not yet licensed for general reuse or contribution; see [`LICENSE-TBD.md`](LICENSE-TBD.md)  
 **Public packaging:** Not yet available
 
@@ -35,6 +35,8 @@ MVP includes:
 - OS-held locks plus metadata/identity and one active executing Run per Project;
 - one manually opened, terminal-paired local dashboard browser Session;
 - canonical cross-language JSON/hash/timestamp/measurement formats;
+- Session-only secret bindings and explicit network-egress capability;
+- staged schema migrations with protected backup and rollback;
 - local observability with remote telemetry/crash upload disabled by default.
 
 MVP excludes automatic merge, push, deployment, generation, Pause, cloud service, browser auto-launch, updater, background daemon, multi-client pairing, and platform-parity claims.
@@ -66,6 +68,8 @@ Project and local evaluator commands run with the user's operating-system author
 21. [`spec/21-artifact-serving-preview-and-active-content-security.md`](spec/21-artifact-serving-preview-and-active-content-security.md)
 22. [`spec/22-retention-trash-garbage-collection-and-storage-admission.md`](spec/22-retention-trash-garbage-collection-and-storage-admission.md)
 23. [`spec/23-locking-leases-concurrency-and-multi-session-ownership.md`](spec/23-locking-leases-concurrency-and-multi-session-ownership.md)
+24. [`spec/24-secrets-authentication-state-and-network-egress-policy.md`](spec/24-secrets-authentication-state-and-network-egress-policy.md)
+25. [`spec/25-component-upgrades-schema-migrations-backups-and-rollback.md`](spec/25-component-upgrades-schema-migrations-backups-and-rollback.md)
 
 Shared sources and cross-record validation:
 
@@ -94,6 +98,8 @@ Architecture decisions are under [`adr/`](adr/), including [`ADR-0012`](adr/ADR-
 - [`docs/PLANNING-SCOPE-STATUS.md`](docs/PLANNING-SCOPE-STATUS.md) — MVP versus post-MVP authority.
 - [`docs/MARKETING-AND-DOCS-SITE-PLAN.md`](docs/MARKETING-AND-DOCS-SITE-PLAN.md) — public claim gates.
 - [`docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md`](docs/PACKAGING-DISTRIBUTION-AND-UPDATES.md) — package, release, and license blockers.
+- [`conformance/README.md`](conformance/README.md) — documentation-conformance scope.
+- [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json) — real pre-repair drift cases for checker regression tests.
 
 Brand exploration is under [`brand/`](brand/) and is not an architecture input.
 
@@ -107,12 +113,12 @@ When statements conflict:
 4. canonical specifications control implementation behavior according to spec12's delegated authority;
 5. the Record Invariant Matrix controls cross-record combinations;
 6. the MVP contract narrows the first release without weakening invariants;
-7. failure, security, test, observability, retention, and lock contracts control required negative behavior and proof;
+7. failure, security, test, observability, retention, lock, secret/network, and migration contracts control required negative behavior and proof;
 8. UI documents expose only legal enabled commands;
 9. marketing, brand, and archive never override implementation;
 10. code deviations require matching specification and ADR changes where architectural.
 
-ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `exporting` to `promoting`; Promotion's internal `exporting` status remains valid.
+ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `exporting` to `promoting`; Promotion and Export Operation internal `exporting` statuses remain valid.
 
 ## Locked ownership and safety decisions
 
@@ -121,7 +127,7 @@ ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `
 - Approved descendants such as Playwright Chromium are allowed only with verified containment inheritance.
 - The ordinary dashboard browser is manually opened and never placed in Render Rivals containment.
 - Dashboard access uses randomized-host one-time pairing and a host-only HttpOnly Session cookie.
-- Windows is the first strong reference; Linux and macOS claims are measured and explicit.
+- Windows 11 x64 is the first strong reference; Linux and macOS claims are measured and explicit.
 - MVP scheduling is sequential and the Project execution lease permits one active executing Run per Project across Sessions.
 - Current implementation is recaptured in each selection Run.
 - Browser continuity failures invalidate the full Epoch; Candidate-local failures do not unless comparability is compromised.
@@ -132,6 +138,8 @@ ADR-0011 is incorporated history. ADR-0012 changes the Run adoption state from `
 - General Export does not change Run state; authorized Promotion uses `promoting`.
 - Deletion moves canonical data to owned trash with a default seven-day grace period; no cleanup occurs while the app is closed and no secure-wipe claim is made.
 - An OS lock handle plus metadata and verified identity is required; heartbeat, PID, hostname, or file existence alone never proves ownership.
+- Raw secret values remain Session-only; browser-layer routing is not represented as Project-process network isolation.
+- Upgrades verify component compatibility before mutation and use staged migration, protected backup, verification, atomic adoption, and explicit rollback rules.
 - Remote telemetry, automatic crash upload, third-party analytics, and hidden background services are absent or disabled by default.
 
 ## Scaffold gate
@@ -143,11 +151,13 @@ Architecture decisions are classified, but foundational scaffold acceptance stil
 - RFC 8785 plus cross-language digest, timestamp, decimal, and unit goldens;
 - durable Operation ledger and proof-based reconciliation;
 - randomized-host pairing, revision/idempotency/status/pagination tests;
-- Windows console, Job, browser-descendant, lock, and listener proof;
+- Windows 11 console, Job, browser-descendant, lock, and listener proof;
 - complete Capture Artifact schemas and current ARIA/screenshot API proof;
 - Artifact active-content and preview security tests;
+- secret lifecycle, browser authentication-state, and egress-capability tests;
+- staged migration, backup, crash recovery, rollback, and downgrade tests;
 - store crash injection, trash/restore/purge, storage admission, filesystem and lock doctor;
-- documentation conformance;
+- executable documentation conformance using the committed real-drift fixtures;
 - telemetry/crash “off means zero network” tests;
 - license and public packaging claims remain blocked.
 
@@ -161,8 +171,10 @@ Hosted/cloud operation, MCP core, public plugin/interchange standard, preference
 
 Architecture changes update affected specifications, shared sources and invariants, an ADR when architectural, failure/security/test/observability/UI/API/package contracts, and both manifests.
 
-Automated conformance should detect missing links, duplicate registries, unregistered errors/classes/commands, deprecated active names or Run `exporting`, raw canonical digests, floating currency, route/API/Operation/storage/lock drift, incomplete Capture classes, unsafe Artifact preview, hidden cleanup/telemetry, or unsupported public claims.
+Every repository write must be verified by re-reading the pushed content. A successful API response alone is not proof that the intended bytes became canonical.
+
+Automated conformance should detect missing links, duplicate registries, unregistered errors/classes/commands, deprecated active names or Run `exporting`, raw canonical digests, floating currency, route/API/Operation/storage/lock drift, incomplete Capture classes, unsafe Artifact preview, hidden cleanup/telemetry, absent active documents, phantom archive entries, or unsupported public claims.
 
 ## Source freshness
 
-Reverify RFC 8785 libraries, Playwright Clock/ARIA/screenshot/browser lifecycle, randomized `.localhost` cookies, Windows Job/console/pipe/TCP/lock APIs, filesystem atomicity, Git worktree/LFS/submodules, evaluator/provider formats, package signing/distribution, and Node/TypeScript/Rust support ranges at scaffold and dependency upgrades.
+Reverify RFC 8785 libraries, Playwright Clock/ARIA/screenshot/browser lifecycle/routing/WebSocket behavior, randomized `.localhost` cookies, Windows Job/console/pipe/TCP/lock APIs, filesystem atomicity, Git worktree/LFS/submodules, evaluator/provider formats, package signing/distribution, and Node/TypeScript/Rust support ranges at scaffold and dependency upgrades.
