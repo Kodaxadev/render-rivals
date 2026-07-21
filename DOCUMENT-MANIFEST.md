@@ -1,6 +1,6 @@
 # Render Rivals Document Manifest
 
-**Inventory format:** 4.2  
+**Inventory format:** 4.2.1  
 **Updated:** 2026-07-20  
 **Content identity:** Git blob SHA and commit history
 
@@ -88,6 +88,7 @@ The invariant matrix defines semantic record combinations; the gap register dist
 ## Documentation conformance
 
 - [`conformance/README.md`](conformance/README.md)
+- [`conformance/check-core.mjs`](conformance/check-core.mjs)
 - [`conformance/check.mjs`](conformance/check.mjs)
 - [`conformance/check.test.mjs`](conformance/check.test.mjs)
 - [`conformance/fixtures/documentation-drift-regression.json`](conformance/fixtures/documentation-drift-regression.json)
