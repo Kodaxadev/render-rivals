@@ -1,378 +1,165 @@
 # 09 — Domain Model and Identifiers
 
 **Status:** Canonical implementation contract  
-**Scope:** Core entities, identifiers, ownership, relationships, mutability, and invariants  
+**Scope:** Entity meaning, identifiers, ownership, relationships, mutability, and invariants  
 **Shared persisted types:** `schemas/domain-types.ts`  
-**Storage schemas:** `spec/11-artifact-event-and-schema-contracts.md`  
+**Storage:** `spec/11-artifact-event-and-schema-contracts.md`  
 **Lifecycle:** `spec/10-run-and-candidate-state-machines.md`
 
 ## 1. Purpose
 
-Render Rivals must be reconstructable from files and append-only events. The coordinator, supervisor protocol, UI, evaluators, reports, and export tooling therefore share one stable domain vocabulary.
+Render Rivals is reconstructable from canonical files and append-only events. Coordinator, supervisor protocol, CLI, UI, evaluators, reports, and export tooling therefore share one domain vocabulary.
 
-This specification defines entity meaning and ownership. It does not redefine shared enum unions already defined in `schemas/domain-types.ts`.
+This specification defines entity meaning and ownership. It does not redefine shared unions from `schemas/domain-types.ts`.
 
-## 2. Naming rules
+## 2. Canonical terms
 
-Canonical product terms are:
+- **current implementation:** qualified reference implementation;
+- **contender:** alternate implementation under evaluation;
+- **candidate:** current implementation or contender;
+- **run:** one execution attempt of one sealed Run Configuration;
+- **capture epoch:** browser/environment validity boundary;
+- **gate:** eligibility rule;
+- **evidence:** cited conclusion derived from verified Artifacts;
+- **recommendation:** deterministic policy conclusion;
+- **user decision:** explicit human response;
+- **promotion:** adoption handoff for a selected contender;
+- **export operation:** non-adoption output such as a report, diagnostics, or portable bundle.
 
-- **current implementation:** the reference implementation being defended;
-- **contender:** an alternate implementation being tested;
-- **candidate:** either current or contender;
-- **run:** one configured evaluation attempt;
-- **capture epoch:** the browser-lifecycle boundary for comparable captures;
-- **gate:** an eligibility rule;
-- **evidence:** a cited observation derived from verified artifacts;
-- **recommendation:** the deterministic policy conclusion;
-- **user decision:** the user's explicit response;
-- **promotion:** a non-destructive export operation.
-
-`champion`, `challenger`, `winner`, and `battle` may appear only as explanatory prose aliases mapped by `spec/12`. They are forbidden in persisted schemas and stable APIs.
+Explanatory aliases are mapped by `spec/12`. `champion`, `challenger`, `winner`, `battle`, `promote`, and `escalate` are forbidden as persisted enum values or stable API names.
 
 ## 3. Identifier format
 
-Entity IDs use a lowercase type prefix, underscore, and 26-character ULID:
+Entity IDs use:
 
 ```text
-<prefix>_<ulid>
+<prefix>_<26-character-lowercase-ulid>
 ```
 
-Identifiers are:
+IDs are opaque, locally generated, immutable, never reused, never derived from labels, and compared case-sensitively. Runtime validators enforce exact prefix and ULID length/character rules.
 
-- locally generated;
-- immutable;
-- never reused;
-- never derived from display names;
-- compared case-sensitively;
-- serialized exactly as created.
-
-Content hashes establish byte/content identity. Entity IDs establish domain identity. They are not interchangeable.
+Content hashes identify bytes. Entity IDs identify domain records. They are not interchangeable.
 
 ## 4. Prefix registry
 
 | Entity | Prefix |
 |---|---|
 | Project | `prj` |
-| Source snapshot | `src` |
+| Source Snapshot | `src` |
 | Run | `run` |
-| Run configuration | `rcf` |
+| Run Configuration | `rcf` |
 | Candidate | `can` |
-| Candidate workspace | `wsp` |
-| Capture epoch | `cep` |
-| Capture plan | `cpl` |
+| Candidate Workspace | `wsp` |
+| Capture Epoch | `cep` |
+| Capture Plan | `cpl` |
 | Capture | `cap` |
-| Gate definition | `gat` |
-| Gate result | `grs` |
-| Evaluation factor | `fac` |
+| Gate Definition | `gat` |
+| Gate Result | `grs` |
+| Evaluation Factor | `fac` |
 | Evaluation | `eva` |
-| Evidence record | `evd` |
+| Evidence Record | `evd` |
 | Comparison | `cmp` |
 | Recommendation | `rec` |
-| User decision | `dec` |
+| User Decision | `dec` |
 | Promotion | `pro` |
+| Export Operation | `exp` |
 | Artifact | `art` |
-| Process record | `pcs` |
+| Process Record | `pcs` |
 | Event | `evt` |
-| Diagnostic bundle | `dgn` |
+| Diagnostic Bundle | `dgn` |
 
 New prefixes require a specification amendment.
 
-## 5. Common entity envelope
+## 5. Common envelope
 
-Every persisted entity includes:
+Persisted entities include:
 
-- `schema`;
-- `schemaVersion`;
-- prefixed `id`;
-- `createdAt`;
-- `updatedAt` when mutable;
-- owning `projectId` and `runId` when applicable;
-- lifecycle state when applicable;
-- monotonically increasing `revision` for mutable summaries;
-- namespaced `extensions` when allowed.
+- schema and schema version;
+- prefixed ID;
+- creation time;
+- update time when mutable;
+- owning Project/Run when applicable;
+- lifecycle state where applicable;
+- monotonic revision for mutable summaries;
+- namespaced extensions only where allowed.
 
-Unknown top-level fields are rejected by canonical writers. Readers may preserve supported namespaced extensions.
+Unknown top-level fields are rejected by writers. Supported namespaced extensions cannot alter core semantics.
 
 ## 6. Aggregate boundaries
 
 ### Project aggregate
 
-Owns:
-
-- project registration;
-- trust/configuration references;
-- source snapshots;
-- run index references.
-
-It does not own or delete the source repository.
+Owns registration, trust/configuration references, Source Snapshots, templates, and Run index references. It never owns or deletes the source repository.
 
 ### Run aggregate
 
-Owns:
+Owns sealed Run Configuration, Candidates/Attempts, Workspaces, Process Records, Capture Plan/Epochs/Captures, Gates, Comparisons, Evaluations, Evidence, Recommendations, User Decisions, Promotions, Export Operations, Artifacts, Events, Cleanup, Integrity, and Recovery records.
 
-- immutable resolved Run Configuration;
-- candidates and attempts;
-- workspaces and process records;
-- capture plans, epochs, and captures;
-- gates;
-- comparisons and evaluations;
-- evidence;
-- recommendations;
-- user decisions;
-- promotions;
-- artifacts;
-- events;
-- cleanup and integrity records.
+A Run does not consume mutable evidence from another Run. Reuse requires explicit import/provenance, and selectable capture evidence is always recaptured in the active Run.
 
-A run does not consume mutable evidence from another run. Reuse requires explicit import/provenance.
+## 7. Project and Source Snapshot
 
-## 7. Project
+A Project represents one registered local repository or source root. It records identity/fingerprint, normalized root, source-control metadata, configuration path, trust, capabilities, and timestamps.
 
-A Project represents one registered local repository or source directory.
+A Source Snapshot is immutable and records source kind, commit/branch provenance, dirty patch, file manifest, lockfile/configuration hashes, exclusions/symlink policy, and creation time.
 
-Required facts:
+Moving source requires explicit relinking. Changed bytes create a new Source Snapshot.
 
-- identity and display name;
-- normalized root path and fingerprint;
-- source-control metadata;
-- configuration path;
-- registration and last-opened timestamps;
-- detected capabilities;
-- trust status.
+## 8. Run Configuration and Run
 
-Moving a source directory requires explicit relinking and identity verification. Removing registration never deletes source.
+A Run Configuration is the fully resolved immutable contract for source inputs, route/origin, fixture/states/viewports/interaction, commands, readiness/settle, gates, protected dimensions, evaluation policy, limits, retry, storage, retention, security, and export policy.
 
-## 8. Source Snapshot
+The wizard edits a draft. Successful validation seals a new Run Configuration. Later changes create a superseding Run.
 
-A Source Snapshot is an immutable declaration of source content used by a Candidate.
+A Run references exactly one current Candidate and, in MVP, exactly one Contender. It records state, active Epoch, latest Recommendation/Decision, durable checkpoint, recovery disposition, and terminal/failure details.
 
-It records:
+A terminal Run never reopens.
 
-- project identity;
-- kind: Git commit, worktree, directory manifest, working-tree snapshot, patched workspace, or imported prior candidate;
-- commit and branch provenance where available;
-- dirty-state declaration;
-- file-manifest hash;
-- lockfile hash;
-- configuration hash;
-- symlink and exclusion policy;
-- creation time.
+## 9. Candidate, Attempt, Workspace, and Process
 
-Changed content creates a new Source Snapshot. Branch names alone never establish immutable identity.
+A Candidate has immutable role/ordinal and Source Snapshot, effective Attempt/Workspace, eligibility, Gate Results, Captures, source-difference summary, and failure details.
 
-## 9. Run Configuration
+A Candidate Attempt records one materialization/execution/capture attempt. Retries never overwrite history.
 
-A Run Configuration is the fully resolved immutable contract for one Run.
+A Candidate Workspace is an owned disposable materialization outside the active working tree. It records method, manifest, verification, and cleanup state.
 
-It includes:
+A Process Record describes one supervisor-managed root process and records purpose, executable identity, redacted args/environment, working directory, native identity, PID as observation only, containment, lifecycle/exit, output/usage Artifacts, and endpoint observations.
 
-- source inputs;
-- target route and local-origin policy;
-- fixture, states, viewports, and critical interaction;
-- install/build/test/development commands;
-- readiness and settle policy;
-- gates and protected dimensions;
-- factor definitions and evaluator policy;
-- resource limits;
-- storage, retention, security, and export policy;
-- configuration provenance and canonical hash.
+Approved contained descendants are attributed through the owning process/group but do not each need an independent managed-root command record unless policy requires one.
 
-The wizard may edit a draft. Validation seals a new immutable Run Configuration.
+## 10. Capture Plan, Epoch, and Capture
 
-## 10. Run
+A Capture Plan freezes candidate order, route, states, viewports, interaction, fixture/environment, readiness/settle, browser requirement, artifact classes, and equivalence rules.
 
-A Run represents one attempt to execute a Run Configuration.
+A Capture Epoch records Run/Plan, browser executable/version/process identity, Playwright version, environment/fixture hashes, ordered capture groups, state, reasons, and timestamps.
 
-Required fields include:
+Browser crash/disconnect/identity loss or wider environment corruption invalidates the complete Epoch permanently. Candidate-local failure alone does not.
 
-- Project and Run Configuration references;
-- state from `RunState`;
-- exactly one current Candidate;
-- ordered Contender IDs;
-- active epoch when capturing;
-- latest Recommendation and User Decision references;
-- durable checkpoint;
-- recovery disposition;
-- terminal/failure details.
+A Capture represents one Candidate, route, state, viewport, and optional interaction step. Validity requires all configured Artifacts and matching source/fixture/browser/environment/Epoch identity.
 
-MVP cardinality is one current Candidate and one Contender. Later modes may add contenders without changing entity semantics.
+## 11. Gates
 
-A terminal Run never reopens. Retrying terminal work creates a superseding Run.
+A Gate Definition is immutable within a sealed Run and declares phase, subject type, severity, evidence dependencies, retry policy, and blocking behavior.
 
-## 11. Candidate
+A Gate Result is one append-only attempt with state, observations, citations, timestamps, effect, and supersession link.
 
-A Candidate represents either current or contender and uses `CandidateRole` from `schemas/domain-types.ts`.
+Required effective failure/error makes a Contender ineligible. Current failure invalidates the baseline.
 
-It records:
+## 12. Evaluation model
 
-- immutable role and ordinal;
-- Source Snapshot;
-- effective workspace/attempt;
-- lifecycle state;
-- eligibility;
-- gate results;
-- captures;
-- source-difference summary;
-- failure details.
+An Evaluation Factor declares stable key, definition, weight, required evidence, confidence, limitations, tie policy, and protected status.
 
-Eligibility is derived from required gates. An ineligible or stale Contender cannot be recommended.
+A Comparison binds exactly two Candidates and one valid evidence set, including Epoch, capture pairs, interactions, eligibility summary, environment fingerprint, validity, and Evaluation attempts.
 
-## 12. Candidate Workspace and Attempt
+An Evaluation records adapter/provider/model, immutable input manifest, raw and normalized output, validation, factor evidence, limitations, attempt history, and `InferenceUsage`.
 
-A Candidate Workspace is an owned execution copy of a Source Snapshot.
+An Evidence Record is immutable and includes Factor, `PairwiseVerdict`, confidence/null, rationale, artifact/region/interaction citations, limitations, and validator status.
 
-It:
+Every citation belongs to the same Run, verifies its hash, and appears in the immutable input packet.
 
-- lives under an owned cache/workspace root;
-- never aliases the active working tree;
-- records materialization method and manifest hash;
-- is verified before reuse;
-- may be cleaned without deleting evidence.
+## 13. Recommendation
 
-A Candidate Attempt records one materialization/execution/capture attempt. Retries preserve prior attempts.
-
-## 13. Process Record
-
-A Process Record describes one supervisor-launched process.
-
-It records:
-
-- Candidate and purpose;
-- executable identity;
-- redacted argument/environment summaries;
-- working directory;
-- supervisor-native identity;
-- PID as observation only;
-- containment membership;
-- lifecycle and exit facts;
-- output and usage artifacts;
-- endpoint-ownership observations.
-
-PID alone never proves continuity.
-
-## 14. Capture Plan
-
-A Capture Plan is the immutable matrix for an epoch:
-
-- candidate order;
-- route;
-- required application states;
-- viewports;
-- critical interaction steps;
-- locale, time zone, theme, reduced motion, clock, and random policy;
-- readiness/settle policy;
-- browser requirement;
-- required artifact classes;
-- comparison-equivalence constraints.
-
-## 15. Capture Epoch
-
-A Capture Epoch is the validity boundary for comparable browser evidence.
-
-It records:
-
-- Run and Capture Plan;
-- browser executable/version and process identity;
-- Playwright version;
-- environment fingerprint;
-- ordered capture groups;
-- state and invalidation reasons;
-- open/seal/invalidation timestamps.
-
-Current and Contender evidence used together must belong to the same valid epoch. Browser disconnect or crash invalidates the complete epoch permanently.
-
-## 16. Capture
-
-A Capture represents one Candidate, route, application state, viewport, and optional interaction step within one epoch.
-
-A valid Capture requires all configured artifacts and matching source, fixture, browser, environment, and epoch identity.
-
-Capture completion does not imply gate success. Invalid-epoch artifacts remain diagnostic only.
-
-## 17. Gate Definition and Result
-
-A Gate Definition is immutable policy within a started Run.
-
-A Gate Result is one append-only attempt against a Candidate or Capture.
-
-Required result facts:
-
-- gate and subject IDs;
-- attempt number;
-- state: pending, running, passed, failed, error, or skipped;
-- observations and cited artifacts;
-- blocking effect;
-- failure/error details;
-- supersession link.
-
-A required effective failure or error makes the Candidate ineligible.
-
-## 18. Evaluation Factor
-
-An Evaluation Factor defines one pairwise judgment dimension and records:
-
-- stable key and definition;
-- weight;
-- required artifact classes;
-- minimum confidence;
-- blocking limitation rules;
-- tie treatment;
-- whether it is protected.
-
-Weights for weighted factors sum to 1.0 within declared tolerance. Protected dimensions may veto independent of weight.
-
-## 19. Comparison
-
-A Comparison binds exactly two Candidates and the valid evidence set used to compare them.
-
-It records:
-
-- Run and Candidate IDs;
-- valid epoch;
-- capture pairs and interaction evidence;
-- gate eligibility summary;
-- environment fingerprint;
-- evaluation attempts;
-- comparison-validity state.
-
-## 20. Evaluation and InferenceUsage
-
-An Evaluation represents one evaluator attempt.
-
-It records:
-
-- adapter/provider/model provenance;
-- immutable input manifest;
-- raw and normalized output artifacts;
-- validation result;
-- factor evidence;
-- limitations;
-- attempt/supersession details;
-- `InferenceUsage` imported from `schemas/domain-types.ts`.
-
-There is no second local `InferenceUsage` definition.
-
-## 21. Evidence Record
-
-An Evidence Record is an immutable factor-level or protected-regression conclusion.
-
-It records:
-
-- Evaluation and Factor references;
-- PairwiseVerdict;
-- confidence or null;
-- rationale;
-- artifact/region/interaction citations;
-- limitations;
-- validator status.
-
-Every cited artifact must belong to the same Run, verify its hash, and be allowed by the immutable evaluation packet.
-
-## 22. Recommendation
-
-A Recommendation uses `RecommendationRecord` and `RecommendationOutcome` from `schemas/domain-types.ts`.
-
-Allowed outcomes are exactly:
+A Recommendation uses `RecommendationRecord` and one of exactly:
 
 - `contender_recommended`;
 - `current_retained`;
@@ -380,15 +167,11 @@ Allowed outcomes are exactly:
 - `human_review_required`;
 - `invalid_run`.
 
-The policy engine creates the Recommendation only after validating gates, evidence, order reversal, protected regressions, and staleness.
+Only deterministic policy creates it after gate, evidence, order, protected-regression, and staleness validation. It is immutable, advisory, and never changes source.
 
-A Recommendation is immutable, advisory, and never changes source.
+## 14. User Decision
 
-## 23. User Decision
-
-A User Decision uses `UserDecisionRecord` and `UserDecisionAction` from `schemas/domain-types.ts`.
-
-Allowed actions are exactly:
+A User Decision uses `UserDecisionRecord` and one of exactly:
 
 - `accept_recommendation`;
 - `retain_current`;
@@ -397,44 +180,48 @@ Allowed actions are exactly:
 - `defer`;
 - `invalidate_run`.
 
-`exported_without_acceptance` is not a decision action.
+It binds to Recommendation, evidence, source, and policy hashes. Changed inputs make it stale. Export is not a Decision action.
 
-Decisions are append-only and bind to recommendation, evidence, source, and policy hashes. Changed bound inputs make a decision stale.
+## 15. Promotion
 
-## 24. Promotion
-
-A Promotion uses `PromotionRecord` from `schemas/domain-types.ts`.
-
-Promotion is a non-destructive export such as:
+A Promotion uses `PromotionRecord` and represents an adoption handoff for a selected eligible Contender:
 
 - patch export;
 - local branch creation;
-- workspace preservation;
-- report export.
+- workspace preservation.
 
-Promotion does not mean merge, push, checkout, or deployment. It requires a nonstale authorizing User Decision.
+It always references a Candidate and nonstale authorizing User Decision.
 
-## 25. Artifact and Event
+Promotion does not mean merge, push, checkout over the active tree, deployment, or ordinary report export.
 
-An Artifact is an immutable registered file with:
+## 16. Export Operation
 
-- owner;
-- class/role;
-- canonical relative path;
-- media type and byte length;
-- SHA-256;
-- validity and sensitivity;
-- retention and provenance.
+An Export Operation uses `ExportOperationRecord` and creates non-adoption output:
 
-An Event is one immutable run-scoped fact with contiguous sequence and hash-chain linkage.
+- report;
+- diagnostic bundle;
+- portable Run bundle;
+- evidence bundle;
+- screenshots;
+- configuration template;
+- selected logs.
 
-Requested actions and observed outcomes are distinct events.
+It may be Run-scoped or installation/project-scoped, need not identify a Candidate, and does not imply acceptance. It always records redaction, omissions, source entities, output Artifacts, and verification.
 
-## 26. Relationship summary
+An export that contains a contender patch or creates an adoption branch is a Promotion, not a general Export Operation.
+
+## 17. Artifact and Event
+
+An Artifact is an immutable registered payload with owner, class, relative path, media type, byte length, SHA-256, validity, sensitivity, retention, operation, and provenance.
+
+An Event is one immutable fact with contiguous sequence and hash-chain linkage. Requested action and observed outcome are separate Events.
+
+## 18. Relationship summary
 
 ```text
 Project
   ├─ SourceSnapshot*
+  ├─ ExportOperation*
   └─ Run*
        ├─ RunConfiguration 1
        ├─ Candidate 2..n
@@ -453,46 +240,50 @@ Project
        ├─ Recommendation*
        ├─ UserDecision*
        ├─ Promotion*
+       ├─ ExportOperation*
        ├─ Artifact*
        └─ Event*
 ```
 
-## 27. Mutation and retention
+## 19. Mutation and retention
 
-- Immutable entities are superseded, never edited in place.
+- Immutable entities are superseded, never edited.
 - Mutable summaries use revision checks and atomic replacement.
-- Event streams preserve every transition.
-- UI caches and databases are rebuildable.
-- Deleting a Project registration never deletes source.
-- Evidence cited by retained decisions or recommendations cannot be removed independently.
-- Display labels may change without changing entity identity.
+- Events preserve transitions and supersession.
+- UI caches/indexes are rebuildable.
+- Deleting registration never deletes source.
+- Cited evidence cannot be removed independently.
+- Display labels may change without changing identity.
 
-## 28. Domain invariants
+## 20. Domain invariants
 
-An implementation is nonconforming if it permits:
+Nonconforming behavior includes:
 
 - two current Candidates in one Run;
-- mixed-epoch selection evidence;
-- recommendation of an ineligible Contender;
-- Recommendation enums outside the canonical five;
-- User Decision actions outside the canonical six;
-- export represented as a User Decision action;
-- recommendation treated as merge or deployment;
-- PID reuse treated as process continuity;
-- cross-run artifact citation without import provenance;
-- mutation of source snapshots, evidence, recommendations, or decisions;
-- a database becoming the only source of a fact;
-- persisted `champion`, `challenger`, `retain_champion`, `promote`, or `escalate` enum values.
+- mixed-Epoch selection evidence;
+- recommending an ineligible Contender;
+- noncanonical Recommendation/Decision enum values;
+- export represented as Decision;
+- report/diagnostic export represented as contender Promotion;
+- Promotion without Candidate and authorizing Decision;
+- Recommendation treated as merge/deployment;
+- PID reuse treated as identity;
+- cross-Run citation without provenance;
+- mutation of Source Snapshot, Evidence, Recommendation, or Decision;
+- database as sole source of a fact;
+- persisted deprecated competitive aliases.
 
-## 29. Required tests
+## 21. Required tests
 
-- shared types compile from `schemas/domain-types.ts`;
-- deprecated persisted vocabulary is rejected;
-- Recommendation validates all five outcomes;
-- User Decision validates all six actions;
-- stale decision blocks Promotion;
-- mixed-epoch Comparison is invalid;
-- artifact citations cannot cross Run boundaries;
-- gate retries preserve attempt history;
-- Run reconstructs without an index;
-- PID reuse cannot attach an unrelated process.
+- all ID prefixes and ULID validators agree;
+- deprecated enum vocabulary rejected;
+- all Recommendation and Decision values serialize;
+- stale Decision blocks Promotion;
+- general Export Operation requires no selected Candidate;
+- Promotion always requires Candidate and Decision;
+- report export cannot create adoption semantics;
+- mixed-Epoch Comparison invalid;
+- citations cannot cross Run without import provenance;
+- Gate retries preserve history;
+- Run reconstructs without index;
+- PID reuse cannot attach unrelated process.
